@@ -58,8 +58,8 @@ module Structure
     end type Structure_Resource
     
     type :: Structure_group
-        type(Structure_Resource) :: Mz, BE, &
-                                Sf, Sp, Sd, &
+        type(Structure_Resource) :: Mz, BE
+        type(Structure_Fish) :: Sf, Sp, Sd, &
                                 Mf, Mp, Md, & 
                                 Lp, Ld
 
@@ -111,7 +111,7 @@ module Structure
 
     end subroutine initPhysiology
     
-    subroutine init_save_data_3D(this, Nlat, Nlong, Ntime)
+    subroutine init_save_data(this, Nlat, Nlong, Ntime)
         type(Save_structure) :: this
         integer :: Nlat, Nlong, Ntime
         

@@ -21,7 +21,7 @@ program Run_physiology
     ! Initialisation: ----------------------------------------------------------
     CALL griddims(dir_Tb, Nlat, Nlong, Ntime, var)
     CALL ini_input(DataTp, DataTb, Datadz, Datadet, DataZM)
-    CALL init_save_data_3D(Data, Nlat, Nlong, Ntime)
+    CALL init_save_data(Data, Nlat, Nlong, Ntime)
 
     call cpu_time(T2)
     print *, "Initialisation time", T2-T1, "sec"
@@ -34,7 +34,7 @@ program Run_physiology
         print*, "lat =  ", ilat
         CALL initPhysiology(Var)
         DO ilong = 1, Nlong
-            print*, "lat =  ", ilat
+            print*, "lat =  ", ilong
             CALL initPhysiology(Var)
             Do itime = 1, Ntime
                 CALL Get_Environental_data(Var, DataTp, DataTb, Datadz, Datadet, DataZM, ilat, ilong, itime)
