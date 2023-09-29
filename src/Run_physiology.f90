@@ -9,11 +9,11 @@ program Run_physiology
     
     type(Structure_group) :: Var
     type(Save_structure) :: Data
-    integer :: Nlat=0, Nlong=0, Ntime=0
+    integer :: Nlat=0, Nlong=0, Ntime=0, Nspace=0
     real(dp), dimension(:, :, :), allocatable :: DataTp, DataTb, &
                                                  Datadz, Datadet, &
                                                  DataZM
-    integer :: ilat, ilong, itime
+    integer :: ilat, ilong, itime, ispace
     real    :: T1, T2, T3
 
     call cpu_time(T1)
@@ -24,17 +24,18 @@ program Run_physiology
     CALL init_save_data(Data, Nlat, Nlong, Ntime)
 
     call cpu_time(T2)
+
     print *, "Initialisation time", T2-T1, "sec"
     print *, "Start simulation, takes ~ 47min"
 
-    Nlat = 1
-    ! Nlong = 1
+    Nlat = 200
+    Nlong = 20
     ! Loops over latitude, longitude and time: ---------------------------------
     Do ilat = 1, Nlat
-        print*, "lat =  ", ilat
+        !print*, "lat =  ", ilat
         CALL initPhysiology(Var)
         DO ilong = 1, Nlong
-            print*, "lat =  ", ilong
+            !print*, "lat =  ", ilong
             CALL initPhysiology(Var)
             Do itime = 1, Ntime
                 CALL Get_Environental_data(Var, DataTp, DataTb, Datadz, Datadet, DataZM, ilat, ilong, itime)
@@ -58,8 +59,6 @@ program Run_physiology
     call cpu_time(T3)
     print *, "Simulation done !"
     print *, "Running time",  (T3-T2)/60, "min"
-
-    
 
     ! Running time: 
     ! ----------------------------------------------------

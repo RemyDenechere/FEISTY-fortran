@@ -74,6 +74,7 @@ module Structure
         real(dp) :: Nlat
         real(dp) :: Nlong
         real(dp) :: Ntime
+        real(dp) :: Nspace
     end type Structure_group
     
     type :: Save_structure

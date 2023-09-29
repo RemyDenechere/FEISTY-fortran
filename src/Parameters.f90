@@ -5,12 +5,15 @@ module Parameters
 
     ! input files: ----------------------------------------------------
     character(LEN=280), parameter :: &
+    
+    ! To use in UCAR -----------------------------------------------------------------
     ! dir_Tb = "/glade/campaign/cesm/development/bgcwg/projects/CESM2-OMIP2-like-4p2z-run/g.e22.GOMIPECOIAF_JRA-1p4-2018.TL319_g17.4p2z.001branch/ocn/proc/tseries/day_1/g.e22.GOMIPECOIAF_JRA-1p4-2018.TL319_g17.4p2z.001branch.pop.h.ecosys.nday1.TEMP_BOTTOM_2.19580101-20211231.nc", &
-    !dir_Tp = "/glade/campaign/cesm/development/bgcwg/projects/CESM2-OMIP2-like-4p2z-run/g.e22.GOMIPECOIAF_JRA-1p4-2018.TL319_g17.4p2z.001branch/ocn/proc/tseries/day_1/g.e22.GOMIPECOIAF_JRA-1p4-2018.TL319_g17.4p2z.001branch.pop.h.ecosys.nday1.TEMP_mean_150m.19580101-20211231.nc", &
-    !dir_zf = "/glade/campaign/cesm/development/bgcwg/projects/CESM2-OMIP2-like-4p2z-run/g.e22.GOMIPECOIAF_JRA-1p4-2018.TL319_g17.4p2z.001branch/ocn/proc/tseries/day_1/g.e22.GOMIPECOIAF_JRA-1p4-2018.TL319_g17.4p2z.001branch.pop.h.ecosys.nday1.mesozooC_zint_100m.19580101-20211231.nc", &
-    !dir_dz = "/glade/campaign/cesm/development/bgcwg/projects/CESM2-OMIP2-like-4p2z-run/g.e22.GOMIPECOIAF_JRA-1p4-2018.TL319_g17.4p2z.001branch/ocn/proc/tseries/day_1/g.e22.GOMIPECOIAF_JRA-1p4-2018.TL319_g17.4p2z.001branch.pop.h.ecosys.nday1.mesozoo_loss_zint_150m.19580101-20211231.nc", &
-    !dir_det = "/glade/campaign/cesm/development/bgcwg/projects/CESM2-OMIP2-like-4p2z-run/g.e22.GOMIPECOIAF_JRA-1p4-2018.TL319_g17.4p2z.001branch/ocn/proc/tseries/day_1/g.e22.GOMIPECOIAF_JRA-1p4-2018.TL319_g17.4p2z.001branch.pop.h.ecosys.nday1.pocToFloor_2.19580101-20211231.nc"
+    ! dir_Tp = "/glade/campaign/cesm/development/bgcwg/projects/CESM2-OMIP2-like-4p2z-run/g.e22.GOMIPECOIAF_JRA-1p4-2018.TL319_g17.4p2z.001branch/ocn/proc/tseries/day_1/g.e22.GOMIPECOIAF_JRA-1p4-2018.TL319_g17.4p2z.001branch.pop.h.ecosys.nday1.TEMP_mean_150m.19580101-20211231.nc", &
+    ! dir_zf = "/glade/campaign/cesm/development/bgcwg/projects/CESM2-OMIP2-like-4p2z-run/g.e22.GOMIPECOIAF_JRA-1p4-2018.TL319_g17.4p2z.001branch/ocn/proc/tseries/day_1/g.e22.GOMIPECOIAF_JRA-1p4-2018.TL319_g17.4p2z.001branch.pop.h.ecosys.nday1.mesozooC_zint_100m.19580101-20211231.nc", &
+    ! dir_dz = "/glade/campaign/cesm/development/bgcwg/projects/CESM2-OMIP2-like-4p2z-run/g.e22.GOMIPECOIAF_JRA-1p4-2018.TL319_g17.4p2z.001branch/ocn/proc/tseries/day_1/g.e22.GOMIPECOIAF_JRA-1p4-2018.TL319_g17.4p2z.001branch.pop.h.ecosys.nday1.mesozoo_loss_zint_150m.19580101-20211231.nc", &
+    ! dir_det = "/glade/campaign/cesm/development/bgcwg/projects/CESM2-OMIP2-like-4p2z-run/g.e22.GOMIPECOIAF_JRA-1p4-2018.TL319_g17.4p2z.001branch/ocn/proc/tseries/day_1/g.e22.GOMIPECOIAF_JRA-1p4-2018.TL319_g17.4p2z.001branch.pop.h.ecosys.nday1.pocToFloor_2.19580101-20211231.nc"
 
+    ! Last FEISTY tunning data -------------------------------------------------------
     dir_Tb = "/project/rdenechere/TunningFEISTY/TL319_g17.4p2z/&
     g.e22.GOMIPECOIAF_JRA-1p4-2018.TL319_g17.4p2z.001branch&
     .pop.h.ecosys.nday1.TEMP_mean_150m.19580101-20211231.nc", &
@@ -27,8 +30,17 @@ module Parameters
     g.e22.GOMIPECOIAF_JRA-1p4-2018.TL319_g17.4p2z.001branch.&
     pop.h.ecosys.nday1.pocToFloor_2.19580101-20211231.nc"
 
- 
-
+    ! 2D data from last FEISTY tunning: ----------------------------------------------
+    ! dir_Tb = "/project/rdenechere/TunningFEISTY/TL319_g17.4p2z/&
+    ! 2D_data/TEMP_BOTTOM_2_2D.nc", &
+    ! dir_Tp = "/project/rdenechere/TunningFEISTY/TL319_g17.4p2z/& 
+    ! 2D_data/TEMP_mean_150m_2D.nc", &
+    ! dir_zf = "/project/rdenechere/TunningFEISTY/TL319_g17.4p2z/&
+    ! 2D_data/mesozooC_zint_150m_2D.nc", &
+    ! dir_dz = "/project/rdenechere/TunningFEISTY/TL319_g17.4p2z/&
+    ! 2D_data/mesozoo_loss_zint_150m_2D.nc", &
+    ! dir_det = "/project/rdenechere/TunningFEISTY/TL319_g17.4p2z/&
+    ! 2D_data/pocToFloor_2_2D.nc"
     
     ! General parameters: ---------------------------------------------
     integer, parameter  :: dp = kind(0.d0)   ! double precision
