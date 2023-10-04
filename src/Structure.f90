@@ -1,6 +1,6 @@
 module Structure 
     use Parameters
-
+    
     implicit none 
 
     type :: Structure_Fish
@@ -77,29 +77,40 @@ module Structure
         real(dp) :: Nspace
     end type Structure_group
     
-    type :: Save_structure
+    type :: Save_structure3D
         real(dp), dimension(:, :, :), allocatable :: Sf, Sp, Sd, Mf, Mp, Md, Lp, Ld
     end type
-        
+
+    type :: Save_structure2D
+        real(dp), dimension(:, :), allocatable :: Sf, Sp, Sd, Mf, Mp, Md, Lp, Ld
+    end type
+
+    type :: Save_structure1D
+    real(dp), dimension(:), allocatable :: Sf, Sp, Sd, Mf, Mp, Md, Lp, Ld
+    end type
+
+    type :: ini_fish_data
+        real(dp), dimension(:), allocatable :: IniSf, IniSp, IniSd, IniMf, IniMp, IniMd , IniLp, IniLd
+    end type 
 
     contains 
-    
-    subroutine initPhysiology(this)
-        type(Structure_group), intent(inout) :: this 
-        
-        ! Give initial condition 
-        ! Will be loaded from saved pattern (spinup)
-        this%Mz%B = 0.001
-        this%BE%B = 0.001
-        this%Sf%B = 0.001
-        this%Sp%B = 0.001
-        this%Sd%B = 0.001
-        this%Mf%B = 0.001
-        this%Mp%B = 0.001
-        this%Md%B = 0.001
-        this%Lp%B = 0.001
-        this%Ld%B = 0.001
 
+    subroutine initPhysiologySpinup(this)
+        type(Structure_group), intent(inout) :: this 
+            ! Give initial condition 
+            ! Will be loaded from saved pattern (spinup)
+            this%Mz%B = 0.001
+            this%BE%B = 0.001
+            this%Sf%B = 0.001
+            this%Sp%B = 0.001
+            this%Sd%B = 0.001
+            this%Mf%B = 0.001
+            this%Mp%B = 0.001
+            this%Md%B = 0.001
+            this%Lp%B = 0.001
+            this%Ld%B = 0.001
+        
+        ! Move this !
         ! Individual Mass (g) geometric mean for each group 
         this%Sf%w = 10.0**((log10(0.001)+log10(0.5))/2)
         this%Sp%w = 10.0**((log10(0.001)+log10(0.5))/2)
@@ -109,38 +120,95 @@ module Structure
         this%Md%w = 10.0**((log10(0.5)+log10(250.0))/2) 
         this%Lp%w = 10.0**((log10(250.0)+log10(125000.0))/2)
         this%Ld%w = 10.0**((log10(250.0)+log10(125000.0))/2)
-
-    end subroutine initPhysiology
+    end subroutine initPhysiologySpinup
     
-    subroutine init_save_data(this, Nlat, Nlong, Ntime)
-        type(Save_structure) :: this
+    subroutine init_save_data3D(this, Nlat, Nlong, Ntime)
+        type(Save_structure3D) :: this
         integer :: Nlat, Nlong, Ntime
-        
-        allocate(this%Sf(Nlat, Nlong, Ntime))
-        allocate(this%Sp(Nlat, Nlong, Ntime))
-        allocate(this%Sd(Nlat, Nlong, Ntime))
-        allocate(this%Mf(Nlat, Nlong, Ntime))
-        allocate(this%Mp(Nlat, Nlong, Ntime))
-        allocate(this%Md(Nlat, Nlong, Ntime))
-        allocate(this%Lp(Nlat, Nlong, Ntime))
-        allocate(this%Ld(Nlat, Nlong, Ntime))
-    
-    end subroutine init_save_data
-    
-    subroutine save_data(this, that, ilat, ilong, itime)
-        type(Save_structure) :: this
+        integer :: Nmonth
+        Nmonth = YR*12
+        allocate(this%Sf(Nlat, Nlong, Nmonth))
+        allocate(this%Sp(Nlat, Nlong, Nmonth))
+        allocate(this%Sd(Nlat, Nlong, Nmonth))
+        allocate(this%Mf(Nlat, Nlong, Nmonth))
+        allocate(this%Mp(Nlat, Nlong, Nmonth))
+        allocate(this%Md(Nlat, Nlong, Nmonth))
+        allocate(this%Lp(Nlat, Nlong, Nmonth))
+        allocate(this%Ld(Nlat, Nlong, Nmonth))
+    end subroutine init_save_data3D
+
+    subroutine init_save_data2D(this, Nspace, Ntime)
+        type(Save_structure2D) :: this
+        integer, intent(in) :: Nspace, Ntime
+        integer :: Nmonth
+        Nmonth = YR*12
+
+        allocate(this%Sf(Nspace, Nmonth))
+        allocate(this%Sp(Nspace, Nmonth))
+        allocate(this%Sd(Nspace, Nmonth))
+        allocate(this%Mf(Nspace, Nmonth))
+        allocate(this%Mp(Nspace, Nmonth))
+        allocate(this%Md(Nspace, Nmonth))
+        allocate(this%Lp(Nspace, Nmonth))
+        allocate(this%Ld(Nspace, Nmonth))
+    end subroutine init_save_data2D
+
+    subroutine init_store_MNTH(this, Ndays)
+        type(Save_structure1D) :: this
+        integer, intent(in) :: Ndays
+        allocate(this%Sf(Ndays))
+        allocate(this%Sp(Ndays))
+        allocate(this%Sd(Ndays))
+        allocate(this%Mf(Ndays))
+        allocate(this%Mp(Ndays))
+        allocate(this%Md(Ndays))
+        allocate(this%Lp(Ndays))
+        allocate(this%Ld(Ndays))
+    end subroutine init_store_MNTH
+
+    subroutine store_MNTH(this, that, iDAY)
+        type(Save_structure1D) :: this
         type(Structure_group) :: that
-        integer :: ilat, ilong, itime
-        
-        this%Sf(ilat, ilong, itime) = that%Sf%B
-        this%Sp(ilat, ilong, itime) = that%Sp%B
-        this%Sd(ilat, ilong, itime) = that%Sd%B
-        this%Mf(ilat, ilong, itime) = that%Mf%B
-        this%Mp(ilat, ilong, itime) = that%Mp%B
-        this%Md(ilat, ilong, itime) = that%Md%B
-        this%Lp(ilat, ilong, itime) = that%Lp%B
-        this%Ld(ilat, ilong, itime) = that%Ld%B
-    end subroutine save_data
+        integer, intent(in) :: iDAY
+
+        this%Sf(iDAY) = that%Sf%B
+        this%Sp(iDAY) = that%Sp%B
+        this%Sd(iDAY) = that%Sd%B
+        this%Mf(iDAY) = that%Mf%B
+        this%Mp(iDAY) = that%Mp%B
+        this%Md(iDAY) = that%Md%B
+        this%Lp(iDAY) = that%Lp%B
+        this%Ld(iDAY) = that%Ld%B
+
+        deallocate(this%Sf)
+        deallocate(this%Sp)
+        deallocate(this%Sd)
+        deallocate(this%Mf)
+        deallocate(this%Mp)
+        deallocate(this%Md)
+        deallocate(this%Lp)
+        deallocate(this%Ld)
+
+    end subroutine store_MNTH
+
+    subroutine store_data2D(this, that, ispace, imonth, Ndays)
+        type(Save_structure2D) :: this
+        type(Save_structure1D) :: that
+        integer, intent(in) :: ispace, imonth, Ndays
+        print*, "check 1"
+        this%Sf(ispace, imonth) = sum(that%Sf(1:Ndays))/Ndays
+        print*, "check 2"
+        this%Sp(ispace, imonth) = sum(that%Sp)/Ndays
+        this%Sd(ispace, imonth) = sum(that%Sd)/Ndays
+        this%Mf(ispace, imonth) = sum(that%Mf)/Ndays
+        this%Mp(ispace, imonth) = sum(that%Mp)/Ndays
+        this%Md(ispace, imonth) = sum(that%Md)/Ndays
+        this%Lp(ispace, imonth) = sum(that%Lp)/Ndays
+        this%Ld(ispace, imonth) = sum(that%Ld)/Ndays
+    end subroutine store_data2D
+
+    
+
 
 
 end module Structure

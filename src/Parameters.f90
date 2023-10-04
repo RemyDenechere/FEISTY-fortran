@@ -14,38 +14,50 @@ module Parameters
     ! dir_det = "/glade/campaign/cesm/development/bgcwg/projects/CESM2-OMIP2-like-4p2z-run/g.e22.GOMIPECOIAF_JRA-1p4-2018.TL319_g17.4p2z.001branch/ocn/proc/tseries/day_1/g.e22.GOMIPECOIAF_JRA-1p4-2018.TL319_g17.4p2z.001branch.pop.h.ecosys.nday1.pocToFloor_2.19580101-20211231.nc"
 
     ! Last FEISTY tunning data -------------------------------------------------------
-    dir_Tb = "/project/rdenechere/TunningFEISTY/TL319_g17.4p2z/&
-    g.e22.GOMIPECOIAF_JRA-1p4-2018.TL319_g17.4p2z.001branch&
-    .pop.h.ecosys.nday1.TEMP_mean_150m.19580101-20211231.nc", &
-    dir_Tp = "/project/rdenechere/TunningFEISTY/TL319_g17.4p2z/& 
-    g.e22.GOMIPECOIAF_JRA-1p4-2018.TL319_g17.4p2z.001branch.&
-    pop.h.ecosys.nday1.TEMP_BOTTOM_2.19580101-20211231.nc", &
-    dir_zf = "/project/rdenechere/TunningFEISTY/TL319_g17.4p2z/&
-    g.e22.GOMIPECOIAF_JRA-1p4-2018.TL319_g17.4p2z.001branch.&
-    pop.h.ecosys.nday1.mesozooC_zint_150m.19580101-20211231.nc", &
-    dir_dz = "/project/rdenechere/TunningFEISTY/TL319_g17.4p2z/&
-    g.e22.GOMIPECOIAF_JRA-1p4-2018.TL319_g17.4p2z.001branch.&
-    pop.h.ecosys.nday1.mesozoo_loss_zint_150m.19580101-20211231.nc", &
-    dir_det = "/project/rdenechere/TunningFEISTY/TL319_g17.4p2z/&
-    g.e22.GOMIPECOIAF_JRA-1p4-2018.TL319_g17.4p2z.001branch.&
-    pop.h.ecosys.nday1.pocToFloor_2.19580101-20211231.nc"
+    ! dir_Tb = "/project/rdenechere/TunningFEISTY/TL319_g17.4p2z/&
+    ! g.e22.GOMIPECOIAF_JRA-1p4-2018.TL319_g17.4p2z.001branch&
+    ! .pop.h.ecosys.nday1.TEMP_mean_150m.19580101-20211231.nc", &
+    ! dir_Tp = "/project/rdenechere/TunningFEISTY/TL319_g17.4p2z/& 
+    ! g.e22.GOMIPECOIAF_JRA-1p4-2018.TL319_g17.4p2z.001branch.&
+    ! pop.h.ecosys.nday1.TEMP_BOTTOM_2.19580101-20211231.nc", &
+    ! dir_zf = "/project/rdenechere/TunningFEISTY/TL319_g17.4p2z/&
+    ! g.e22.GOMIPECOIAF_JRA-1p4-2018.TL319_g17.4p2z.001branch.&
+    ! pop.h.ecosys.nday1.mesozooC_zint_150m.19580101-20211231.nc", &
+    ! dir_dz = "/project/rdenechere/TunningFEISTY/TL319_g17.4p2z/&
+    ! g.e22.GOMIPECOIAF_JRA-1p4-2018.TL319_g17.4p2z.001branch.&
+    ! pop.h.ecosys.nday1.mesozoo_loss_zint_150m.19580101-20211231.nc", &
+    ! dir_det = "/project/rdenechere/TunningFEISTY/TL319_g17.4p2z/&
+    ! g.e22.GOMIPECOIAF_JRA-1p4-2018.TL319_g17.4p2z.001branch.&
+    ! pop.h.ecosys.nday1.pocToFloor_2.19580101-20211231.nc"
 
     ! 2D data from last FEISTY tunning: ----------------------------------------------
-    ! dir_Tb = "/project/rdenechere/TunningFEISTY/TL319_g17.4p2z/&
-    ! 2D_data/TEMP_BOTTOM_2_2D.nc", &
-    ! dir_Tp = "/project/rdenechere/TunningFEISTY/TL319_g17.4p2z/& 
-    ! 2D_data/TEMP_mean_150m_2D.nc", &
-    ! dir_zf = "/project/rdenechere/TunningFEISTY/TL319_g17.4p2z/&
-    ! 2D_data/mesozooC_zint_150m_2D.nc", &
-    ! dir_dz = "/project/rdenechere/TunningFEISTY/TL319_g17.4p2z/&
-    ! 2D_data/mesozoo_loss_zint_150m_2D.nc", &
-    ! dir_det = "/project/rdenechere/TunningFEISTY/TL319_g17.4p2z/&
-    ! 2D_data/pocToFloor_2_2D.nc"
+    dir_Tb = "/project/rdenechere/TunningFEISTY/TL319_g17.4p2z/&
+        2D_data/TEMP_BOTTOM_2_2D.nc", &
+    dir_Tp = "/project/rdenechere/TunningFEISTY/TL319_g17.4p2z/& 
+        2D_data/TEMP_mean_150m_2D.nc", &
+    dir_zf = "/project/rdenechere/TunningFEISTY/TL319_g17.4p2z/&
+        2D_data/mesozooC_zint_150m_2D.nc", &
+    dir_dz = "/project/rdenechere/TunningFEISTY/TL319_g17.4p2z/&
+        2D_data/mesozoo_loss_zint_150m_2D.nc", &
+    dir_det = "/project/rdenechere/TunningFEISTY/TL319_g17.4p2z/&
+        2D_data/pocToFloor_2_2D.nc", &
+
+    ! Input data (Spinup): -----------------------------------------------------------
+    Dir_IniSf = '../output/Sf_bio_Spinup.nc',&
+    Dir_IniSp = '../output/Sp_bio_Spinup.nc',&
+    Dir_IniSd = '../output/Sd_bio_Spinup.nc',&
+    Dir_IniMf = '../output/Mf_bio_Spinup.nc',&
+    Dir_IniMp = '../output/Mp_bio_Spinup.nc',&
+    Dir_IniMd = '../output/Md_bio_Spinup.nc',&
+    Dir_IniLp = '../output/Lp_bio_Spinup.nc',&
+    Dir_IniLd = '../output/Ld_bio_Spinup.nc'
     
     ! General parameters: ---------------------------------------------
     integer, parameter  :: dp = kind(0.d0)   ! double precision
     real(dp), parameter :: zero = 0.0
     real(dp), parameter :: eps = 1d-200     ! Small number for divisions 
+    integer, parameter :: YR = 64 
+    integer, parameter ::  Nmonth = YR*12
     
 
     ! Environemental data for test: -----------------------------------

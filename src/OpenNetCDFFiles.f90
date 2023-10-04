@@ -29,26 +29,31 @@ program OpenNetCDFFiles
   print *, "Netcdf version", trim(nf90_inq_libvers())
 
  ! Get basic information about the different imput files:-------------------
-  CALL GetVariableInfo(dir_Tb, varid_Tb, varname_Tb)  
-  CALL GetVariableInfo(dir_Tp, varid_Tp, varname_Tp)
-  CALL GetVariableInfo(dir_zf, varid_zf, varname_zf) 
-  CALL GetVariableInfo(dir_dz, varid_dz, varname_dz) 
-  CALL GetVariableInfo(dir_det, varid_det, varname_det)
+  ! CALL GetVariableInfo(dir_Tb, varid_Tb, varname_Tb)  
+  ! CALL GetVariableInfo(dir_Tp, varid_Tp, varname_Tp)
+  ! CALL GetVariableInfo(dir_zf, varid_zf, varname_zf) 
+  ! CALL GetVariableInfo(dir_dz, varid_dz, varname_dz) 
+  ! CALL GetVariableInfo(dir_det, varid_det, varname_det)
+  CALL GetVariableInfo(dir_Tb, varid, varname_Tb)  
+  CALL GetVariableInfo(dir_Tp, varid, varname_Tp)
+  CALL GetVariableInfo(dir_zf, varid, varname_zf) 
+  CALL GetVariableInfo(dir_dz, varid, varname_dz) 
+  CALL GetVariableInfo(dir_det, varid, varname_det)
 
 
   ! Get the dimension for the input variable: (Same for all the imput files)
-  CALL griddims3D(dir_Tb, Nlat, Nlong, Ntime, Var)
-  ! CALL griddims2D(dir, Nspace, Ntime, this)
+  ! CALL griddims3D(dir_Tb, Nlat, Nlong, Ntime, Var)
+  CALL griddims2D(dir_Tb, Nspace, Ntime, Var)
   ! print *, "Dimension of the Netcdf -------"
   ! print *, "Space grid  = ", Nspace
   ! print *, "Ntime       = ", Ntime
   
   ! ! Get the input from a 3D variable: ------------------------------- 
-  CALL readgrid3D(dir_Tb,  varid_Tb, Nlat, Nlong, Ntime, Tb3D)
-  CALL readgrid3D(dir_Tp,  varid_Tp, Nlat, Nlong, Ntime, Tp3D)
-  CALL readgrid3D(dir_zf,  varid_zf, Nlat, Nlong, Ntime, zf3D)
-  CALL readgrid3D(dir_dz,  varid_dz, Nlat, Nlong, Ntime, dz3D)
-  CALL readgrid3D(dir_det, varid_det, Nlat, Nlong, Ntime, det3D)
+  ! CALL readgrid3D(dir_Tb,  varid_Tb, Nlat, Nlong, Ntime, Tb3D)
+  ! CALL readgrid3D(dir_Tp,  varid_Tp, Nlat, Nlong, Ntime, Tp3D)
+  ! CALL readgrid3D(dir_zf,  varid_zf, Nlat, Nlong, Ntime, zf3D)
+  ! CALL readgrid3D(dir_dz,  varid_dz, Nlat, Nlong, Ntime, dz3D)
+  ! CALL readgrid3D(dir_det, varid_det, Nlat, Nlong, Ntime, det3D)
 
   !  ! Get the input from a 2D variable: ------------------------------- 
   ! CALL readgrid2D(dir_Tb,  varid, Nspace, Ntime, Tb2D)
@@ -58,13 +63,13 @@ program OpenNetCDFFiles
   ! CALL readgrid2D(dir_det, varid, Nspace, Ntime, det2D)
 
   ! Get only the ocean id: REGION_MASK; ID = 15: ------------------------
-  CALL GetVariableInfo(dir_Tb, varid_RM, varname_RM)
-  CALL griddims2D(dir_Tb, Nspace, Ntime, Var)
-  CALL readgrid2D(dir_zf, 15, Nspace, Ntime, RM)
+  ! CALL GetVariableInfo(dir_Tb, varid_RM, varname_RM)
+  ! CALL griddims2D(dir_Tb, Nspace, Ntime, Var)
+  ! CALL readgrid2D(dir_zf, 15, Nspace, Ntime, RM)
 
   
   ! Read all the dimension in a netcdf files ----------------------------
-  CALL Get_all_Variable_info(dir_Tp)
+  !CALL Get_all_Variable_info(dir_Tp)
 
   ! Close the netCDF files : ----------------------------------------------------------------
   ierr = nf90_close(ncid_Tb)

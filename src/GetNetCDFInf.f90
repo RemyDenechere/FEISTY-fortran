@@ -6,8 +6,70 @@ module GetNetCDFinf
     implicit none 
 
     contains 
+
+    subroutine Initialisation(Spinup, Var, Nspace, Ntime, Data_F_ini, Data, DataTp, DataTb, Datadz, Datadet, DataZM, MNTH)
+        logical, intent(in) :: Spinup
+        integer, intent(inout) :: Nspace, Ntime
+        integer, dimension(12), intent(inout) :: MNTH
+        type(Structure_group) :: Var
+        type(ini_fish_data), intent(inout) :: Data_F_ini
+        type(Save_structure2D), intent(inout) :: Data
+        real(dp), dimension(:, :), allocatable, intent(inout) :: DataTp, DataTb, &
+                                                                Datadz, Datadet, &
+                                                                DataZM
+
+        CALL griddims2D(dir_Tb, Nspace, Ntime, var)                                                        
+        CALL ini_input2D(DataTp, DataTb, Datadz, Datadet, DataZM)
+        Call ini_input_fish(Spinup, Nspace, Data_F_ini)
+        CALL init_save_data2D(Data, Nspace, Ntime)
+
+        MNTH(1) = 31
+        MNTH(2) = 28
+        MNTH(3) = 31
+        MNTH(4) = 30
+        MNTH(5) = 31
+        MNTH(6) = 30
+        MNTH(7) = 31
+        MNTH(8) = 31
+        MNTH(9) = 30
+        MNTH(10) = 31
+        MNTH(11) = 30
+        MNTH(12) = 31
+    end subroutine Initialisation
     
-    subroutine write_nc_file(filename, varname, var, Nlat, Nlong, Ntime)
+    subroutine save_data(Spinup, this, that, Nspace, Ntime)
+        logical, intent(in) :: Spinup
+        type(ini_fish_data) :: this
+        type(Save_structure2D) :: that
+        integer, intent(in) :: Nspace, Ntime
+        integer :: i
+    
+        if (Spinup) then 
+            ! this%IniSf(i) = that%Sf%B(1:Nspace, Nmonth)
+            ! this%IniSp(i) = that%Sp%B(1:Nspace, Nmonth)
+            ! this%IniSd(i) = that%Sd%B(1:Nspace, Nmonth)
+            ! this%IniMf(i) = that%Mf%B(1:Nspace, Nmonth)
+            ! this%IniMp(i) = that%Mp%B(1:Nspace, Nmonth)
+            ! this%IniMd(i) = that%Md%B(1:Nspace, Nmonth)
+            ! this%IniLp(i) = that%Lp%B(1:Nspace, Nmonth)
+            ! this%IniLd(i) = that%Ld%B(1:Nspace, Nmonth) 
+
+            ! Write each variable to a separate NetCDF file : ---------------------------
+            call write_nc_file1D('../output/Sf_bio_Spinup.nc', 'Sf', this%IniSf, Nspace)
+            call write_nc_file1D('../output/Sp_bio_Spinup.nc', 'Sp', this%IniSp, Nspace)
+            call write_nc_file1D('../output/Sd_bio_Spinup.nc', 'Sd', this%IniSd, Nspace)
+            call write_nc_file1D('../output/Mf_bio_Spinup.nc', 'Mf', this%IniMf, Nspace)
+            call write_nc_file1D('../output/Mp_bio_Spinup.nc', 'Mp', this%IniMp, Nspace)
+            call write_nc_file1D('../output/Md_bio_Spinup.nc', 'Md', this%IniMd, Nspace)
+            call write_nc_file1D('../output/Lp_bio_Spinup.nc', 'Lp', this%IniLp, Nspace)
+            call write_nc_file1D('../output/Ld_bio_Spinup.nc', 'Ld', this%IniLd, Nspace)
+        end if 
+
+
+    end subroutine save_data 
+
+
+    subroutine write_nc_file3D(filename, varname, var, Nlat, Nlong, Ntime)
         character(*), intent(in) :: filename, varname
         integer, intent(in) :: Nlat, Nlong, Ntime
         real(dp), dimension(Nlat, Nlong, Ntime), intent(in) :: var
@@ -36,13 +98,74 @@ module GetNetCDFinf
         
         ! Close the file
         status = nf90_close(ncid)
-    end subroutine write_nc_file
+    end subroutine write_nc_file3D
+
+    subroutine write_nc_file2D(filename, varname, var, Nspace, Ntime)
+        character(*), intent(in) :: filename, varname
+        integer, intent(in) :: Nspace, Ntime
+        real(dp), dimension(Nspace, Ntime), intent(in) :: var
+        integer :: ncid, dimids(2), varid
+        integer :: status
+
+        ! Create the NetCDF file
+        status = nf90_create(filename, NF90_CLOBBER, ncid)
+        
+        ! Define the dimensions
+        status = nf90_def_dim(ncid, 'Space', Nspace, dimids(1))
+        status = nf90_def_dim(ncid, 'Time' , Ntime , dimids(2))
+
+        ! Define the variable
+        status = nf90_def_var(ncid, varname, NF90_REAL, dimids, varid)
+
+        ! End the definitions mode
+        status = nf90_enddef(ncid)
+        
+        ! Write the variable data
+        status = nf90_put_var(ncid, varid, var)
+
+        ! add a unit attribute 
+        status = nf90_put_att(ncid, varid, 'units', 'gWW m-2')
+        
+        ! Close the file
+        status = nf90_close(ncid)
+    end subroutine write_nc_file2D
+    
+
+    subroutine write_nc_file1D(filename, varname, var, Nspace)
+        character(*), intent(in) :: filename, varname
+        integer, intent(in) :: Nspace
+        real(dp), dimension(Nspace), intent(in) :: var
+        integer :: ncid, dimids(1), varid
+        integer :: status
+
+        ! Create the NetCDF file
+        status = nf90_create(filename, NF90_CLOBBER, ncid)
+        
+        ! Define the dimensions
+        status = nf90_def_dim(ncid, 'Space', Nspace, dimids(1))
+
+        ! Define the variable
+        status = nf90_def_var(ncid, varname, NF90_REAL, dimids, varid)
+
+        ! End the definitions mode
+        status = nf90_enddef(ncid)
+        
+        ! Write the variable data
+        status = nf90_put_var(ncid, varid, var)
+
+        ! add a unit attribute 
+        status = nf90_put_att(ncid, varid, 'units', 'gWW m-2')
+        
+        ! Close the file
+        status = nf90_close(ncid)
+    end subroutine write_nc_file1D
+    
     
 
     !:====================================================================== 
     ! Get the input values for the given lat long and time 
     !:======================================================================  
-    subroutine Get_Environental_data(this, DataTp, DataTb, Datadz, Datadet, DataZM, ilat, ilong, itime)
+    subroutine Get_Environental_data3D(this, DataTp, DataTb, Datadz, Datadet, DataZM, ilat, ilong, itime)
         type(Structure_group), intent(inout) :: this
         integer :: ilat, ilong, itime
         real(dp), dimension(:, :, :), allocatable, intent(inout) :: DataTp, DataTb, &
@@ -54,13 +177,30 @@ module GetNetCDFinf
         this%dz = Datadz(ilat, ilong, itime)
         this%det = Datadet(ilat, ilong, itime)
         this%Mz%B = DataZM(ilat, ilong, itime)
-    end subroutine Get_Environental_data
+    end subroutine Get_Environental_data3D
+
+    !:====================================================================== 
+    ! Get the input values for the given lat long and time 
+    !:======================================================================  
+    subroutine Get_Environental_data2D(this, DataTp, DataTb, Datadz, Datadet, DataZM, ispace, itime)
+        type(Structure_group), intent(inout) :: this
+        integer :: ispace, itime
+        real(dp), dimension(:, :), allocatable, intent(inout) :: DataTp, DataTb, &
+                                                                Datadz, Datadet, &
+                                                                DataZM
+        
+        this%Tp =  DataTp(ispace, itime)
+        this%Tb = DataTb(ispace, itime)
+        this%dz = Datadz(ispace, itime)
+        this%det = Datadet(ispace, itime)
+        this%Mz%B = DataZM(ispace, itime)
+    end subroutine Get_Environental_data2D
 
 
     !:====================================================================== 
     ! Load all the imput values to force the model
     !:======================================================================  
-    subroutine ini_input(DataTp, DataTb, Datadz, Datadet, DataZM)
+    subroutine ini_input3D(DataTp, DataTb, Datadz, Datadet, DataZM)
         ! Declare variables
         real(dp), dimension(:, :, :), allocatable, intent(inout) :: DataTp, DataTb, &
                                                                     Datadz, Datadet, &
@@ -83,7 +223,65 @@ module GetNetCDFinf
         CALL readgrid3D(dir_dz, varid_dz, Nlat, Nlong, Ntime, Datadz)
         CALL readgrid3D(dir_det, varid_det, Nlat, Nlong, Ntime, Datadet)      
 
-    end subroutine ini_input
+    end subroutine ini_input3D
+
+
+    !:====================================================================== 
+    ! Load all the imput values to force the model
+    !:======================================================================  
+    subroutine ini_input2D(DataTp, DataTb, Datadz, Datadet, DataZM)
+        ! Declare variables
+        real(dp), dimension(:, :), allocatable, intent(inout) :: DataTp, DataTb, &
+                                                                Datadz, Datadet, &
+                                                                DataZM
+        integer :: ncid_Tb, ncid_Tp, ncid_zf, ncid_dz, ncid_det, ierr
+        integer :: nvars_Tb, nvars_Tp, nvars_zf, nvars_dz, nvars_det
+        integer ::  varid_Tb = 1, & 
+                    varid_Tp = 1, & 
+                    varid_zf = 1, &
+                    varid_dz = 1, &
+                    varid_det = 1
+        integer :: varshape_Tb, varshape_Tp, varshape_zf, varshape_dz, varshape_det
+        character(250) :: varname_Tb, varname_Tp, varname_zf, varname_dz, varname_det
+        integer :: Nspace, Ntime
+
+        ! Get the input grid file: 
+        CALL readgrid2D(dir_Tb, varid_Tb, Nspace, Ntime, DataTp)
+        CALL readgrid2D(dir_Tp, varid_Tp, Nspace, Ntime, DataTb)
+        CALL readgrid2D(dir_zf, varid_zf, Nspace, Ntime, DataZM)
+        CALL readgrid2D(dir_dz, varid_dz, Nspace, Ntime, Datadz)
+        CALL readgrid2D(dir_det, varid_det, Nspace, Ntime, Datadet)      
+
+    end subroutine ini_input2D
+
+
+    subroutine ini_input_fish(Spinup, Nspace, this)
+        type(ini_fish_data) :: this
+        logical, intent(in) :: Spinup
+        integer, intent(in) :: Nspace
+
+        allocate(this%IniSf(Nspace))
+        allocate(this%IniSp(Nspace))
+        allocate(this%IniSd(Nspace))
+        allocate(this%IniMf(Nspace))
+        allocate(this%IniMp(Nspace))
+        allocate(this%IniMd(Nspace))
+        allocate(this%IniLp(Nspace))
+        allocate(this%IniLd(Nspace))
+
+        if (Spinup .eqv. .false.) then 
+            CALL readgrid(dir_IniSf, 1, Nspace, this%IniSf)
+            CALL readgrid(dir_IniSp, 1, Nspace, this%IniSp)
+            CALL readgrid(dir_IniSd, 1, Nspace, this%IniSd)
+            CALL readgrid(dir_IniMf, 1, Nspace, this%IniMf)
+            CALL readgrid(dir_IniMp, 1, Nspace, this%IniMp)
+            CALL readgrid(dir_IniMd, 1, Nspace, this%IniMd)
+            CALL readgrid(dir_IniLp, 1, Nspace, this%IniLp)
+            CALL readgrid(dir_IniLd, 1, Nspace, this%IniLd)
+        end if
+
+    end subroutine ini_input_fish
+
 
     !:====================================================================== 
     ! Get the dimension of the netCDF 3D gridfile
@@ -144,7 +342,7 @@ module GetNetCDFinf
         
         !inquire about the dimensions: ----------------------------
         ierr = nf90_inquire_dimension(ncid, 1, xname, Nspace)
-        ierr = nf90_inquire_dimension(ncid, 2, yname, Nspace)
+        ierr = nf90_inquire_dimension(ncid, 2, yname, Ntime)
         
         
         !Close netCDF file
@@ -153,7 +351,7 @@ module GetNetCDFinf
         ! print outputs: -------------------------------------------
         print *, "------------------------------------"
         print*, "1st dimension =", trim(xname), "; length = ", Nspace
-        print*, "2nd dimension =", trim(yname), "; length = ", Nspace
+        print*, "2nd dimension =", trim(yname), "; length = ", Ntime
         print *, "------------------------------------"      
         
         ! Save lat long, and time in structure: 
@@ -220,6 +418,31 @@ module GetNetCDFinf
         ierr = nf90_close(ncid)
     end subroutine readgrid2D
 
+    subroutine readgrid(dir, varid, Nspace, values)
+        character(LEN=280), intent(in) :: dir
+        integer, intent(in) :: Nspace, varid 
+        real(dp), dimension(:), allocatable, intent(inout) :: values
+        character(LEN=250) :: varname
+        integer :: ierr, vartype, ndims, nAtts, ncid
+
+        allocate(values(Nspace))
+        
+        ! Open NetCDF: --------------------------------------------
+        ierr = nf90_open(dir, NF90_NOWRITE, ncid)
+        if (ierr /= NF90_NOERR) then
+            print *, "Error opening file: ", trim(dir)
+            stop
+        end if
+        
+        ! Get the values of the coordinates and put them in xpos & ypos 
+        ierr = nf90_inquire_variable(ncid, varid, varname, vartype, ndims, nAtts = nAtts)
+        
+        ! Get values of the variable 
+        ierr = nf90_get_var(ncid, varid, values)
+        
+        ! Close the netCDF files : ----------------------------------------------------------------
+        ierr = nf90_close(ncid)
+    end subroutine readgrid
     
     !:====================================================================== 
     ! Get information about the variables in the netCDF
@@ -264,7 +487,7 @@ module GetNetCDFinf
         integer, dimension(:), allocatable :: dimids
         integer :: ncid, varid
         integer :: nvars, vartype, ndims
-        integer :: ierr, i, j
+        integer :: ierr, i
 
         ! Open NetCDF: --------------------------------------------
         ierr = nf90_open(dir, NF90_NOWRITE, ncid)
@@ -291,5 +514,6 @@ module GetNetCDFinf
         ! Close the netCDF files : ----------------------------------------------------------------
         ierr = nf90_close(ncid)
     end subroutine Get_all_Variable_info
+
 
 end module GetNetCDFinf
