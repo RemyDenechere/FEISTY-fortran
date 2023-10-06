@@ -82,24 +82,28 @@ module Structure
     end type
 
     type :: Save_structure2D
-        real(dp), dimension(:, :), allocatable :: Sf, Sp, Sd, Mf, Mp, Md, Lp, Ld
+        real(dp), dimension(:, :), allocatable :: Sf, Sp, Sd, Mf, Mp, Md, Lp, Ld, BE
     end type
 
     type :: Save_structure1D
-    real(dp), dimension(:), allocatable :: Sf, Sp, Sd, Mf, Mp, Md, Lp, Ld
+    real(dp), dimension(:), allocatable :: Sf, Sp, Sd, Mf, Mp, Md, Lp, Ld, BE
     end type
 
     type :: ini_fish_data
-        real(dp), dimension(:), allocatable :: IniSf, IniSp, IniSd, IniMf, IniMp, IniMd , IniLp, IniLd
+        real(dp), dimension(:), allocatable :: IniSf, IniSp, IniSd, IniMf, IniMp, IniMd , IniLp, IniLd, IniBE
     end type 
 
     contains 
 
-    subroutine initPhysiologySpinup(this)
-        type(Structure_group), intent(inout) :: this 
-            ! Give initial condition 
-            ! Will be loaded from saved pattern (spinup)
-            this%Mz%B = 0.001
+    ! Define initial condition for a grid cell
+    subroutine initPhysiology(Spinup, ispace, Data_F_ini, this)
+        logical, intent(in) :: Spinup
+        integer, intent(in) :: ispace
+        type(Structure_group), intent(inout) :: this
+        type(ini_fish_data)  , intent(inout) :: Data_F_ini
+    
+        if (Spinup) then 
+            ! this%Mz%B = 0.001
             this%BE%B = 0.001
             this%Sf%B = 0.001
             this%Sp%B = 0.001
@@ -109,8 +113,21 @@ module Structure
             this%Md%B = 0.001
             this%Lp%B = 0.001
             this%Ld%B = 0.001
+        else 
+            ! this%Mz%B = Data_F_ini%Mz(ispace)
+            this%BE%B = Data_F_ini%iniBE(ispace)
+            this%Sf%B = Data_F_ini%iniSf(ispace)
+            this%Sp%B = Data_F_ini%iniSp(ispace)
+            this%Sd%B = Data_F_ini%iniSd(ispace)
+            this%Mf%B = Data_F_ini%iniMf(ispace)
+            this%Mp%B = Data_F_ini%iniMp(ispace)
+            this%Md%B = Data_F_ini%iniMd(ispace)
+            this%Lp%B = Data_F_ini%iniLp(ispace)
+            this%Ld%B = Data_F_ini%iniLd(ispace)
+
+        end if 
         
-        ! Move this !
+        ! Move this 
         ! Individual Mass (g) geometric mean for each group 
         this%Sf%w = 10.0**((log10(0.001)+log10(0.5))/2)
         this%Sp%w = 10.0**((log10(0.001)+log10(0.5))/2)
@@ -120,13 +137,12 @@ module Structure
         this%Md%w = 10.0**((log10(0.5)+log10(250.0))/2) 
         this%Lp%w = 10.0**((log10(250.0)+log10(125000.0))/2)
         this%Ld%w = 10.0**((log10(250.0)+log10(125000.0))/2)
-    end subroutine initPhysiologySpinup
+
+    end subroutine initPhysiology
     
-    subroutine init_save_data3D(this, Nlat, Nlong, Ntime)
+    subroutine init_save_data3D(this, Nlat, Nlong)
         type(Save_structure3D) :: this
-        integer :: Nlat, Nlong, Ntime
-        integer :: Nmonth
-        Nmonth = YR*12
+        integer :: Nlat, Nlong
         allocate(this%Sf(Nlat, Nlong, Nmonth))
         allocate(this%Sp(Nlat, Nlong, Nmonth))
         allocate(this%Sd(Nlat, Nlong, Nmonth))
@@ -137,12 +153,10 @@ module Structure
         allocate(this%Ld(Nlat, Nlong, Nmonth))
     end subroutine init_save_data3D
 
-    subroutine init_save_data2D(this, Nspace, Ntime)
+    subroutine init_save_data2D(this, Nspace)
         type(Save_structure2D) :: this
-        integer, intent(in) :: Nspace, Ntime
-        integer :: Nmonth
-        Nmonth = YR*12
-
+        integer, intent(in) :: Nspace
+        allocate(this%BE(Nspace, Nmonth))
         allocate(this%Sf(Nspace, Nmonth))
         allocate(this%Sp(Nspace, Nmonth))
         allocate(this%Sd(Nspace, Nmonth))
@@ -156,6 +170,7 @@ module Structure
     subroutine init_store_MNTH(this, Ndays)
         type(Save_structure1D) :: this
         integer, intent(in) :: Ndays
+        allocate(this%BE(Ndays))
         allocate(this%Sf(Ndays))
         allocate(this%Sp(Ndays))
         allocate(this%Sd(Ndays))
@@ -170,7 +185,7 @@ module Structure
         type(Save_structure1D) :: this
         type(Structure_group) :: that
         integer, intent(in) :: iDAY
-
+        this%BE(iDAY) = that%BE%B
         this%Sf(iDAY) = that%Sf%B
         this%Sp(iDAY) = that%Sp%B
         this%Sd(iDAY) = that%Sd%B
@@ -179,25 +194,15 @@ module Structure
         this%Md(iDAY) = that%Md%B
         this%Lp(iDAY) = that%Lp%B
         this%Ld(iDAY) = that%Ld%B
-
-        deallocate(this%Sf)
-        deallocate(this%Sp)
-        deallocate(this%Sd)
-        deallocate(this%Mf)
-        deallocate(this%Mp)
-        deallocate(this%Md)
-        deallocate(this%Lp)
-        deallocate(this%Ld)
-
     end subroutine store_MNTH
 
     subroutine store_data2D(this, that, ispace, imonth, Ndays)
         type(Save_structure2D) :: this
         type(Save_structure1D) :: that
         integer, intent(in) :: ispace, imonth, Ndays
-        print*, "check 1"
-        this%Sf(ispace, imonth) = sum(that%Sf(1:Ndays))/Ndays
-        print*, "check 2"
+
+        this%BE(ispace, imonth) = sum(that%BE)/Ndays
+        this%Sf(ispace, imonth) = sum(that%Sf)/Ndays
         this%Sp(ispace, imonth) = sum(that%Sp)/Ndays
         this%Sd(ispace, imonth) = sum(that%Sd)/Ndays
         this%Mf(ispace, imonth) = sum(that%Mf)/Ndays
@@ -205,6 +210,16 @@ module Structure
         this%Md(ispace, imonth) = sum(that%Md)/Ndays
         this%Lp(ispace, imonth) = sum(that%Lp)/Ndays
         this%Ld(ispace, imonth) = sum(that%Ld)/Ndays
+
+        deallocate(that%BE)
+        deallocate(that%Sf)
+        deallocate(that%Sp)
+        deallocate(that%Sd)
+        deallocate(that%Mf)
+        deallocate(that%Mp)
+        deallocate(that%Md)
+        deallocate(that%Lp)
+        deallocate(that%Ld)
     end subroutine store_data2D
 
     

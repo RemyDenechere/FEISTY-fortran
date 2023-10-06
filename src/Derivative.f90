@@ -116,7 +116,7 @@ module Derivative
         end if 
         if (this%Ld%B <= zero) then  ! Large demersal
             this%Ld%B = eps
-        end if 
+        end if
     end subroutine Biomass_check
 
 

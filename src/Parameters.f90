@@ -42,7 +42,8 @@ module Parameters
     dir_det = "/project/rdenechere/TunningFEISTY/TL319_g17.4p2z/&
         2D_data/pocToFloor_2_2D.nc", &
 
-    ! Input data (Spinup): -----------------------------------------------------------
+    ! Input data (Spinup): --------------------------------------------
+    Dir_IniBE =    '../output/BE_bio_Spinup.nc',&
     Dir_IniSf = '../output/Sf_bio_Spinup.nc',&
     Dir_IniSp = '../output/Sp_bio_Spinup.nc',&
     Dir_IniSd = '../output/Sd_bio_Spinup.nc',&
@@ -58,7 +59,8 @@ module Parameters
     real(dp), parameter :: eps = 1d-200     ! Small number for divisions 
     integer, parameter :: YR = 64 
     integer, parameter ::  Nmonth = YR*12
-    
+    integer, dimension(12), parameter ::  MNTH = (/31, 28, 31, 30, 31,&
+                                                 30, 31, 31, 30, 31, 30, 31 /)
 
     ! Environemental data for test: -----------------------------------
     ! real(dp), parameter :: DataTp = -1.756200, DataTb = -1.908700
@@ -119,5 +121,4 @@ module Parameters
     real(dp), parameter :: pref_Ld_Mp = D               ! Preference for Medium pelagics
     real(dp), parameter :: pref_Ld_Md = 1.0             ! Preference for Medium Demersal
     real(dp), parameter :: pref_Ld_BE = 1.0             ! Preference for Benthos
-
 end module Parameters

@@ -11,12 +11,13 @@ program Parallel_Hello_World
 
     call omp_set_num_threads(4)
 
-    ! !$OMP PARALLEL
-    !     print*, "Hello from process: ", OMP_GET_THREAD_NUM()
-    ! !$OMP END PARALLEL
+    !$OMP PARALLEL
+        print*, "Hello from process: ", OMP_GET_THREAD_NUM()
+    !$OMP END PARALLEL
     
     !===========================================================!
-    !                  Test parallele on loop
+    !                  Test parallele on loop                   !
+    !===========================================================!
   
     ! Initialize the input array
     do i = 1, n
@@ -25,11 +26,11 @@ program Parallel_Hello_World
   
     ! Parallelize the simulation using OpenMP
     call cpu_time(T1)
-    ! !$omp parallel do
+    !$omp parallel do
     do i = 1, n
         y(i) = x(i) ** 2
     end do
-    ! !$omp end parallel do
+    !$omp end parallel do
     call cpu_time(T2)
   
     ! Print the results

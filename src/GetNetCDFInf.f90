@@ -7,10 +7,9 @@ module GetNetCDFinf
 
     contains 
 
-    subroutine Initialisation(Spinup, Var, Nspace, Ntime, Data_F_ini, Data, DataTp, DataTb, Datadz, Datadet, DataZM, MNTH)
+    subroutine Initialisation(Spinup, Var, Nspace, Ntime, Data_F_ini, Data, DataTp, DataTb, Datadz, Datadet, DataZM)
         logical, intent(in) :: Spinup
         integer, intent(inout) :: Nspace, Ntime
-        integer, dimension(12), intent(inout) :: MNTH
         type(Structure_group) :: Var
         type(ini_fish_data), intent(inout) :: Data_F_ini
         type(Save_structure2D), intent(inout) :: Data
@@ -21,48 +20,50 @@ module GetNetCDFinf
         CALL griddims2D(dir_Tb, Nspace, Ntime, var)                                                        
         CALL ini_input2D(DataTp, DataTb, Datadz, Datadet, DataZM)
         Call ini_input_fish(Spinup, Nspace, Data_F_ini)
-        CALL init_save_data2D(Data, Nspace, Ntime)
-
-        MNTH(1) = 31
-        MNTH(2) = 28
-        MNTH(3) = 31
-        MNTH(4) = 30
-        MNTH(5) = 31
-        MNTH(6) = 30
-        MNTH(7) = 31
-        MNTH(8) = 31
-        MNTH(9) = 30
-        MNTH(10) = 31
-        MNTH(11) = 30
-        MNTH(12) = 31
+        CALL init_save_data2D(Data, Nspace)
+        
+        
+        ! Individual Mass (g) geometric mean for each group 
+        Var%Sf%w = 10.0**((log10(0.001)+log10(0.5))/2)
+        Var%Sp%w = 10.0**((log10(0.001)+log10(0.5))/2)
+        Var%Sd%w = 10.0**((log10(0.001)+log10(0.5))/2)
+        Var%Mf%w = 10.0**((log10(0.5)+log10(250.0))/2) 
+        Var%Mp%w = 10.0**((log10(0.5)+log10(250.0))/2) 
+        Var%Md%w = 10.0**((log10(0.5)+log10(250.0))/2) 
+        Var%Lp%w = 10.0**((log10(250.0)+log10(125000.0))/2)
+        Var%Ld%w = 10.0**((log10(250.0)+log10(125000.0))/2)
     end subroutine Initialisation
     
-    subroutine save_data(Spinup, this, that, Nspace, Ntime)
+    subroutine save_data(Spinup, that, Nspace)
         logical, intent(in) :: Spinup
-        type(ini_fish_data) :: this
         type(Save_structure2D) :: that
-        integer, intent(in) :: Nspace, Ntime
+        integer, intent(in) :: Nspace
         integer :: i
     
         if (Spinup) then 
-            ! this%IniSf(i) = that%Sf%B(1:Nspace, Nmonth)
-            ! this%IniSp(i) = that%Sp%B(1:Nspace, Nmonth)
-            ! this%IniSd(i) = that%Sd%B(1:Nspace, Nmonth)
-            ! this%IniMf(i) = that%Mf%B(1:Nspace, Nmonth)
-            ! this%IniMp(i) = that%Mp%B(1:Nspace, Nmonth)
-            ! this%IniMd(i) = that%Md%B(1:Nspace, Nmonth)
-            ! this%IniLp(i) = that%Lp%B(1:Nspace, Nmonth)
-            ! this%IniLd(i) = that%Ld%B(1:Nspace, Nmonth) 
-
             ! Write each variable to a separate NetCDF file : ---------------------------
-            call write_nc_file1D('../output/Sf_bio_Spinup.nc', 'Sf', this%IniSf, Nspace)
-            call write_nc_file1D('../output/Sp_bio_Spinup.nc', 'Sp', this%IniSp, Nspace)
-            call write_nc_file1D('../output/Sd_bio_Spinup.nc', 'Sd', this%IniSd, Nspace)
-            call write_nc_file1D('../output/Mf_bio_Spinup.nc', 'Mf', this%IniMf, Nspace)
-            call write_nc_file1D('../output/Mp_bio_Spinup.nc', 'Mp', this%IniMp, Nspace)
-            call write_nc_file1D('../output/Md_bio_Spinup.nc', 'Md', this%IniMd, Nspace)
-            call write_nc_file1D('../output/Lp_bio_Spinup.nc', 'Lp', this%IniLp, Nspace)
-            call write_nc_file1D('../output/Ld_bio_Spinup.nc', 'Ld', this%IniLd, Nspace)
+            call write_nc_file1D(Dir_IniBE, 'BE', that%BE(1:Nspace, Nmonth), Nspace)
+            call write_nc_file1D(Dir_IniSf, 'Sf', that%Sf(1:Nspace, Nmonth), Nspace)
+            call write_nc_file1D(Dir_IniSp, 'Sp', that%Sp(1:Nspace, Nmonth), Nspace)
+            call write_nc_file1D(Dir_IniSd, 'Sd', that%Sd(1:Nspace, Nmonth), Nspace)
+            call write_nc_file1D(Dir_IniMf, 'Mf', that%Mf(1:Nspace, Nmonth), Nspace)
+            call write_nc_file1D(Dir_IniMp, 'Mp', that%Mp(1:Nspace, Nmonth), Nspace)
+            call write_nc_file1D(Dir_IniMd, 'Md', that%Md(1:Nspace, Nmonth), Nspace)
+            call write_nc_file1D(Dir_IniLp, 'Lp', that%Lp(1:Nspace, Nmonth), Nspace)
+            call write_nc_file1D(Dir_IniLd, 'Ld', that%Ld(1:Nspace, Nmonth), Nspace)
+            
+        else
+            ! Write each variable to a separate NetCDF file : ---------------------------
+            call write_nc_file2D('../output/BE_bio.nc', 'BE', that%BE, Nspace, Nmonth)
+            call write_nc_file2D('../output/Sf_bio.nc', 'Sf', that%Sf, Nspace, Nmonth)
+            call write_nc_file2D('../output/Sp_bio.nc', 'Sp', that%Sp, Nspace, Nmonth)
+            call write_nc_file2D('../output/Sd_bio.nc', 'Sd', that%Sd, Nspace, Nmonth)
+            call write_nc_file2D('../output/Mf_bio.nc', 'Mf', that%Mf, Nspace, Nmonth)
+            call write_nc_file2D('../output/Mp_bio.nc', 'Mp', that%Mp, Nspace, Nmonth)
+            call write_nc_file2D('../output/Md_bio.nc', 'Md', that%Md, Nspace, Nmonth)
+            call write_nc_file2D('../output/Lp_bio.nc', 'Lp', that%Lp, Nspace, Nmonth)
+            call write_nc_file2D('../output/Ld_bio.nc', 'Ld', that%Ld, Nspace, Nmonth)
+
         end if 
 
 
@@ -260,15 +261,6 @@ module GetNetCDFinf
         logical, intent(in) :: Spinup
         integer, intent(in) :: Nspace
 
-        allocate(this%IniSf(Nspace))
-        allocate(this%IniSp(Nspace))
-        allocate(this%IniSd(Nspace))
-        allocate(this%IniMf(Nspace))
-        allocate(this%IniMp(Nspace))
-        allocate(this%IniMd(Nspace))
-        allocate(this%IniLp(Nspace))
-        allocate(this%IniLd(Nspace))
-
         if (Spinup .eqv. .false.) then 
             CALL readgrid(dir_IniSf, 1, Nspace, this%IniSf)
             CALL readgrid(dir_IniSp, 1, Nspace, this%IniSp)
@@ -278,6 +270,7 @@ module GetNetCDFinf
             CALL readgrid(dir_IniMd, 1, Nspace, this%IniMd)
             CALL readgrid(dir_IniLp, 1, Nspace, this%IniLp)
             CALL readgrid(dir_IniLd, 1, Nspace, this%IniLd)
+            CALL readgrid(dir_IniBE, 1, Nspace, this%IniBE)
         end if
 
     end subroutine ini_input_fish
