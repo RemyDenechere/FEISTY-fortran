@@ -19,6 +19,7 @@ sudo apt install gfortran make netcdf-bin libnetcdf-dev libnetcdff-dev openmpi-b
 - Fortran compiler: gfortran
 - NetCDF packages: netcdf-bin libnetcdf-dev libnetcdff-dev
 - parallel simulation: openmpi-bin libopenmpi-dev
+
 Flags for netcdf and OpenMP are already in the makefile.
 
 ------------------------------------------------------------------------
