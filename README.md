@@ -7,6 +7,7 @@ Change Spinup option (.true. or .false.) in runphysiology.f90 to spinup the mode
 All the packages are installed on rockfish, to run the model simply run in the comand line:
 ```
 cd /project/rdenechere/FEISTY-fortran/src
+mkdir ../output
 make
 ./FEISTY
 ```
