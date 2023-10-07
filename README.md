@@ -1,5 +1,6 @@
-# Fortran files for FEISTY (Petrik 2019)
+# Fortran code for FEISTY - Petrik 2019
 The current version runs the climatology on Rockfish.
+
 Change Spinup option (.true. or .false.) in runphysiology.f90 to spinup the model on new data. 
 
 ## Run the model from Rockfish
