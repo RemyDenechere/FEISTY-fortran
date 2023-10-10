@@ -102,8 +102,7 @@ module Structure
         type(Structure_group), intent(inout) :: this
         type(ini_fish_data)  , intent(inout) :: Data_F_ini
     
-        if (Spinup) then 
-            ! this%Mz%B = 0.001
+        if (Spinup) then
             this%BE%B = 0.001
             this%Sf%B = 0.001
             this%Sp%B = 0.001
@@ -114,7 +113,6 @@ module Structure
             this%Lp%B = 0.001
             this%Ld%B = 0.001
         else 
-            ! this%Mz%B = Data_F_ini%Mz(ispace)
             this%BE%B = Data_F_ini%iniBE(ispace)
             this%Sf%B = Data_F_ini%iniSf(ispace)
             this%Sp%B = Data_F_ini%iniSp(ispace)
@@ -126,18 +124,6 @@ module Structure
             this%Ld%B = Data_F_ini%iniLd(ispace)
 
         end if 
-        
-        ! Move this 
-        ! Individual Mass (g) geometric mean for each group 
-        this%Sf%w = 10.0**((log10(0.001)+log10(0.5))/2)
-        this%Sp%w = 10.0**((log10(0.001)+log10(0.5))/2)
-        this%Sd%w = 10.0**((log10(0.001)+log10(0.5))/2)
-        this%Mf%w = 10.0**((log10(0.5)+log10(250.0))/2) 
-        this%Mp%w = 10.0**((log10(0.5)+log10(250.0))/2) 
-        this%Md%w = 10.0**((log10(0.5)+log10(250.0))/2) 
-        this%Lp%w = 10.0**((log10(250.0)+log10(125000.0))/2)
-        this%Ld%w = 10.0**((log10(250.0)+log10(125000.0))/2)
-
     end subroutine initPhysiology
     
     subroutine init_save_data3D(this, Nlat, Nlong)

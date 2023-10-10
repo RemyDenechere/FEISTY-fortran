@@ -22,9 +22,16 @@ module Physiology
 
         type(Structure_group), intent(inout) :: this
         real(dp), dimension(2) :: tpel, Texp, T_e, T_met
+        real(dp) :: biop, biod
         integer :: i
         tpel(1) = 1.0 ! Pelagic type of life (100% time spent in the pelagic zone)
         tpel(2) = 0.0 ! benthic type of lige (0% time spent in the pelagic zone)
+        ! Other calculation for time in pelagic for demersals taking into account prey biomass: 
+        ! biop = pref_Ld_Mf * this%Mf%B + pref_Ld_Mp * this%Mp%B
+        ! biod = pref_Ld_Md * this%Md%B + pref_Ld_BE * this%BE%B
+        ! If (depth < Pi_be_cutoff) then 
+        !     tpel(3) = biop/(biop+biod)
+        ! end If
 
         DO i = 1, 2
             ! Calc of the average temperature experienced 

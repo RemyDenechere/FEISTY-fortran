@@ -43,7 +43,7 @@ module Parameters
         2D_data/pocToFloor_2_2D.nc", &
 
     ! Input data (Spinup): --------------------------------------------
-    Dir_IniBE =    '../output/BE_bio_Spinup.nc',&
+    Dir_IniBE = '../output/BE_bio_Spinup.nc',&
     Dir_IniSf = '../output/Sf_bio_Spinup.nc',&
     Dir_IniSp = '../output/Sp_bio_Spinup.nc',&
     Dir_IniSd = '../output/Sd_bio_Spinup.nc',&
@@ -55,12 +55,12 @@ module Parameters
     
     ! General parameters: ---------------------------------------------
     integer, parameter  :: dp = kind(0.d0)   ! double precision
-    real(dp), parameter :: zero = 0.0
-    real(dp), parameter :: eps = 1d-200     ! Small number for divisions 
-    integer, parameter :: YR = 64 
-    integer, parameter ::  Nmonth = YR*12
-    integer, dimension(12), parameter ::  MNTH = (/31, 28, 31, 30, 31,&
-                                                 30, 31, 31, 30, 31, 30, 31 /)
+    real(dp), parameter :: zero = 0.0        ! Zero
+    real(dp), parameter :: eps = 1d-200      ! Small number for divisions 
+    integer, parameter :: YR = 64            ! Number of year in Time series
+    integer, parameter ::  Nmonth = YR*12    ! Number of month in Time series
+    integer, dimension(12), parameter ::  MNTH = (/ 31, 28, 31, 30, 31, 30, &
+                                                    31, 31, 30, 31, 30, 31 /) ! Length of month (days)
 
     ! Environemental data for test: -----------------------------------
     ! real(dp), parameter :: DataTp = -1.756200, DataTb = -1.908700
@@ -77,28 +77,29 @@ module Parameters
     real(dp), parameter :: ke = 0.063              ! [°c-1]                Temperature correction for cmax and encounter
     real(dp), parameter :: kmet = 0.0855           ! [°c-1]                Temperature correction for Metabolic cost cost
     real(dp), parameter :: gamma = 70.0            ! []                    Coeff for mass-specific Encounter rate             
-    real(dp), parameter :: b_enc = 0.2             ! [m2 g^(b_enc−1) d−1]  Exponent for mass-specific Encounter rate 
+    real(dp), parameter :: b_enc = 0.2             ! [m-2 g^(b_enc−1) d−1] Exponent for mass-specific Encounter rate 
     real(dp), parameter :: h = 20.0                ! [d g^(b_cmax)]        Coeff for Cmax 
     real(dp), parameter :: b_cmax = 0.25           ! []                    Exponent for Cmax 
     real(dp), parameter :: a_met = 0.2*h           ! [d-1 g^(b_met)]       Coeff for Metabolic loss 
     real(dp), parameter :: b_met = 0.175           ! []                    Exponent for Metabolic cost 
     real(dp), parameter :: eps_a =  0.7            ! []                    Assimilation efficiency 
-    real(dp), parameter :: Nat_mrt = 0.1/365;      ! [m2 d-1]              Natural mortality coeffient 
-    ! Fishing : 
+    real(dp), parameter :: Nat_mrt = 0.1/365;      ! [m-2 d-1]             Natural mortality coeffient 
+    ! Fishing : ---------------------------------------------------------
     real(dp), parameter :: Frate = 0.3/365         ! [d-1]                 Fishing intensity 
     real(dp), parameter :: Jselct = 0.1            ! []                    Fishing Selectivity of juveniles  
     real(dp), parameter :: Aselct = 1.0            ! []                    Fishing Selectivity of adult 
-    ! Param for Size-class growth rate: 
+    
+    ! Param for Size-class growth rate: ----------------------------------
     real(dp), parameter :: Z_s = 0.001/0.5;        ! Small fish Ratio of upper and lower body size boundary 
-    real(dp), parameter :: Z_m = 0.5/250;          ! Medium fish Ratio of upper and lower body size boundary 
-    real(dp), parameter :: Z_l = 250.0/125000;     ! Large fish Ratio of upper and lower body size boundary 
-    real(dp), parameter :: kappa_l = 1             ! Larvale Fraction of energy available (E_a) invested in growth 
-    real(dp), parameter :: kappa_j = 1             ! Juvenile Fraction of energy available (E_a) invested in growth 
+    real(dp), parameter :: Z_m = 0.5/250.0;        ! Medium fish Ratio of upper and lower body size boundary 
+    real(dp), parameter :: Z_l = 250.0/125000.0;   ! Large fish Ratio of upper and lower body size boundary 
+    real(dp), parameter :: kappa_l = 1.0           ! Larval Fraction of energy available (E_a) invested in growth 
+    real(dp), parameter :: kappa_j = 1.0           ! Juvenile Fraction of energy available (E_a) invested in growth 
     real(dp), parameter :: kappa_a = 0.5           ! Adult Fraction of energy available (E_a) invested in growth 
     real(dp), parameter :: eps_R = 0.01            ! Reproduction efficiency: account for energy spend in reprodutive organe, aditional foraging activities, cost of migration, and death from egg release to hatchement. 
     ! Benthic chemostat
     real(dp), parameter :: Bent_eff =  0.075       ! Benthic Efficiency from detritus to benthic biomass
-    real(dp), parameter :: CC = 80                 ! Carring Capacity for benthic chemostat
+    real(dp), parameter :: CC = 80.0               ! Carring Capacity for benthic chemostat
 
     ! Parameters feeding preferences: ---------------------------------
     real(dp), parameter :: D = 0.75                     ! Demersal feeding in pelagic reduction
@@ -121,4 +122,9 @@ module Parameters
     real(dp), parameter :: pref_Ld_Mp = D               ! Preference for Medium pelagics
     real(dp), parameter :: pref_Ld_Md = 1.0             ! Preference for Medium Demersal
     real(dp), parameter :: pref_Ld_BE = 1.0             ! Preference for Benthos
+
+    ! Unit conversion for input data: ---------------------------------------------- 
+    real(dp), parameter :: convers_zm  = 10.0**(-3 -2)*12.01*9.0, &                  ! zooplankton biomass 
+                           convers_det = 10.0**(-9 +4)*12.01*9.0*24.0*3600.0, &      ! detritus 
+                           convers_dZm = 10.0**(-2 -3)*12.01*9.0*24.0*3600.0         ! zooplankton loss
 end module Parameters

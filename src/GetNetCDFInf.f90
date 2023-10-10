@@ -192,9 +192,10 @@ module GetNetCDFinf
         
         this%Tp =  DataTp(ispace, itime)
         this%Tb = DataTb(ispace, itime)
-        this%dz = Datadz(ispace, itime)
-        this%det = Datadet(ispace, itime)
-        this%Mz%B = DataZM(ispace, itime)
+        this%dz = Datadz(ispace, itime)   * convers_dZm
+        this%det = Datadet(ispace, itime) * convers_det
+        this%Mz%B = DataZM(ispace, itime) * convers_zm
+
     end subroutine Get_Environental_data2D
 
 

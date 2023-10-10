@@ -33,6 +33,9 @@ program Run_physiology
     print *, '# Spacial grid      ', Nspace
     print *, "Initialisation time " , T2-T1, "sec"
     print *, "Start simulation, takes ~ 30min"
+    print *, "------------------------------"
+
+    Nspace = 1    
 
     ! Loops over space and time: ---------------------------------
     Do ispace = 1, Nspace
@@ -47,6 +50,7 @@ program Run_physiology
                     CALL Get_Environental_data2D(Var, DataTp, DataTb, &         ! Get the environemntal data for
                                  Datadz, Datadet, DataZM, ispace, itime)        ! that specific day
                     CALL CalcBiomass(Var)                                       ! Calcul biomass at day+1
+                    stop          
                     CALL store_MNTH(Data_MNTH, Var, iDAY)                       ! Store the monthly data 
                 end Do ! End Loop Days
                 count = count + 1                                               ! Counts the month to save data

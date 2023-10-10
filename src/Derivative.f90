@@ -78,6 +78,17 @@ module Derivative
         this%Lp%B = this%Lp%B + Delta_t * dLp
         this%Ld%B = this%Ld%B + Delta_t * dLd
 
+        print *, "---------------------------------------------------------"
+        print *, "                 Derivative values                       "
+        print *, "Small forgage         ",  dSf
+        print *, "Small pelagic         ",  dSp
+        print *, "Small demerdal        ",  dSd 
+        print *, "Medium Forage         ",  dMf  
+        print *, "Medium pelagic        ",  dMp
+        print *, "Medium demerdal       ",  dMd
+        print *, "Large pelagic         ",  dLp   
+        print *, "Large demerdal        ",  dLd
+
     end subroutine Euler
 
 
