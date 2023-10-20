@@ -24,7 +24,7 @@ load([param.rootdir 'Feisty/GCM_Data/CESM/FOSI/gridspec_POP_gx1v6_noSeas.mat']);
 load([param.rootdir 'Feisty/GCM_Data/CESM/FOSI/Data_grid_POP_gx1v6_noSeas.mat']);
 
 % Set these bounds for your data ------------------------------------------
-[ni,nj]=size(TLONG);
+[ni, nj]=size(TLONG);
 
 plotminlat=-90; 
 plotmaxlat=90;

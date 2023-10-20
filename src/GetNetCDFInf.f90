@@ -18,7 +18,7 @@ module GetNetCDFinf
                                                                 DataZM
 
         CALL griddims2D(dir_Tb, Nspace, Ntime, var)                                                        
-        CALL ini_input2D(DataTp, DataTb, Datadz, Datadet, DataZM)
+        CALL ini_input2D(Nspace, Ntime, DataTp, DataTb, Datadz, Datadet, DataZM)
         Call ini_input_fish(Spinup, Nspace, Data_F_ini)
         CALL init_save_data2D(Data, Nspace)
         
@@ -32,6 +32,11 @@ module GetNetCDFinf
         Var%Md%w = 10.0**((log10(0.5)+log10(250.0))/2) 
         Var%Lp%w = 10.0**((log10(250.0)+log10(125000.0))/2)
         Var%Ld%w = 10.0**((log10(250.0)+log10(125000.0))/2)
+
+        ! print*, " Small size ", Var%Sd%w
+        ! print*, " Medium size ", Var%Md%w
+        ! print*, " Large size ", Var%Ld%w
+
     end subroutine Initialisation
     
     subroutine save_data(Spinup, that, Nspace)
@@ -196,6 +201,15 @@ module GetNetCDFinf
         this%det = Datadet(ispace, itime) * convers_det
         this%Mz%B = DataZM(ispace, itime) * convers_zm
 
+        ! print*, "-------------------------------------"
+        ! print*, "     Environemental condition        "
+        ! print*, "Tp                 ", this%Tp
+        ! print*, "Tb                 ", this%Tb
+        ! print*, "dz                 ", this%dz
+        ! print*, "det                ", this%det
+        ! print*, "Mz                 ", this%Mz%B
+        ! print*, "-------------------------------------"
+
     end subroutine Get_Environental_data2D
 
 
@@ -231,28 +245,23 @@ module GetNetCDFinf
     !:====================================================================== 
     ! Load all the imput values to force the model
     !:======================================================================  
-    subroutine ini_input2D(DataTp, DataTb, Datadz, Datadet, DataZM)
+    subroutine ini_input2D(Nspace, Ntime, DataTp, DataTb, Datadz, Datadet, DataZM)
         ! Declare variables
         real(dp), dimension(:, :), allocatable, intent(inout) :: DataTp, DataTb, &
                                                                 Datadz, Datadet, &
                                                                 DataZM
         integer :: ncid_Tb, ncid_Tp, ncid_zf, ncid_dz, ncid_det, ierr
         integer :: nvars_Tb, nvars_Tp, nvars_zf, nvars_dz, nvars_det
-        integer ::  varid_Tb = 1, & 
-                    varid_Tp = 1, & 
-                    varid_zf = 1, &
-                    varid_dz = 1, &
-                    varid_det = 1
         integer :: varshape_Tb, varshape_Tp, varshape_zf, varshape_dz, varshape_det
         character(250) :: varname_Tb, varname_Tp, varname_zf, varname_dz, varname_det
         integer :: Nspace, Ntime
 
         ! Get the input grid file: 
-        CALL readgrid2D(dir_Tb, varid_Tb, Nspace, Ntime, DataTp)
-        CALL readgrid2D(dir_Tp, varid_Tp, Nspace, Ntime, DataTb)
-        CALL readgrid2D(dir_zf, varid_zf, Nspace, Ntime, DataZM)
-        CALL readgrid2D(dir_dz, varid_dz, Nspace, Ntime, Datadz)
-        CALL readgrid2D(dir_det, varid_det, Nspace, Ntime, Datadet)      
+        CALL readgrid2D(dir_Tb, 1, Nspace, Ntime, DataTb)
+        CALL readgrid2D(dir_Tp, 1, Nspace, Ntime, DataTp)
+        CALL readgrid2D(dir_zf, 1, Nspace, Ntime, DataZM)
+        CALL readgrid2D(dir_dz, 1, Nspace, Ntime, Datadz)
+        CALL readgrid2D(dir_det, 1, Nspace, Ntime, Datadet)
 
     end subroutine ini_input2D
 
@@ -392,9 +401,10 @@ module GetNetCDFinf
         real(dp), dimension(:, :), allocatable, intent(inout) :: values
         character(LEN=250) :: varname
         integer :: ierr, vartype, ndims, nAtts, ncid
+        ! Problem the function does not read the values 
 
         allocate(values(Nspace, Ntime))
-        
+
         ! Open NetCDF: --------------------------------------------
         ierr = nf90_open(dir, NF90_NOWRITE, ncid)
         if (ierr /= NF90_NOERR) then

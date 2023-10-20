@@ -21,18 +21,13 @@ module Physiology
         !:====================================================================== 
 
         type(Structure_group), intent(inout) :: this
-        real(dp), dimension(2) :: tpel, Texp, T_e, T_met
+        real(dp), dimension(2) :: Texp, T_e, T_met, tpel 
         real(dp) :: biop, biod
         integer :: i
         tpel(1) = 1.0 ! Pelagic type of life (100% time spent in the pelagic zone)
         tpel(2) = 0.0 ! benthic type of lige (0% time spent in the pelagic zone)
         ! Other calculation for time in pelagic for demersals taking into account prey biomass: 
-        ! biop = pref_Ld_Mf * this%Mf%B + pref_Ld_Mp * this%Mp%B
-        ! biod = pref_Ld_Md * this%Md%B + pref_Ld_BE * this%BE%B
-        ! If (depth < Pi_be_cutoff) then 
-        !     tpel(3) = biop/(biop+biod)
-        ! end If
-
+        
         DO i = 1, 2
             ! Calc of the average temperature experienced 
             Texp(i) = (this%Tp * tpel(i)) + (this%Tb*(1.0-tpel(i)))
@@ -41,7 +36,7 @@ module Physiology
             T_e(i) = exp(ke * (Texp(i)-10.0))      ! for encounter rate and Cmax
             T_met(i) = exp(kmet * (Texp(i)-10.0))  ! for metabolism
         END DO 
-
+        
         ! Save temperature correction for encounter and cmax 
         this%Sf%Tcorr_e = T_e(1)
         this%Sp%Tcorr_e = T_e(1)
@@ -97,7 +92,7 @@ module Physiology
         this%Md%V = this%Md%Tcorr_e * gamma * this%Md%w **(-b_enc)/365.0
         this%Lp%V = this%Lp%Tcorr_e * gamma * this%Lp%w **(-b_enc)/365.0
         this%Ld%V = this%Ld%Tcorr_e * gamma * this%Ld%w **(-b_enc)/365.0
-        
+                
         ! Calcul cmax: ------------------------------------------------------------------
         this%Sf%cmax = this%Sf%Tcorr_e * h * this%Sf%w **(-b_cmax)/365.0
         this%Sp%cmax = this%Sp%Tcorr_e * h * this%Sp%w **(-b_cmax)/365.0
@@ -107,50 +102,69 @@ module Physiology
         this%Md%cmax = this%Md%Tcorr_e * h * this%Md%w **(-b_cmax)/365.0
         this%Lp%cmax = this%Lp%Tcorr_e * h * this%Lp%w **(-b_cmax)/365.0
         this%Ld%cmax = this%Ld%Tcorr_e * h * this%Ld%w **(-b_cmax)/365.0
-
-        ! Calcul feeding level of MesoZoo: -------------------------------------------------
+       
+        ! Calcul feeding level of MesoZoo prey: -------------------------------------------------
         ! Small fish only consume zooplankton:
         this%Sf%f_Zm = this%Sf%V * pref_Mz * this%Mz%B/((this%Sf%V* pref_Mz * this%Mz%B) + this%Sf%cmax)
         this%Sp%f_Zm = this%Sp%V * pref_Mz * this%Mz%B/((this%Sp%V* pref_Mz * this%Mz%B) + this%Sp%cmax)
         this%Sd%f_Zm = this%Sd%V * pref_Mz * this%Mz%B/((this%Sd%V* pref_Mz * this%Mz%B) + this%Sd%cmax)
+        
         ! Medium forage:
-        this%Mf%f_Zm = this%Mf%V * pref_Mf_Mz * this%Mz%B/(this%Mf%V* & 
-            (pref_Mf_Mz * this%Mz%B + pref_Mf_S*(this%Sf%B + this%Sp%B + this%Sd%B)) + this%Mf%cmax)
-        this%Mf%f_Sf = this%Mf%V *pref_Mf_S* this%Sf%B/(this%Mf%V* &
-            (pref_Mf_Mz * this%Mz%B + pref_Mf_S*(this%Sf%B + this%Sp%B + this%Sd%B)) + this%Mf%cmax)
-        this%Mf%f_Sp = this%Mf%V *pref_Mf_S* this%Sp%B/(this%Mf%V* &
-            (pref_Mf_Mz * this%Mz%B + pref_Mf_S*(this%Sf%B + this%Sp%B + this%Sd%B)) + this%Mf%cmax)
-        this%Mf%f_Sd = this%Mf%V *pref_Mf_S* this%Sd%B/(this%Mf%V* &
-            (pref_Mf_Mz * this%Mz%B + pref_Mf_S*(this%Sf%B + this%Sp%B + this%Sd%B)) + this%Mf%cmax)      
+        this%Mf%f_Zm = this%Mf%V * pref_Mf_Mz * this%Mz%B/((this%Mf%V* & 
+            (pref_Mf_Mz * this%Mz%B + pref_Mf_S*(this%Sf%B + this%Sp%B + this%Sd%B))) + this%Mf%cmax)
+            
+        this%Mf%f_Sf = this%Mf%V *pref_Mf_S* this%Sf%B/((this%Mf%V* &
+            (pref_Mf_Mz * this%Mz%B + pref_Mf_S*(this%Sf%B + this%Sp%B + this%Sd%B))) + this%Mf%cmax)
+
+        this%Mf%f_Sp = this%Mf%V *pref_Mf_S* this%Sp%B/((this%Mf%V* &
+            (pref_Mf_Mz * this%Mz%B + pref_Mf_S*(this%Sf%B + this%Sp%B + this%Sd%B))) + this%Mf%cmax)
+
+        this%Mf%f_Sd = this%Mf%V *pref_Mf_S* this%Sd%B/((this%Mf%V* &
+            (pref_Mf_Mz * this%Mz%B + pref_Mf_S*(this%Sf%B + this%Sp%B + this%Sd%B))) + this%Mf%cmax) 
+                 
         this%Mf%f = this%Mf%f_Zm + this%Mf%f_Sf + this%Mf%f_Sp + this%Mf%f_Sd
+        
         ! Medium pelagic:
-        this%Mp%f_Zm = this%Mp%V * pref_Mp_Mz * this%Mz%B/(this%Mp%V* (pref_Mp_Mz * this%Mz%B &
-            + pref_Mp_S*(this%Sf%B + this%Sp%B + this%Sd%B)) + this%Mp%cmax)
-        this%Mp%f_Sf = this%Mp%V *pref_Mp_S* this%Sf%B/(this%Mp%V* (pref_Mp_Mz * this%Mz%B &
-            + pref_Mp_S*(this%Sf%B + this%Sp%B + this%Sd%B)) + this%Mp%cmax)
-        this%Mp%f_Sp = this%Mp%V *pref_Mp_S* this%Sp%B/(this%Mp%V* (pref_Mp_Mz * this%Mz%B &
-            + pref_Mp_S*(this%Sf%B + this%Sp%B + this%Sd%B)) + this%Mp%cmax)
-        this%Mp%f_Sd = this%Mp%V *pref_Mp_S* this%Sd%B/(this%Mp%V* (pref_Mp_Mz * this%Mz%B &
-            + pref_Mp_S*(this%Sf%B + this%Sp%B + this%Sd%B)) + this%Mp%cmax)
+        this%Mp%f_Zm = this%Mp%V * pref_Mp_Mz * this%Mz%B/((this%Mp%V* (pref_Mp_Mz * this%Mz%B &
+            + pref_Mp_S*(this%Sf%B + this%Sp%B + this%Sd%B))) + this%Mp%cmax)
+
+        this%Mp%f_Sf = this%Mp%V *pref_Mp_S* this%Sf%B/((this%Mp%V* (pref_Mp_Mz * this%Mz%B &
+            + pref_Mp_S*(this%Sf%B + this%Sp%B + this%Sd%B))) + this%Mp%cmax)
+
+        this%Mp%f_Sp = this%Mp%V *pref_Mp_S* this%Sp%B/((this%Mp%V* (pref_Mp_Mz * this%Mz%B &
+            + pref_Mp_S*(this%Sf%B + this%Sp%B + this%Sd%B))) + this%Mp%cmax)
+
+        this%Mp%f_Sd = this%Mp%V *pref_Mp_S* this%Sd%B/((this%Mp%V* (pref_Mp_Mz * this%Mz%B &
+            + pref_Mp_S*(this%Sf%B + this%Sp%B + this%Sd%B))) + this%Mp%cmax)
+        
         this%Mp%f = this%Mp%f_Zm + this%Mp%f_Sf + this%Mp%f_Sp + this%Mp%f_Sd
+
         ! Medium Demersals only eat benthos resource: 
-        this%Md%f_BE = this%Md%V *pref_Md_BE * this%BE%B/(this%Md%V*pref_Md_BE * this%BE%B + this%Md%cmax)
+        this%Md%f_BE = this%Md%V *pref_Md_BE * this%BE%B/((this%Md%V * pref_Md_BE * this%BE%B) + this%Md%cmax)
         this%Md%f = this%Md%f_BE
+
         ! Large Demersal: 
-        this%Ld%f_Mf = this%Ld%V * pref_Ld_Mf * this%Mf%B /(this%Ld%V* &
+        this%Ld%f_Mf = this%Ld%V * pref_Ld_Mf * this%Mf%B /(this%Ld%V * &
             (pref_Ld_Mf * this%Mf%B + pref_Ld_Mp * this%Mp%B + pref_Ld_Md * this%Md%B + pref_Ld_BE * this%BE%B) + this%Ld%cmax)
+
         this%Ld%f_Mp = this%Ld%V * pref_Ld_Mp * this%Mp%B /(this%Ld%V* &
             (pref_Ld_Mf * this%Mf%B + pref_Ld_Mp * this%Mp%B + pref_Ld_Md * this%Md%B + pref_Ld_BE * this%BE%B) + this%Ld%cmax)
+
         this%Ld%f_Md = this%Ld%V * pref_Ld_Md * this%Md%B /(this%Ld%V* &
             (pref_Ld_Mf * this%Mf%B + pref_Ld_Mp * this%Mp%B + pref_Ld_Md * this%Md%B + pref_Ld_BE * this%BE%B) + this%Ld%cmax)
+
         this%Ld%f_BE = this%Ld%V * pref_Ld_BE * this%BE%B /(this%Ld%V* &
             (pref_Ld_Mf * this%Mf%B + pref_Ld_Mp * this%Mp%B + pref_Ld_Md * this%Md%B + pref_Ld_BE * this%BE%B) + this%Ld%cmax)
+
         this%Ld%f = this%Ld%f_Mf + this%Ld%f_Mp + this%Ld%f_Md + this%Ld%f_BE
+
         ! Large pelagics: 
         this%Lp%f_Mf = this%Lp%V * pref_Lp_Mf * this%Mf%B / &
             (this%Lp%V* (pref_Lp_Mf * this%Mf%B + pref_Lp_Mp * this%Mp%B) + this%Lp%cmax)
+
         this%Lp%f_Mp = this%Lp%V * pref_Lp_Mp * this%Mp%B / &
             (this%Lp%V* (pref_Lp_Mf * this%Mf%B + pref_Lp_Mp * this%Mp%B) + this%Lp%cmax)
+
         this%Lp%f = this%Lp%f_Mf + this%Lp%f_Mp
 
         !:====================================================================================:!
@@ -176,6 +190,7 @@ module Physiology
         this%Mp%cons_Sf = this%Mp%f_Sf * this%Mp%cmax
         this%Mp%cons_Sp = this%Mp%f_Sp * this%Mp%cmax 
         this%Mp%cons_Sd = this%Mp%f_Sd * this%Mp%cmax
+
         ! Medium Demersal consumption on fish
         this%Md%cons_BE = this%Md%f_BE * this%Md%cmax
         ! Large Pelagic:
@@ -258,8 +273,8 @@ module Physiology
         this%Sp%mu_p = (this%Mp%cons_Sp * this%Mp%B + this%Mf%cons_Sp * this%Mf%B) / this%Sp%B
         this%Sd%mu_p = (this%Mp%cons_Sd * this%Mp%B + this%Mf%cons_Sd * this%Mf%B) / this%Sd%B
         this%Mf%mu_p = (this%Lp%cons_Mf * this%Lp%B + this%Ld%cons_Mf * this%Ld%B) / this%Mf%B
-        this%Mp%mu_p = (this%Lp%cons_Mp * this%Lp%B + this%Lp%cons_Mp * this%Lp%B) / this%Mp%B
-        this%Md%mu_p = (this%Lp%cons_Md * this%Lp%B + this%Lp%cons_Md * this%Lp%B) / this%Md%B
+        this%Mp%mu_p = (this%Lp%cons_Mp * this%Lp%B + this%Ld%cons_Mp * this%Ld%B) / this%Mp%B
+        this%Md%mu_p = (this%Lp%cons_Md * this%Lp%B + this%Ld%cons_Md * this%Ld%B) / this%Md%B
         this%Lp%mu_p = 0
         this%Ld%mu_p = 0
 
@@ -367,13 +382,23 @@ module Physiology
         type(Structure_group), intent(inout) :: this
 
         this%Sf%Fout = ((kappa_l * this%Sf%E_A) - this%Sf%mu ) / (1 - (Z_s ** (1 - (this%Sf%mu / (kappa_l * this%Sf%E_A)))) + eps)
-        this%Sp%Fout = ((kappa_l * this%Sp%E_A) - this%Sf%mu ) / (1 - (Z_s ** (1 - (this%Sp%mu / (kappa_l * this%Sp%E_A)))) + eps)
-        this%Sd%Fout = ((kappa_l * this%Sd%E_A) - this%Sf%mu ) / (1 - (Z_s ** (1 - (this%Sd%mu / (kappa_l * this%Sd%E_A)))) + eps)
-        this%Mf%Fout = ((kappa_a * this%Mf%E_A) - this%Sf%mu ) / (1 - (Z_m ** (1 - (this%Mf%mu / (kappa_a * this%Mf%E_A)))) + eps)
-        this%Mp%Fout = ((kappa_j * this%Mp%E_A) - this%Sf%mu ) / (1 - (Z_m ** (1 - (this%Mp%mu / (kappa_j * this%Mp%E_A)))) + eps)
-        this%Md%Fout = ((kappa_j * this%Md%E_A) - this%Sf%mu ) / (1 - (Z_m ** (1 - (this%Md%mu / (kappa_j * this%Md%E_A)))) + eps)
-        this%Lp%Fout = ((kappa_a * this%Lp%E_A) - this%Sf%mu ) / (1 - (Z_l ** (1 - (this%Lp%mu / (kappa_a * this%Lp%E_A)))) + eps)
-        this%Ld%Fout = ((kappa_a * this%Ld%E_A) - this%Sf%mu ) / (1 - (Z_l ** (1 - (this%Ld%mu / (kappa_a * this%Ld%E_A)))) + eps)
+        this%Sp%Fout = ((kappa_l * this%Sp%E_A) - this%Sp%mu ) / (1 - (Z_s ** (1 - (this%Sp%mu / (kappa_l * this%Sp%E_A)))) + eps)
+        this%Sd%Fout = ((kappa_l * this%Sd%E_A) - this%Sd%mu ) / (1 - (Z_s ** (1 - (this%Sd%mu / (kappa_l * this%Sd%E_A)))) + eps)
+        this%Mf%Fout = ((kappa_a * this%Mf%E_A) - this%Mf%mu ) / (1 - (Z_m ** (1 - (this%Mf%mu / (kappa_a * this%Mf%E_A)))) + eps)
+        this%Mp%Fout = ((kappa_j * this%Mp%E_A) - this%Mp%mu ) / (1 - (Z_m ** (1 - (this%Mp%mu / (kappa_j * this%Mp%E_A)))) + eps)
+        this%Md%Fout = ((kappa_j * this%Md%E_A) - this%Md%mu ) / (1 - (Z_m ** (1 - (this%Md%mu / (kappa_j * this%Md%E_A)))) + eps)
+        this%Lp%Fout = ((kappa_a * this%Lp%E_A) - this%Lp%mu ) / (1 - (Z_l ** (1 - (this%Lp%mu / (kappa_a * this%Lp%E_A)))) + eps)
+        this%Ld%Fout = ((kappa_a * this%Ld%E_A) - this%Ld%mu ) / (1 - (Z_l ** (1 - (this%Ld%mu / (kappa_a * this%Ld%E_A)))) + eps)
+
+        ! If Fout is higher than E_a take E_a, and 0 is negative: 
+        this%Sf%Fout = max(min(this%Sf%Fout, this%Sf%E_A), zero)
+        this%Sp%Fout = max(min(this%Sp%Fout, this%Sp%E_A), zero)
+        this%Sd%Fout = max(min(this%Sd%Fout, this%Sd%E_A), zero)
+        this%Mf%Fout = max(min(this%Mf%Fout, this%Mf%E_A), zero)
+        this%Mp%Fout = max(min(this%Mp%Fout, this%Mp%E_A), zero)
+        this%Md%Fout = max(min(this%Md%Fout, this%Md%E_A), zero)
+        this%Lp%Fout = max(min(this%Lp%Fout, this%Lp%E_A), zero)
+        this%Ld%Fout = max(min(this%Ld%Fout, this%Ld%E_A), zero)
 
     end subroutine Fout
 
@@ -382,7 +407,7 @@ module Physiology
         ! Calcul the reproductive flux of biomass 
         ! Repro   : rate (of biomass) invested in reproduction after reproduction loss [m-2 d-1]
         ! eps_R   : Reproduction efficiency 
-        ! We assumed that the biomass that is going out of the last size class (Adult)
+        ! We DO NOT assum that the biomass that is going out of the last size class (Adult)
         ! is converted to reproduction to account for a fraction of individual dying after 
         ! reproduction. 
         !:======================================================================
@@ -390,9 +415,9 @@ module Physiology
         type(Structure_group), intent(inout) :: this
 
         ! Only Medium forage, large pelagic and demersal reproduce: 
-        this%Mf%Repro = eps_R * ((1.0 - kappa_a) * this%Mf%E_A + this%Mf%Fout)
-        this%Lp%Repro = eps_R * ((1.0 - kappa_a) * this%Lp%E_A + this%Lp%Fout)
-        this%Ld%Repro = eps_R * ((1.0 - kappa_a) * this%Ld%E_A + this%Ld%Fout)
+        this%Mf%Repro = (1.0 - kappa_a) * this%Mf%E_A + this%Mf%Fout
+        this%Lp%Repro = (1.0 - kappa_a) * this%Lp%E_A + this%Lp%Fout
+        this%Ld%Repro = (1.0 - kappa_a) * this%Ld%E_A + this%Ld%Fout
 
         ! Fout for Adult are set up to 0: (sub_rep function in matlab)
         this%Mf%Fout = 0 

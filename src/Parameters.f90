@@ -1,4 +1,3 @@
-
 module Parameters
 
     implicit none 
@@ -74,43 +73,43 @@ module Parameters
     real(dp), parameter :: Delta_t = 1.0                      ! Time step [d]
 
     ! Parameters physiology: ------------------------------------------
-    real(dp), parameter :: ke = 0.063              ! [°c-1]                Temperature correction for cmax and encounter
-    real(dp), parameter :: kmet = 0.0855           ! [°c-1]                Temperature correction for Metabolic cost cost
+    real(dp), parameter :: ke = 0.0630             ! [°c-1]                Temperature correction for cmax and encounter
+    real(dp), parameter :: kmet = 0.08550          ! [°c-1]                Temperature correction for Metabolic cost cost
     real(dp), parameter :: gamma = 70.0            ! []                    Coeff for mass-specific Encounter rate             
-    real(dp), parameter :: b_enc = 0.2             ! [m-2 g^(b_enc−1) d−1] Exponent for mass-specific Encounter rate 
+    real(dp), parameter :: b_enc = 0.20            ! [m-2 g^(b_enc−1) d−1] Exponent for mass-specific Encounter rate 
     real(dp), parameter :: h = 20.0                ! [d g^(b_cmax)]        Coeff for Cmax 
-    real(dp), parameter :: b_cmax = 0.25           ! []                    Exponent for Cmax 
-    real(dp), parameter :: a_met = 0.2*h           ! [d-1 g^(b_met)]       Coeff for Metabolic loss 
-    real(dp), parameter :: b_met = 0.175           ! []                    Exponent for Metabolic cost 
-    real(dp), parameter :: eps_a =  0.7            ! []                    Assimilation efficiency 
-    real(dp), parameter :: Nat_mrt = 0.1/365;      ! [m-2 d-1]             Natural mortality coeffient 
+    real(dp), parameter :: b_cmax = 0.250          ! []                    Exponent for Cmax 
+    real(dp), parameter :: a_met = 0.20*h          ! [d-1 g^(b_met)]       Coeff for Metabolic loss 
+    real(dp), parameter :: b_met = 0.1750          ! []                    Exponent for Metabolic cost 
+    real(dp), parameter :: eps_a =  0.70           ! []                    Assimilation efficiency 
+    real(dp), parameter :: Nat_mrt = 0.10/365.0;   ! [m-2 d-1]             Natural mortality coeffient 
     ! Fishing : ---------------------------------------------------------
-    real(dp), parameter :: Frate = 0.3/365         ! [d-1]                 Fishing intensity 
-    real(dp), parameter :: Jselct = 0.1            ! []                    Fishing Selectivity of juveniles  
+    real(dp), parameter :: Frate = 0.30/365.0      ! [d-1]                 Fishing intensity 
+    real(dp), parameter :: Jselct = 0.10           ! []                    Fishing Selectivity of juveniles  
     real(dp), parameter :: Aselct = 1.0            ! []                    Fishing Selectivity of adult 
     
     ! Param for Size-class growth rate: ----------------------------------
-    real(dp), parameter :: Z_s = 0.001/0.5;        ! Small fish Ratio of upper and lower body size boundary 
-    real(dp), parameter :: Z_m = 0.5/250.0;        ! Medium fish Ratio of upper and lower body size boundary 
+    real(dp), parameter :: Z_s = 0.0010/0.50;      ! Small fish Ratio of upper and lower body size boundary 
+    real(dp), parameter :: Z_m = 0.50/250.0;       ! Medium fish Ratio of upper and lower body size boundary 
     real(dp), parameter :: Z_l = 250.0/125000.0;   ! Large fish Ratio of upper and lower body size boundary 
     real(dp), parameter :: kappa_l = 1.0           ! Larval Fraction of energy available (E_a) invested in growth 
     real(dp), parameter :: kappa_j = 1.0           ! Juvenile Fraction of energy available (E_a) invested in growth 
-    real(dp), parameter :: kappa_a = 0.5           ! Adult Fraction of energy available (E_a) invested in growth 
-    real(dp), parameter :: eps_R = 0.01            ! Reproduction efficiency: account for energy spend in reprodutive organe, aditional foraging activities, cost of migration, and death from egg release to hatchement. 
+    real(dp), parameter :: kappa_a = 0.50          ! Adult Fraction of energy available (E_a) invested in growth 
+    real(dp), parameter :: eps_R = 0.010           ! Reproduction efficiency: account for energy spend in reprodutive organe, aditional foraging activities, cost of migration, and death from egg release to hatchement. 
     ! Benthic chemostat
-    real(dp), parameter :: Bent_eff =  0.075       ! Benthic Efficiency from detritus to benthic biomass
+    real(dp), parameter :: Bent_eff =  0.0750      ! Benthic Efficiency from detritus to benthic biomass
     real(dp), parameter :: CC = 80.0               ! Carring Capacity for benthic chemostat
 
     ! Parameters feeding preferences: ---------------------------------
-    real(dp), parameter :: D = 0.75                     ! Demersal feeding in pelagic reduction
-    real(dp), parameter :: A = 0.5                      ! Adult predation reduction
+    real(dp), parameter :: D = 0.750                    ! Demersal feeding in pelagic reduction
+    real(dp), parameter :: A = 0.50                     ! Adult predation reduction
     
-    real(dp), parameter :: pref_Mz = 0.9                ! Preference for one mesozooplankton group
+    real(dp), parameter :: pref_Mz = 0.90               ! Preference for one mesozooplankton group
     ! Medium Forage 
-    real(dp), parameter :: pref_Mf_Mz = 0.5 * pref_Mz   ! Preference for Mesozooplankton   
+    real(dp), parameter :: pref_Mf_Mz = 0.50* pref_Mz   ! Preference for Mesozooplankton   
     real(dp), parameter :: pref_Mf_S = 1.0              ! Preference for small fish
     ! Medium pelagic 
-    real(dp), parameter :: pref_Mp_Mz = 0.5 * pref_Mz   ! Preference for Mesozooplankton
+    real(dp), parameter :: pref_Mp_Mz = 0.50* pref_Mz   ! Preference for Mesozooplankton
     real(dp), parameter :: pref_Mp_S = 1.0              ! Preference for small fish
     ! Medium Demersal 
     real(dp), parameter :: pref_Md_BE = 1.0             ! Preference for Benthos
@@ -118,9 +117,9 @@ module Parameters
     real(dp), parameter :: pref_Lp_Mf = 1.0 * A         ! Preference for Medium forage
     real(dp), parameter :: pref_Lp_Mp = 1.0 
     ! Large Demersal
-    real(dp), parameter :: pref_Ld_Mf = D * A           ! Preference for Medium forage
-    real(dp), parameter :: pref_Ld_Mp = D               ! Preference for Medium pelagics
-    real(dp), parameter :: pref_Ld_Md = 1.0             ! Preference for Medium Demersal
+    real(dp), parameter :: pref_Ld_Mf = zero            !D * A ! Preference for Medium forage
+    real(dp), parameter :: pref_Ld_Mp = zero            !D Preference for Medium pelagics
+    real(dp), parameter :: pref_Ld_Md =  1.0            ! Preference for Medium Demersal
     real(dp), parameter :: pref_Ld_BE = 1.0             ! Preference for Benthos
 
     ! Unit conversion for input data: ---------------------------------------------- 

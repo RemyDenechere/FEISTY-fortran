@@ -3,7 +3,7 @@
 % close all
 
 %% Root directory: 
-param.Rockfish =  true; % false; %
+param.Rockfish = true; % false; % 
 param.newColor = false; 
 
 param = param_setup(param);
@@ -147,14 +147,14 @@ clear BE
 %% Take means for visualization
 
 %Time
-sp_tmean = nanmean(SP.bio,1);
-sf_tmean = nanmean(SF.bio,1);
-sd_tmean = nanmean(SD.bio,1);
-mp_tmean = nanmean(MP.bio,1);
-mf_tmean = nanmean(MF.bio,1);
-md_tmean = nanmean(MD.bio,1);
-lp_tmean = nanmean(LP.bio,1);
-ld_tmean = nanmean(LD.bio,1);
+sp_tmean = nanmean(SP.bio, 1);
+sf_tmean = nanmean(SF.bio, 1);
+sd_tmean = nanmean(SD.bio, 1);
+mp_tmean = nanmean(MP.bio, 1);
+mf_tmean = nanmean(MF.bio, 1);
+md_tmean = nanmean(MD.bio, 1);
+lp_tmean = nanmean(LP.bio, 1);
+ld_tmean = nanmean(LD.bio, 1);
 b_tmean  = nanmean(Bent.bio,1);
 % mz_tmfrac =nanmean(MZ.frac,1);
 

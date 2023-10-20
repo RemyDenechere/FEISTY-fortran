@@ -103,15 +103,15 @@ module Structure
         type(ini_fish_data)  , intent(inout) :: Data_F_ini
     
         if (Spinup) then
-            this%BE%B = 0.001
-            this%Sf%B = 0.001
-            this%Sp%B = 0.001
-            this%Sd%B = 0.001
-            this%Mf%B = 0.001
-            this%Mp%B = 0.001
-            this%Md%B = 0.001
-            this%Lp%B = 0.001
-            this%Ld%B = 0.001
+            this%BE%B = 0.01
+            this%Sf%B = 0.01
+            this%Sp%B = 0.01
+            this%Sd%B = 0.01
+            this%Mf%B = 0.01
+            this%Mp%B = 0.01
+            this%Md%B = 0.01
+            this%Lp%B = 0.01
+            this%Ld%B = 0.01
         else 
             this%BE%B = Data_F_ini%iniBE(ispace)
             this%Sf%B = Data_F_ini%iniSf(ispace)
@@ -122,7 +122,6 @@ module Structure
             this%Md%B = Data_F_ini%iniMd(ispace)
             this%Lp%B = Data_F_ini%iniLp(ispace)
             this%Ld%B = Data_F_ini%iniLd(ispace)
-
         end if 
     end subroutine initPhysiology
     
@@ -207,9 +206,6 @@ module Structure
         deallocate(that%Lp)
         deallocate(that%Ld)
     end subroutine store_data2D
-
-    
-
 
 
 end module Structure

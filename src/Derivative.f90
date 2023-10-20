@@ -5,7 +5,6 @@ module Derivative
     use physiology
 
     implicit none
-     ! Environemental parameters: 
     
     contains
 
@@ -21,9 +20,97 @@ module Derivative
         call Metabolic_loss(this)
         call Available_energy(this)
         call Fout(this)
-        call Reproduction(this)
+    
+    ! ! Element of reproduction Mf
+    ! print*, "repro with Esp_R option 1          ", eps_R * ((1.0 - kappa_a) * this%Mf%E_A + this%Mf%Fout)
+    ! print*, "repro with Esp_R option 2          ", eps_R * ((1.0 - kappa_a) * this%Mf%E_A) + this%Mf%Fout
+    ! print*, "eps_R                              ", eps_R
+    ! print*, "kappa_a                            ", kappa_a
+    ! print*, "E_a                                ", this%Mf%E_A
+    ! print*, "Fout                               ", this%Mf%Fout
+
+       call Reproduction(this)
+    ! ----------------------------------------------------
+    ! test physioloical calc
+    ! ----------------------------------------------------
+    ! print*, "Temperature Pel       ", this%Tp
+    ! print*, "Temperature bot       ", this%Tb
+    ! print*, "Sf Biomass Zoo        ", this%Mz%B
+    ! print*, "Sf Tcorr_e            ", this%Sf%Tcorr_e
+    ! print*, "Sf Tcorr_met          ", this%Sf%Tcorr_met
+    ! print*, "Md Tcorr_e            ", this%Md%Tcorr_e
+    ! print*, "Md Tcorr_met          ", this%Md%Tcorr_met
+    ! print*, "Sf Clearance rate Sf  ", this%Sf%V
+    ! print*, "Sf Cmax Sf            ", this%Sf%cmax
+    ! print*, "Sf feeding level Sf   ", this%Sf%f
+    ! print*, "Sf Total consumption  ", this%Sf%cons 
+    ! print*, "Sf consumption Mz     ", this%Sf%cons_Mz 
+    ! print*, "Sf Total mort         ", this%Sf%mu
+    ! print*, "Sf Predation mort     ", this%Sf%mu_p
+    ! print*, "Sf Natur mort         ", this%Sf%mu_a
+    ! print*, "Sf Fishng mort        ", this%Sf%mu_f
+    ! print*, "Sf Met loss           ", this%Sf%met
+    ! print*, "Sf Available energy   ", this%Sf%E_A
+    ! print*, "Sf Fout               ", this%Sf%Fout 
+    ! print*, "Sf Repro flux         ", this%Sf%Repro 
+    ! print*, "BE biomass            ", this%BE%B
+    ! ----------------------------------------------------
+    ! print*, "Mf Clearance rate Sf  ", this%Mf%V
+    ! print*, "Mf Cmax               ", this%Mf%cmax
+    ! print*, "Mf feeding level      ", this%Mf%f
+    ! print*, "Consumption Mp to Sf  ", this%Mp%cons_Sf
+    ! print*, "Consumption Mf to Sf  ", this%Mf%cons_Sf
+    ! print*, "feeding level Mf to Zm", this%Mf%f_Zm
+    ! print*, "feeding level Mf to Sf", this%Mf%f_Sf
+    ! print*, "feeding level Mf to Sp", this%Mf%f_Sp
+    ! print*, "feeding level Mf to Sd", this%Mf%f_Sd
+    ! print*, "Encounter Mf to Zm    ", this%Mf%V * pref_Mf_Mz * this%Mz%B
+    ! print*, "Encounter Mf to Sf    ", this%Mf%V *pref_Mf_S* this%Sf%B
+    ! print*, "Encounter Mf to Sp    ", this%Mf%V *pref_Mf_S* this%Sp%B
+    ! print*, "Encounter Mf to Sd    ", this%Mf%V *pref_Mf_S* this%Sd%B
+    ! print*, "Pref Mf to Zm         ", pref_Mf_Mz 
+    ! print*, "Pref Mf to S          ", pref_Mf_S
+    ! print*, "Zooplankton biomass   ", this%Mz%B
+    ! print*, "Sf biomass            ", this%Sf%B
+    ! ----------------------------------------------------
+    ! print*, "Frac Zoo lost         ", this%zf
+    ! print*, "Large Dem Cons        ", this%Ld%cons
+    ! ----------------------------------------------------
+    ! Element of the derivative: Mf
+    ! print*, "dMf                   ", this%Sf%Fout * this%Sf%B + (this%Mf%E_A - this%Mf%Repro - this%Mf%mu) * this%Mf%B
+    ! print*, "Md E_available        ", this%Md%E_A
+    ! print*, "Md consumption        ", this%Md%cons
+    ! print*, "Md Clearance rate     ", this%Md%V
+    ! print*, "Md Encounter rate     ", this%Md%V *pref_Md_BE * this%BE%B
+    ! print*, "Md Cmax               ", this%Md%cmax
+    ! print*, "Md metabolism         ", this%Md%met
+    ! print*, "Md feeding lvl        ", this%Md%f_BE
+    ! print*, "Md feeding lvl 2      ",this%Md%V *pref_Md_BE * this%BE%B/((this%Md%V * pref_Md_BE * this%BE%B) + this%Md%cmax)
+    ! print*, "Biomass Bent          ", this%BE%B
+    ! print*, "MF mortality          ", this%Md%mu 
+    ! print*, "MF pred mort          ", this%Md%mu_p
+    ! print*, "MF Nat mort           ", this%Md%mu_a
+    ! print*, "MF Fish mort          ", this%Md%mu_f
+    ! print*, "Sf_Fout               ", this%Sd%Fout
+    ! print*, "Sf_Bio                ", this%Md%B
+    ! print*, "Mf Repro              ", this%Md%Repro
+    ! print*, "Fout  2               ", this%Md%Fout
+    ! print*, "Pred Lp to Mf         ", this%Lp%cons_Md
+    ! print*, "Pred Ld to Mf         ", this%Ld%cons_Md 
+    ! ! ----------------------------------------------------
         call Euler(this)
         call Biomass_check(this)
+    ! ! Print biomass out 
+    ! print*, 'Sf Bio out  ', this%Sf%B
+    ! print*, 'Sp Bio out  ', this%Sp%B
+    ! print*, 'Sd Bio out  ', this%Sd%B
+    ! print*, 'Mf Bio out  ', this%Mf%B
+    ! print*, 'Mp Bio out  ', this%Mp%B
+    ! print*, 'Md Bio out  ', this%Md%B
+    ! print*, 'Lp Bio out  ', this%Lp%B
+    ! print*, 'Ld Bio out  ', this%Ld%B
+    ! stop
+
     end subroutine CalcBiomass
 
 
@@ -54,9 +141,9 @@ module Derivative
 
         ! Calcul derivative for each group : --------------------
         ! Small size (no loss from reproduction)
-        dSf = this%Mf%Repro * this%Mf%B + (this%Sf%E_A - this%Sf%Fout - this%Sf%mu) * this%Sf%B
-        dSp = this%Lp%Repro * this%Lp%B + (this%Sp%E_A - this%Sp%Fout - this%Sp%mu) * this%Sp%B
-        dSd = this%Ld%Repro * this%Ld%B + (this%Sd%E_A - this%Sd%Fout - this%Sd%mu) * this%Sd%B  
+        dSf = eps_R * this%Mf%Repro * this%Mf%B + (this%Sf%E_A - this%Sf%Fout - this%Sf%mu) * this%Sf%B
+        dSp = eps_R * this%Lp%Repro * this%Lp%B + (this%Sp%E_A - this%Sp%Fout - this%Sp%mu) * this%Sp%B
+        dSd = eps_R * this%Ld%Repro * this%Ld%B + (this%Sd%E_A - this%Sd%Fout - this%Sd%mu) * this%Sd%B  
         
         ! Medium size (reproduction loss for Mf)
         dMf = this%Sf%Fout * this%Sf%B + (this%Mf%E_A - this%Mf%Repro - this%Mf%mu) * this%Mf%B 
@@ -66,6 +153,14 @@ module Derivative
         ! Large fish (reproduction Fout = 0) 
         dLp = this%Mp%Fout * this%Mp%B + (this%Lp%E_A - this%Lp%Repro - this%Lp%mu) * this%Lp%B
         dLd = this%Md%Fout * this%Md%B + (this%Ld%E_A - this%Ld%Repro - this%Ld%mu) * this%Ld%B 
+
+        ! print *, "---------------------------------------------------------"
+        ! print *, "                 Derivative Md                       "
+        ! print*, 'Md Fout                ',this%Sd%Fout 
+        ! print*, 'Sd Biomass             ', this%Sd%B 
+        ! print*, 'Md Biomass             ', this%Md%B 
+        
+        ! (this%Md%E_A - this%Md%Fout  - this%Md%mu) * this%Md%B 
 
         ! New biomass : ------------------------------------------
         ! Euler schem: 
@@ -78,16 +173,18 @@ module Derivative
         this%Lp%B = this%Lp%B + Delta_t * dLp
         this%Ld%B = this%Ld%B + Delta_t * dLd
 
-        print *, "---------------------------------------------------------"
-        print *, "                 Derivative values                       "
-        print *, "Small forgage         ",  dSf
-        print *, "Small pelagic         ",  dSp
-        print *, "Small demerdal        ",  dSd 
-        print *, "Medium Forage         ",  dMf  
-        print *, "Medium pelagic        ",  dMp
-        print *, "Medium demerdal       ",  dMd
-        print *, "Large pelagic         ",  dLp   
-        print *, "Large demerdal        ",  dLd
+        ! print *, "---------------------------------------------------------"
+        ! print *, "                 Derivative values                       "
+        ! print *, "Small forgage         ",  dSf
+        ! print *, "Small pelagic         ",  dSp
+        ! print *, "Small demerdal        ",  dSd 
+        ! print *, "Medium Forage         ",  dMf  
+        ! print *, "Medium pelagic        ",  dMp
+        ! print *, "Medium demerdal       ",  dMd
+        ! print *, "Large pelagic         ",  dLp   
+        ! print *, "Large demerdal        ",  dLd
+        ! print *, "---------------------------------------------------------"
+        ! stop
 
     end subroutine Euler
 
