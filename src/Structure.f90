@@ -39,6 +39,7 @@ module Structure
         real(dp) :: f_Lp = 0            ! --
         real(dp) :: f_Ld = 0            ! --
         real(dp) :: f_BE = 0
+
          ! consumption for each prey : ------------------------------------------------
         real(dp) :: cons_Zm = 0            
         real(dp) :: cons_Sf = 0            ! --
@@ -69,7 +70,9 @@ module Structure
         real(dp) :: Tb = 0                   ! Benthic temperature
         real(dp) :: dz = 0                   ! Biomass consumed by top predators 
         real(dp) :: det = 0                  ! Detritus flux to benthic community
+        real(dp) :: H = 20000.0              ! Depth (set up deeper than max depth to avoid problem with demersal tdiff if depth is not setup from environemental data)
         real(dp), dimension(nDeriv) :: dudt  ! variable containing the derivative 
+        real(dp) :: Zcons_VS_dZm = 0         ! Zm consumption from FEISTY over dZm estmated
         
         real(dp) :: Nlat
         real(dp) :: Nlong
@@ -82,15 +85,15 @@ module Structure
     end type
 
     type :: Save_structure2D
-        real(dp), dimension(:, :), allocatable :: Sf, Sp, Sd, Mf, Mp, Md, Lp, Ld, BE
+        real(dp), dimension(:, :), allocatable :: Sf, Sp, Sd, Mf, Mp, Md, Lp, Ld, BE, Zcons_VS_dZm
     end type
 
     type :: Save_structure1D
-    real(dp), dimension(:), allocatable :: Sf, Sp, Sd, Mf, Mp, Md, Lp, Ld, BE
+        real(dp), dimension(:), allocatable :: Sf, Sp, Sd, Mf, Mp, Md, Lp, Ld, BE, Zcons_VS_dZm
     end type
 
     type :: ini_fish_data
-        real(dp), dimension(:), allocatable :: IniSf, IniSp, IniSd, IniMf, IniMp, IniMd , IniLp, IniLd, IniBE
+        real(dp), dimension(:), allocatable :: IniSf, IniSp, IniSd, IniMf, IniMp, IniMd , IniLp, IniLd, IniBE, H
     end type 
 
     contains 
@@ -113,16 +116,17 @@ module Structure
             this%Lp%B = 0.01
             this%Ld%B = 0.01
         else 
-            this%BE%B = Data_F_ini%iniBE(ispace)
-            this%Sf%B = Data_F_ini%iniSf(ispace)
-            this%Sp%B = Data_F_ini%iniSp(ispace)
-            this%Sd%B = Data_F_ini%iniSd(ispace)
-            this%Mf%B = Data_F_ini%iniMf(ispace)
-            this%Mp%B = Data_F_ini%iniMp(ispace)
-            this%Md%B = Data_F_ini%iniMd(ispace)
-            this%Lp%B = Data_F_ini%iniLp(ispace)
-            this%Ld%B = Data_F_ini%iniLd(ispace)
+            this%BE%B = Data_F_ini%IniBE(ispace)
+            this%Sf%B = Data_F_ini%IniSf(ispace)
+            this%Sp%B = Data_F_ini%IniSp(ispace)
+            this%Sd%B = Data_F_ini%IniSd(ispace)
+            this%Mf%B = Data_F_ini%IniMf(ispace)
+            this%Mp%B = Data_F_ini%IniMp(ispace)
+            this%Md%B = Data_F_ini%IniMd(ispace)
+            this%Lp%B = Data_F_ini%IniLp(ispace)
+            this%Ld%B = Data_F_ini%IniLd(ispace)
         end if 
+            this%H = Data_F_ini%H(ispace)
     end subroutine initPhysiology
     
     subroutine init_save_data3D(this, Nlat, Nlong)
@@ -136,6 +140,7 @@ module Structure
         allocate(this%Md(Nlat, Nlong, Nmonth))
         allocate(this%Lp(Nlat, Nlong, Nmonth))
         allocate(this%Ld(Nlat, Nlong, Nmonth))
+
     end subroutine init_save_data3D
 
     subroutine init_save_data2D(this, Nspace)
@@ -150,6 +155,7 @@ module Structure
         allocate(this%Md(Nspace, Nmonth))
         allocate(this%Lp(Nspace, Nmonth))
         allocate(this%Ld(Nspace, Nmonth))
+        allocate(this%Zcons_VS_dZm(Nspace, Nmonth))
     end subroutine init_save_data2D
 
     subroutine init_store_MNTH(this, Ndays)
@@ -164,6 +170,7 @@ module Structure
         allocate(this%Md(Ndays))
         allocate(this%Lp(Ndays))
         allocate(this%Ld(Ndays))
+        allocate(this%Zcons_VS_dZm(Ndays))
     end subroutine init_store_MNTH
 
     subroutine store_MNTH(this, that, iDAY)
@@ -179,6 +186,7 @@ module Structure
         this%Md(iDAY) = that%Md%B
         this%Lp(iDAY) = that%Lp%B
         this%Ld(iDAY) = that%Ld%B
+        this%Zcons_VS_dZm(iDay) = that%Zcons_VS_dZm
     end subroutine store_MNTH
 
     subroutine store_data2D(this, that, ispace, imonth, Ndays)
@@ -195,6 +203,7 @@ module Structure
         this%Md(ispace, imonth) = sum(that%Md)/Ndays
         this%Lp(ispace, imonth) = sum(that%Lp)/Ndays
         this%Ld(ispace, imonth) = sum(that%Ld)/Ndays
+        this%Zcons_VS_dZm(ispace, imonth) = sum(that%Zcons_VS_dZm)/Ndays
 
         deallocate(that%BE)
         deallocate(that%Sf)
@@ -205,6 +214,7 @@ module Structure
         deallocate(that%Md)
         deallocate(that%Lp)
         deallocate(that%Ld)
+        deallocate(that%Zcons_VS_dZm)
     end subroutine store_data2D
 
 

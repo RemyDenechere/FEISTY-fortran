@@ -132,17 +132,17 @@ Bent.bio = BE;
 clear BE
 
 %% MZ loss
-% ncid = netcdf.open([fpath 'FOSI_' harv 'mzoo.nc'],'NC_NOWRITE');
-% [~, nvars, ~, ~] = netcdf.inq(ncid);
-% for i = 1:nvars
-%     varname = netcdf.inqVar(ncid, i-1);
-%     eval([ varname ' = netcdf.getVar(ncid,i-1);']);
-%     eval([ varname '(' varname ' == 99999) = NaN;']);
-% end
-% netcdf.close(ncid);
-% 
-% MZ.frac = fraction;
-% clear fraction
+ncid = netcdf.open([dir 'dZm.nc'],'NC_NOWRITE');
+[~, nvars, ~, ~] = netcdf.inq(ncid);
+for i = 1:nvars
+    varname = netcdf.inqVar(ncid, i-1);
+    eval([ varname ' = netcdf.getVar(ncid,i-1);']);
+    eval([ varname '(' varname ' == 99999) = NaN;']);
+end
+netcdf.close(ncid);
+
+MZ.frac = dZm;
+clear dZm
 
 %% Take means for visualization
 
@@ -156,7 +156,7 @@ md_tmean = nanmean(MD.bio, 1);
 lp_tmean = nanmean(LP.bio, 1);
 ld_tmean = nanmean(LD.bio, 1);
 b_tmean  = nanmean(Bent.bio,1);
-% mz_tmfrac =nanmean(MZ.frac,1);
+mz_tmfrac =nanmean(MZ.frac,1);
 
 %% Space
 
@@ -169,16 +169,16 @@ md_sbio = nanmean(MD.bio,2);
 lp_sbio = nanmean(LP.bio,2);
 ld_sbio = nanmean(LD.bio,2);
 b_sbio  = nanmean(Bent.bio,2);
-% mz_smfrac= nanmean(MZ.frac,2);
+mz_smfrac= nanmean(MZ.frac,2);
 
 %% Total times overcon happens
-% MZ.over = nan*ones(size(MZ.frac));
-% MZ.over(MZ.frac > 1) = ones;
-% MZ.over(MZ.frac <= 1) = zeros;
-% % Time
-% mz_ttf=nansum(MZ.over,1);
-% % Space
-% mz_stf=nansum(MZ.over,2);
+MZ.over = nan*ones(size(MZ.frac));
+MZ.over(MZ.frac > 1) = ones;
+MZ.over(MZ.frac <= 1) = zeros;
+% Time
+mz_ttf=nansum(MZ.over,1);
+% Space
+mz_stf=nansum(MZ.over,2);
 
 %% Annual means
 nyr = nt/12;
@@ -188,7 +188,7 @@ mz_mtf = nan*ones(ni,nyr);
 
 for n=1:length(st)
     % total overcon
-%     mz_mtf(:,n)=nansum(MZ.over(:,st(n):en(n)),2);
+    mz_mtf(:,n)=nansum(MZ.over(:,st(n):en(n)),2);
 
     % mean biomass
     sp_abio(:,n)=nanmean(SP.bio(:,st(n):en(n)),2);
@@ -229,17 +229,17 @@ end
 save([save_dir 'Time_Means_FOSI' '.mat'],'time',...
     'sf_tmean','sp_tmean','sd_tmean',...
     'mf_tmean','mp_tmean','md_tmean',...
-    'lp_tmean','ld_tmean','b_tmean')
+    'lp_tmean','ld_tmean','b_tmean', 'mz_ttf')
 
 save([save_dir 'Space_Means_FOSI' '.mat'],'time',...
     'sf_sbio','sp_sbio','sd_sbio',...
     'mf_sbio','mp_sbio','md_sbio',...
-    'lp_sbio','ld_sbio','b_sbio')
+    'lp_sbio','ld_sbio','b_sbio', 'mz_stf')
 
 save([save_dir 'Annual_Means_FOSI' '.mat'],'time',...
     'sf_abio','sp_abio','sd_abio',...
     'mf_abio','mp_abio','md_abio',...
-    'lp_abio','ld_abio','b_abio')
+    'lp_abio','ld_abio','b_abio', 'mz_mtf')
 
 % STOPPED HERE 
 

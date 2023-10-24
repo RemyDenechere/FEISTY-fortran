@@ -68,6 +68,7 @@ module GetNetCDFinf
             call write_nc_file2D('../output/Md_bio.nc', 'Md', that%Md, Nspace, Nmonth)
             call write_nc_file2D('../output/Lp_bio.nc', 'Lp', that%Lp, Nspace, Nmonth)
             call write_nc_file2D('../output/Ld_bio.nc', 'Ld', that%Ld, Nspace, Nmonth)
+            call write_nc_file2D('../output/dZm.nc', 'dZm', that%Zcons_VS_dZm, Nspace, Nmonth)
 
         end if 
 
@@ -282,6 +283,8 @@ module GetNetCDFinf
             CALL readgrid(dir_IniLd, 1, Nspace, this%IniLd)
             CALL readgrid(dir_IniBE, 1, Nspace, this%IniBE)
         end if
+
+        CALL readgrid(dir_H, 1, Nspace, this%H)
 
     end subroutine ini_input_fish
 

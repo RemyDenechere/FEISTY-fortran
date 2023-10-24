@@ -17,7 +17,7 @@ end
 % Load Data: -------------------------------------------------------------- 
 load([dir 'Time_Means_FOSI.mat']);
 load([dir 'Space_Means_FOSI.mat']);
-load([dir 'Annual_Means_FOSI.mat']); % ,'mz_mtf'
+load([dir 'Annual_Means_FOSI.mat'], 'mz_mtf'); % 
 
 % Map data
 load([param.rootdir 'Feisty/GCM_Data/CESM/FOSI/gridspec_POP_gx1v6_noSeas.mat']);
@@ -441,85 +441,85 @@ set(gcf, 'PaperUnits','centimeters',...
     'PaperSize', [screenposition(3:4)]); % make the print paper size fits the figure size
 print('-dpng',[fpath, 'global_ratios_subplot.png'])
 
-% %% MZ loss plots
-% [nx,nt] = size(mz_mtf);
-% %Mean fraction
-% Cmz_smfrac = mz_smfrac;
-% %Total times it happens over time
-% Cmz_ttover = mz_ttf/nx;
-% %Total times it happens in each year in space?
-% Cmz_stover5 = mz_stf/nt;
-% 
-% %%
-% %happens whole year
-% test2=floor(Cmz_stover5);
-% %histogram(test2)
-% sum(test2)/length(test2) % = 2.1675
-% 
-% %happens >=50% of year
-% test4=round(Cmz_stover5);
-% %histogram(test4)
-% sum(test4)/length(test4) % = 2.4561
-% 
-% %% Plot in time
-% figure(7)
-% plot(y, Cmz_ttover,'k','LineWidth',2); hold on;
-% xlabel('Years')
-% ylabel('Fraction of grid cells over-consumed')
-% print('-dpng',[ppath 'FOSI_', param.save_name '_timeseries_zoop_overcon.png'])
+%% MZ loss plots
+[nx,nt] = size(mz_mtf);
+%Mean fraction
+Cmz_smfrac = mz_smfrac;
+%Total times it happens over time
+Cmz_ttover = mz_ttf/nx;
+%Total times it happens in each year in space?
+Cmz_stover5 = mz_stf/nt;
 
-% %% Plots in space
-% CFmz=NaN*ones(ni,nj);
-% COmz=NaN*ones(ni,nj);
-% COmz5=NaN*ones(ni,nj);
-% CFmz(GRD.ID)=Cmz_smfrac;
-% COmz(GRD.ID)=Cmz_stover5;
-% 
-% % save([bpath 'FOSI_' mod '_ts_map_zoop_overcon.mat'],...
-% %     'Cmz_ttover','CFmz','COmz','-append');
-% 
-% % cmBP2=cbrewer('seq','BuPu', 10,'PCHIP');
-% % cmBP3 = cmBP2;
-% % cmBP3(11,:) = [0 0 0];
-% % save('cmBP2.mat', 'cmBP2')
-% % save('cmBP3.mat', 'cmBP3')
-% load('cmBP2')
-% load('cmBP3')
-% %% 2 plots of both maps
-% figure(8)
-% %1 - m frac
-% tiledlayout(2, 1, "TileSpacing", "compact", "Padding", "compact")
-% nexttile
-% axesm ('Robinson','MapLatLimit',latlim,'MapLonLimit',lonlim,'frame','on',...
-%     'Grid','off','FLineWidth',1)
-% surfm(TLAT,TLONG,CFmz)
-% colormap(cmBP3)
-% h=patchm(coastlat+0.5,coastlon+0.5,'w','FaceColor',[0.75 0.75 0.75]);
-% caxis([0 1.1]);
-% colorbar
-% set(gcf,'renderer','painters')
-% title('Mean fraction MZ hploss consumed')
-% 
-% %2 - m over
-% nexttile
-% axesm ('Robinson','MapLatLimit',latlim,'MapLonLimit',lonlim,'frame','on',...
-%     'Grid','off','FLineWidth',1)
-% surfm(TLAT,TLONG,COmz)
-% colormap(cmBP2)
-% h=patchm(coastlat+0.5,coastlon+0.5,'w','FaceColor',[0.75 0.75 0.75]);
-% caxis([0 1]);
-% colorbar
-% set(gcf,'renderer','painters')
-% title('Mean times MZ overconsumed')
-% 
-% % paper size options: -----------------------------------------------------
-% width = 12;
-% height = 10;
-% set(gcf, 'Units', 'centimeters', 'position',[2.5,2.5,width+2.5,height+2.5])
-% screenposition = get(gcf,'Position'); % get the figure size
-% set(gcf, 'PaperUnits','centimeters',...
-%     'PaperPosition',[0 0 screenposition(3:4)],...
-%     'PaperSize', [screenposition(3:4)]); % make the print paper size fits the figure size
-% print('-dpng',[ppath 'FOSI_', param.save_name '_global_zoop_overcon.png'])
+%%
+%happens whole year
+test2=floor(Cmz_stover5);
+%histogram(test2)
+sum(test2)/length(test2) % = 2.1675
+
+%happens >=50% of year
+test4=round(Cmz_stover5);
+%histogram(test4)
+sum(test4)/length(test4) % = 2.4561
+
+%% Plot in time
+figure(7)
+plot(y, Cmz_ttover,'k','LineWidth',2); hold on;
+xlabel('Years')
+ylabel('Fraction of grid cells over-consumed')
+print('-dpng',[ppath 'FOSI_', param.save_name '_timeseries_zoop_overcon.png'])
+
+%% Plots in space
+CFmz=NaN*ones(ni,nj);
+COmz=NaN*ones(ni,nj);
+COmz5=NaN*ones(ni,nj);
+CFmz(GRD.ID)=Cmz_smfrac;
+COmz(GRD.ID)=Cmz_stover5;
+
+% save([bpath 'FOSI_' mod '_ts_map_zoop_overcon.mat'],...
+%     'Cmz_ttover','CFmz','COmz','-append');
+
+% cmBP2=cbrewer('seq','BuPu', 10,'PCHIP');
+% cmBP3 = cmBP2;
+% cmBP3(11,:) = [0 0 0];
+% save('cmBP2.mat', 'cmBP2')
+% save('cmBP3.mat', 'cmBP3')
+load('cmBP2')
+load('cmBP3')
+%% 2 plots of both maps
+figure(8)
+%1 - m frac
+tiledlayout(2, 1, "TileSpacing", "compact", "Padding", "compact")
+nexttile
+axesm ('Robinson','MapLatLimit',latlim,'MapLonLimit',lonlim,'frame','on',...
+    'Grid','off','FLineWidth',1)
+surfm(TLAT,TLONG,CFmz)
+colormap(cmBP3)
+h=patchm(coastlat+0.5,coastlon+0.5,'w','FaceColor',[0.75 0.75 0.75]);
+caxis([0 1.1]);
+colorbar
+set(gcf,'renderer','painters')
+title('Mean fraction MZ hploss consumed')
+
+%2 - m over
+nexttile
+axesm ('Robinson','MapLatLimit',latlim,'MapLonLimit',lonlim,'frame','on',...
+    'Grid','off','FLineWidth',1)
+surfm(TLAT,TLONG,COmz)
+colormap(cmBP2)
+h=patchm(coastlat+0.5,coastlon+0.5,'w','FaceColor',[0.75 0.75 0.75]);
+caxis([0 1]);
+colorbar
+set(gcf,'renderer','painters')
+title('Mean times MZ overconsumed')
+
+% paper size options: -----------------------------------------------------
+width = 12;
+height = 10;
+set(gcf, 'Units', 'centimeters', 'position',[2.5,2.5,width+2.5,height+2.5])
+screenposition = get(gcf,'Position'); % get the figure size
+set(gcf, 'PaperUnits','centimeters',...
+    'PaperPosition',[0 0 screenposition(3:4)],...
+    'PaperSize', [screenposition(3:4)]); % make the print paper size fits the figure size
+print('-dpng',[ppath 'FOSI_', param.save_name '_global_zoop_overcon.png'])
 
 

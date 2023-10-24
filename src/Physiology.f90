@@ -21,14 +21,16 @@ module Physiology
         !:====================================================================== 
 
         type(Structure_group), intent(inout) :: this
-        real(dp), dimension(2) :: Texp, T_e, T_met, tpel 
-        real(dp) :: biop, biod
+        real(dp), dimension(3) :: Texp, T_e, T_met, tpel 
         integer :: i
         tpel(1) = 1.0 ! Pelagic type of life (100% time spent in the pelagic zone)
         tpel(2) = 0.0 ! benthic type of lige (0% time spent in the pelagic zone)
-        ! Other calculation for time in pelagic for demersals taking into account prey biomass: 
+        CALL tdif_dem(this, tpel(3))
+        ! Calc Tdiff for large demersals: 
+        ! Pelagic preys Biomass : 
+        ! Demersal preys biomass : 
         
-        DO i = 1, 2
+        DO i = 1, 3
             ! Calc of the average temperature experienced 
             Texp(i) = (this%Tp * tpel(i)) + (this%Tb*(1.0-tpel(i)))
         
@@ -45,7 +47,7 @@ module Physiology
         this%Mp%Tcorr_e = T_e(1)
         this%Md%Tcorr_e = T_e(2)
         this%Lp%Tcorr_e = T_e(1)
-        this%Ld%Tcorr_e = T_e(2)
+        this%Ld%Tcorr_e = T_e(3)
 
         ! Save temperature correction for metabolism
         this%Sf%Tcorr_met = T_met(1)
@@ -55,9 +57,31 @@ module Physiology
         this%Mp%Tcorr_met = T_met(1)
         this%Md%Tcorr_met = T_met(2)
         this%Lp%Tcorr_met = T_met(1)
-        this%Ld%Tcorr_met = T_met(2)
+        this%Ld%Tcorr_met = T_met(3)
     end subroutine Calc_Q10
 
+     
+    subroutine tdif_dem(this, tdiff)
+        !:======================================================================
+        ! Calc Tdiff the fraction of time spent in pelagic for large demersals 
+        ! The calculation uses the biomass of benthic resources versus 
+        ! pelagic resources 
+        ! Pelagic preys Biomass : Medium forage and medium Pelagic 
+        ! Demersal preys biomass : Medium Demersal and benthic resource 
+        !:======================================================================
+        type(Structure_group), intent(in) :: this
+        real(dp), intent(inout) :: tdiff 
+        real(dp) :: biop, biob
+
+        biop =  pref_Ld_Mf * this%Mf%B + pref_Ld_Mp * this%Md%B
+        biob = pref_Ld_Md *this%Md%B  + pref_Ld_BE * this%BE%B
+
+        if (this%H < PI_be_cutoff) then 
+            tdiff = biop / (biop + biob)
+        else 
+            tdiff = 0.0
+        end if 
+    end subroutine tdif_dem
     
     subroutine Consumption(This)
         !:======================================================================
@@ -208,7 +232,9 @@ module Physiology
                    this%Mp%cons_Mz * this%Mp%B)
         this%zf = Cons_Zm/(this%dz + eps)
 
-         ! Calcul fraction of consumption on zooplankton of each group: ----------------------
+        ! Calcul fraction of consumption on zooplankton of each group: ----------------------
+        this%Zcons_VS_dZm = Cons_Zm / this%dz
+
         if (Cons_Zm > this%dz) then
             frac_Sf = this%Sf%cons_Mz * this%Sf%B / (this%Sf%cons_Mz * this%Sf%B + this%Sp%cons_Mz * this%Sp%B + &
                    this%Sd%cons_Mz * this%Sd%B + this%Mf%cons_Mz * this%Mf%B + &

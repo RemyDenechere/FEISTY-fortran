@@ -17,22 +17,22 @@ program Run_physiology
                                               Datadet, DataZM
     integer :: ispace, count, itime, iDAY, iYR, imonth
     real(dp) :: T1, T2, T3
-    logical :: Spinup = .false. ! .true. ! 
+    logical :: Spinup = .false. ! .true. !  
     CALL cpu_time(T1)
 
     ! Initialisation: ----------------------------------------------------------
     CALL Initialisation(Spinup, Var, Nspace, Ntime, Data_F_ini, Data, DataTp, DataTb, Datadz, Datadet, DataZM)
     CALL cpu_time(T2)
 
-    ! print *, "-------------------------------------"
-    ! print *, "     Simulation parameters    "
-    ! print *, '# Days              ', Ntime
-    ! print *, '# month             ', Nmonth
-    ! print *, '# Year              ', Ntime/365
-    ! print *, '# Spacial grid      ', Nspace
-    ! print *, "Initialisation time " , T2-T1, "sec"
-    ! print *, "Start simulation, takes ~ 30min"
-    ! print *, "-------------------------------------"
+    print *, "-------------------------------------"
+    print *, "     Simulation parameters    "
+    print *, '# Days              ', Ntime
+    print *, '# month             ', Nmonth
+    print *, '# Year              ', Ntime/365
+    print *, '# Spacial grid      ', Nspace
+    print *, "Initialisation time " , T2-T1, "sec"
+    print *, "Start simulation, takes ~ 30min"
+    print *, "-------------------------------------"
 
     ! Loops over space and time: ---------------------------------
     Do ispace = 1, Nspace
@@ -61,9 +61,11 @@ program Run_physiology
     CALL save_data(Spinup, Data, Nspace)  ! Save Netcdf 
 
     CALL cpu_time(T3)
+    print *, "-------------------------------------"
     print *, "Simulation done !"
     print *, "Running time",  (T3-T2)/60, "min"
     print *, "Total time  ",  (T3-T1)/60, "min"
+    print *, "-------------------------------------"
  
 
 end program Run_physiology

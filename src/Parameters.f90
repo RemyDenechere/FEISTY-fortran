@@ -40,6 +40,8 @@ module Parameters
         2D_data/mesozoo_loss_zint_150m_2D.nc", &
     dir_det = "/project/rdenechere/TunningFEISTY/TL319_g17.4p2z/&
         2D_data/pocToFloor_2_2D.nc", &
+    dir_H = "/project/rdenechere/TunningFEISTY/TL319_g17.4p2z/&
+        2D_data/Depth_1D.nc", &
 
     ! Input data (Spinup): --------------------------------------------
     Dir_IniBE = '../output/BE_bio_Spinup.nc',&
@@ -62,9 +64,7 @@ module Parameters
                                                     31, 31, 30, 31, 30, 31 /) ! Length of month (days)
 
     ! Environemental data for test: -----------------------------------
-    ! real(dp), parameter :: DataTp = -1.756200, DataTb = -1.908700
-    ! real(dp), parameter :: Datadz = 0.002800, Datadet = 0.340100 
-    ! real(dp), parameter :: DataZM = 1.377700
+    real(dp), parameter :: PI_be_cutoff = 200 ! Benthic-pelagic coupling cutoff (depth, m)
 
     ! Groupe information: ---------------------------------------------
     integer, parameter :: nFishGroup = 8                      ! Number of fish functional group
@@ -117,8 +117,8 @@ module Parameters
     real(dp), parameter :: pref_Lp_Mf = 1.0 * A         ! Preference for Medium forage
     real(dp), parameter :: pref_Lp_Mp = 1.0 
     ! Large Demersal
-    real(dp), parameter :: pref_Ld_Mf = zero            !D * A ! Preference for Medium forage
-    real(dp), parameter :: pref_Ld_Mp = zero            !D Preference for Medium pelagics
+    real(dp), parameter :: pref_Ld_Mf = D * A           ! Preference for Medium forage
+    real(dp), parameter :: pref_Ld_Mp = D               ! Preference for Medium pelagics
     real(dp), parameter :: pref_Ld_Md =  1.0            ! Preference for Medium Demersal
     real(dp), parameter :: pref_Ld_BE = 1.0             ! Preference for Benthos
 
