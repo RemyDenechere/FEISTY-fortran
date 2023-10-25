@@ -466,7 +466,7 @@ figure(7)
 plot(y, Cmz_ttover,'k','LineWidth',2); hold on;
 xlabel('Years')
 ylabel('Fraction of grid cells over-consumed')
-print('-dpng',[ppath 'FOSI_', param.save_name '_timeseries_zoop_overcon.png'])
+print('-dpng',[fpath, 'timeseries_zoop_overcon.png'])
 
 %% Plots in space
 CFmz=NaN*ones(ni,nj);
