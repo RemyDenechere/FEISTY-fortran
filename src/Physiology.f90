@@ -2,9 +2,9 @@ module Physiology
     use Parameters
     use Structure
     implicit none 
-!:==================================================================================
+!:==================================================================================:!
 !!!!!!!!!!!!! Calculation of the physiological parameters in FEISTY !!!!!!!!!!!!!!!!
-!:================================================================================== 
+!:==================================================================================:!
 
 
     contains
@@ -105,7 +105,7 @@ module Physiology
         ! dZ test should be remove for online simulation 
         !:======================================================================
         class(Structure_group), intent(inout) :: this
-        real(dp) :: Cons_Zm, frac_Sf, frac_Sp, frac_Sd, frac_Mf, frac_Mp
+        real(dp) :: Cons_Zm, Cons_Zl, frac_Sf, frac_Sp, frac_Sd, frac_Mf, frac_Mp
 
         ! Calcul clearance rate: -------------------------------------------------------
         this%Sf%V = this%Sf%Tcorr_e * gamma * this%Sf%w **(-b_enc)/365.0
@@ -128,40 +128,47 @@ module Physiology
         this%Ld%cmax = this%Ld%Tcorr_e * h * this%Ld%w **(-b_cmax)/365.0
        
         ! Calcul feeding level of MesoZoo prey: -------------------------------------------------
-        ! Small fish only consume zooplankton:
+        ! Small fish only consume Medium zooplankton: (pref_Mz = 0.9 for 4P2Z and 1 for 4P4Z models)
+        ! Small fish don't feed on Large zooplankton
         this%Sf%f_Zm = this%Sf%V * pref_Mz * this%Mz%B/((this%Sf%V* pref_Mz * this%Mz%B) + this%Sf%cmax)
         this%Sp%f_Zm = this%Sp%V * pref_Mz * this%Mz%B/((this%Sp%V* pref_Mz * this%Mz%B) + this%Sp%cmax)
         this%Sd%f_Zm = this%Sd%V * pref_Mz * this%Mz%B/((this%Sd%V* pref_Mz * this%Mz%B) + this%Sd%cmax)
         
         ! Medium forage:
         this%Mf%f_Zm = this%Mf%V * pref_Mf_Mz * this%Mz%B/((this%Mf%V* & 
-            (pref_Mf_Mz * this%Mz%B + pref_Mf_S*(this%Sf%B + this%Sp%B + this%Sd%B))) + this%Mf%cmax)
+            (pref_Mf_Mz * this%Mz%B + pref_Mf_Lz * this%Lz%B + pref_Mf_S*(this%Sf%B + this%Sp%B + this%Sd%B))) + this%Mf%cmax)
+
+        this%Mf%f_Zl = this%Mf%V * pref_Mf_Lz * this%Lz%B/((this%Mf%V* & 
+            (pref_Mf_Mz * this%Mz%B + pref_Mf_Lz * this%Lz%B + pref_Mf_S*(this%Sf%B + this%Sp%B + this%Sd%B))) + this%Mf%cmax)
             
         this%Mf%f_Sf = this%Mf%V *pref_Mf_S* this%Sf%B/((this%Mf%V* &
-            (pref_Mf_Mz * this%Mz%B + pref_Mf_S*(this%Sf%B + this%Sp%B + this%Sd%B))) + this%Mf%cmax)
+            (pref_Mf_Mz * this%Mz%B + pref_Mf_Lz * this%Lz%B + pref_Mf_S*(this%Sf%B + this%Sp%B + this%Sd%B))) + this%Mf%cmax)
 
         this%Mf%f_Sp = this%Mf%V *pref_Mf_S* this%Sp%B/((this%Mf%V* &
-            (pref_Mf_Mz * this%Mz%B + pref_Mf_S*(this%Sf%B + this%Sp%B + this%Sd%B))) + this%Mf%cmax)
+            (pref_Mf_Mz * this%Mz%B + pref_Mf_Lz * this%Lz%B + pref_Mf_S*(this%Sf%B + this%Sp%B + this%Sd%B))) + this%Mf%cmax)
 
         this%Mf%f_Sd = this%Mf%V *pref_Mf_S* this%Sd%B/((this%Mf%V* &
-            (pref_Mf_Mz * this%Mz%B + pref_Mf_S*(this%Sf%B + this%Sp%B + this%Sd%B))) + this%Mf%cmax) 
+            (pref_Mf_Mz * this%Mz%B + pref_Mf_Lz * this%Lz%B + pref_Mf_S*(this%Sf%B + this%Sp%B + this%Sd%B))) + this%Mf%cmax) 
                  
-        this%Mf%f = this%Mf%f_Zm + this%Mf%f_Sf + this%Mf%f_Sp + this%Mf%f_Sd
+        this%Mf%f = this%Mf%f_Zm + this%Mf%f_Zl + this%Mf%f_Sf + this%Mf%f_Sp + this%Mf%f_Sd
         
         ! Medium pelagic:
         this%Mp%f_Zm = this%Mp%V * pref_Mp_Mz * this%Mz%B/((this%Mp%V* (pref_Mp_Mz * this%Mz%B &
-            + pref_Mp_S*(this%Sf%B + this%Sp%B + this%Sd%B))) + this%Mp%cmax)
+            + pref_Mp_Lz * this%Lz%B + pref_Mp_S*(this%Sf%B + this%Sp%B + this%Sd%B))) + this%Mp%cmax)
+
+        this%Mp%f_Zl = this%Mp%V * pref_Mp_Lz * this%Lz%B/((this%Mp%V* (pref_Mp_Mz * this%Mz%B &
+            + pref_Mp_Lz * this%Lz%B + pref_Mp_S*(this%Sf%B + this%Sp%B + this%Sd%B))) + this%Mp%cmax)
 
         this%Mp%f_Sf = this%Mp%V *pref_Mp_S* this%Sf%B/((this%Mp%V* (pref_Mp_Mz * this%Mz%B &
-            + pref_Mp_S*(this%Sf%B + this%Sp%B + this%Sd%B))) + this%Mp%cmax)
+            + pref_Mp_Lz * this%Lz%B + pref_Mp_S*(this%Sf%B + this%Sp%B + this%Sd%B))) + this%Mp%cmax)
 
         this%Mp%f_Sp = this%Mp%V *pref_Mp_S* this%Sp%B/((this%Mp%V* (pref_Mp_Mz * this%Mz%B &
-            + pref_Mp_S*(this%Sf%B + this%Sp%B + this%Sd%B))) + this%Mp%cmax)
+            + pref_Mp_Lz * this%Lz%B + pref_Mp_S*(this%Sf%B + this%Sp%B + this%Sd%B))) + this%Mp%cmax)
 
         this%Mp%f_Sd = this%Mp%V *pref_Mp_S* this%Sd%B/((this%Mp%V* (pref_Mp_Mz * this%Mz%B &
-            + pref_Mp_S*(this%Sf%B + this%Sp%B + this%Sd%B))) + this%Mp%cmax)
+            + pref_Mp_Lz * this%Lz%B + pref_Mp_S*(this%Sf%B + this%Sp%B + this%Sd%B))) + this%Mp%cmax)
         
-        this%Mp%f = this%Mp%f_Zm + this%Mp%f_Sf + this%Mp%f_Sp + this%Mp%f_Sd
+        this%Mp%f = this%Mp%f_Zm + this%Mp%f_Zl + this%Mp%f_Sf + this%Mp%f_Sp + this%Mp%f_Sd
 
         ! Medium Demersals only eat benthos resource: 
         this%Md%f_BE = this%Md%V *pref_Md_BE * this%BE%B/((this%Md%V * pref_Md_BE * this%BE%B) + this%Md%cmax)
@@ -200,9 +207,12 @@ module Physiology
         this%Sf%cons_Mz = this%Sf%f_Zm * this%Sf%cmax 
         this%Sp%cons_Mz = this%Sp%f_Zm * this%Sp%cmax
         this%Sd%cons_Mz = this%Sd%f_Zm * this%Sd%cmax
-        ! Medium
+        ! Medium on Mz
         this%Mf%cons_Mz = this%Mf%f_Zm * this%Mf%cmax
         this%Mp%cons_Mz = this%Mp%f_Zm * this%Mp%cmax
+        ! Medium on Lz
+        this%Mf%cons_Lz = this%Mf%f_Zl * this%Mf%cmax
+        this%Mp%cons_Lz = this%Mp%f_Zl * this%Mp%cmax
 
         ! Calcul consumption for each fish group: ----------------------------------------------
         ! Used to calculate the predation mortality on each group: 
@@ -226,16 +236,22 @@ module Physiology
         this%Ld%cons_Md = this%Ld%f_Md * this%Ld%cmax
         this%Ld%cons_BE = this%Ld%f_BE * this%Ld%cmax
 
-        ! Fraction of zooplankton biomass consumed:
+        ! Fraction of zooplankton biomass consumed:----------------------------------------
+        ! Calcul total consumption for each Zooplankton group:
         Cons_Zm = (this%Sf%cons_Mz * this%Sf%B + this%Sp%cons_Mz * this%Sp%B + &
                    this%Sd%cons_Mz * this%Sd%B + this%Mf%cons_Mz * this%Mf%B + &
                    this%Mp%cons_Mz * this%Mp%B)
-        this%zf = Cons_Zm/(this%dz + eps)
+        Cons_Zl = (this%Mf%cons_Lz * this%Mf%B + this%Mp%cons_Lz * this%Mp%B)
+        
+        ! Calcul of fraction of Zoo consumption over estimated zoop consumption:
+        this%zfm = Cons_Zm/(this%dzm + eps)
+        this%zfl = Cons_Zl/(this%dzl + eps)
 
-        ! Calcul fraction of consumption on zooplankton of each group: ----------------------
-        this%Zcons_VS_dZm = Cons_Zm / this%dz
-
-        if (Cons_Zm > this%dz) then
+        ! If calculated consumtiion is higher than estimated recalcul the fraction of Z consumed 
+        ! depending on every group relative fraction of consumtion on Z. 
+        ! Mz: 
+        if (Cons_Zm > this%dzm) then
+            ! Calcul fraction of consumption over total consumption of zoo
             frac_Sf = this%Sf%cons_Mz * this%Sf%B / (this%Sf%cons_Mz * this%Sf%B + this%Sp%cons_Mz * this%Sp%B + &
                    this%Sd%cons_Mz * this%Sd%B + this%Mf%cons_Mz * this%Mf%B + &
                    this%Mp%cons_Mz * this%Mp%B)
@@ -254,19 +270,31 @@ module Physiology
 
             ! Actual consumption as the faction of consumption * dz: -------------------------
             ! Divide the biomass consumed by the biomass of the predator to get a per g of predator rate. 
-            this%Sf%cons_Mz = frac_Sf * this%dz / this%Sf%B
-            this%Sp%cons_Mz = frac_Sp * this%dz / this%Sp%B
-            this%Sd%cons_Mz = frac_Sd * this%dz / this%Sd%B
-            this%Mf%cons_Mz = frac_Mf * this%dz / this%Mf%B
-            this%Mp%cons_Mz = frac_Mp * this%dz / this%Mp%B
+            this%Sf%cons_Mz = frac_Sf * this%dzm / this%Sf%B
+            this%Sp%cons_Mz = frac_Sp * this%dzm / this%Sp%B
+            this%Sd%cons_Mz = frac_Sd * this%dzm / this%Sd%B
+            this%Mf%cons_Mz = frac_Mf * this%dzm / this%Mf%B
+            this%Mp%cons_Mz = frac_Mp * this%dzm / this%Mp%B
         end if  
+        
+        ! Lz:
+        if (Cons_Zl > this%dzl) then
+            ! Calcul fraction of consumption over total consumption of zoo
+            frac_Mf = this%Mf%cons_Lz * this%Mf%B / (this%Mf%cons_Lz * this%Mf%B + this%Mp%cons_Lz * this%Mp%B)
+            frac_Mp = this%Mp%cons_Lz * this%Mp%B / (this%Mf%cons_Lz * this%Mf%B + this%Mp%cons_Lz * this%Mp%B)
+
+            ! Actual consumption as the faction of consumption * dz: -------------------------
+            ! Divide the biomass consumed by the biomass of the predator to get a per g of predator rate. 
+            this%Mf%cons_Mz = frac_Mf * this%dzl / this%Mf%B
+            this%Mp%cons_Mz = frac_Mp * this%dzl / this%Mp%B
+        end if 
 
         ! Total consumption rate with adjusted consumption on zooplankton: ------------------
         this%Sf%cons = this%Sf%cons_Mz
         this%Sp%cons = this%Sp%cons_Mz
         this%Sd%cons = this%Sd%cons_Mz
-        this%Mf%cons = this%Mf%cons_Mz + this%Mf%cons_Sf + this%Mf%cons_Sp + this%Mf%cons_Sd 
-        this%Mp%cons = this%Mp%cons_Mz + this%Mp%cons_Sf + this%Mp%cons_Sp + this%Mp%cons_Sd
+        this%Mf%cons = this%Mf%cons_Mz + this%Mf%cons_Lz + this%Mf%cons_Sf + this%Mf%cons_Sp + this%Mf%cons_Sd 
+        this%Mp%cons = this%Mp%cons_Mz + this%Mp%cons_Lz + this%Mp%cons_Sf + this%Mp%cons_Sp + this%Mp%cons_Sd
 
         ! Recalculate feeding level based on new consumption:--------------------------------
         this%Sf%f = this%Sf%cons / this%Sf%cmax
@@ -480,13 +508,3 @@ module Physiology
     end subroutine Benthic_chemostat
     
 end module Physiology
-
-        ! this%Sf%
-        ! this%Sp%
-        ! this%Sd%
-        ! this%Mf%
-        ! this%Mp%
-        ! this%Md%
-        ! this%Lp%
-        ! this%Ld%
-

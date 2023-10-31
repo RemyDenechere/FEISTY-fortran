@@ -29,36 +29,65 @@ module Parameters
     ! g.e22.GOMIPECOIAF_JRA-1p4-2018.TL319_g17.4p2z.001branch.&
     ! pop.h.ecosys.nday1.pocToFloor_2.19580101-20211231.nc"
 
-    ! 2D data from last FEISTY tunning: ----------------------------------------------
-    dir_Tb = "/project/rdenechere/TunningFEISTY/TL319_g17.4p2z/&
-        2D_data/TEMP_BOTTOM_2_2D.nc", &
-    dir_Tp = "/project/rdenechere/TunningFEISTY/TL319_g17.4p2z/& 
-        2D_data/TEMP_mean_150m_2D.nc", &
-    dir_zf = "/project/rdenechere/TunningFEISTY/TL319_g17.4p2z/&
-        2D_data/mesozooC_zint_150m_2D.nc", &
-    dir_dz = "/project/rdenechere/TunningFEISTY/TL319_g17.4p2z/&
-        2D_data/mesozoo_loss_zint_150m_2D.nc", &
-    dir_det = "/project/rdenechere/TunningFEISTY/TL319_g17.4p2z/&
-        2D_data/pocToFloor_2_2D.nc", &
+    ! ! 2D data from last FEISTY tunning: ----------------------------------------------
+    ! dir_Tb = "/project/rdenechere/TunningFEISTY/TL319_g17.4p2z/&
+    !     2D_data/TEMP_BOTTOM_2_2D.nc", &
+    ! dir_Tp = "/project/rdenechere/TunningFEISTY/TL319_g17.4p2z/& 
+    !     2D_data/TEMP_mean_150m_2D.nc", &
+    ! dir_zf = "/project/rdenechere/TunningFEISTY/TL319_g17.4p2z/&
+    !     2D_data/mesozooC_zint_150m_2D.nc", &
+    ! dir_dz = "/project/rdenechere/TunningFEISTY/TL319_g17.4p2z/&
+    !     2D_data/mesozoo_loss_zint_150m_2D.nc", &
+    ! dir_det = "/project/rdenechere/TunningFEISTY/TL319_g17.4p2z/&
+    !     2D_data/pocToFloor_2_2D.nc", &
+    ! dir_H = "/project/rdenechere/TunningFEISTY/TL319_g17.4p2z/&
+    !     2D_data/Depth_1D.nc", &
+
+    ! ! Input data (Spinup): --------------------------------------------
+    ! Dir_IniBE = '../output/BE_bio_Spinup.nc',&
+    ! Dir_IniSf = '../output/Sf_bio_Spinup.nc',&
+    ! Dir_IniSp = '../output/Sp_bio_Spinup.nc',&
+    ! Dir_IniSd = '../output/Sd_bio_Spinup.nc',&
+    ! Dir_IniMf = '../output/Mf_bio_Spinup.nc',&
+    ! Dir_IniMp = '../output/Mp_bio_Spinup.nc',&
+    ! Dir_IniMd = '../output/Md_bio_Spinup.nc',&
+    ! Dir_IniLp = '../output/Lp_bio_Spinup.nc',&
+    ! Dir_IniLd = '../output/Ld_bio_Spinup.nc'
+
+    ! 2D data for 4P4Z : ----------------------------------------------
+    ! Base on colleen's data (check matlab code)
+    dir_Tb = "/project/rdenechere/TunningFEISTY/Input_4p4z/&
+        TEMP_BOTTOM_2_2D.nc", &
+    dir_Tp = "/project/rdenechere/TunningFEISTY/Input_4p4z/& 
+        TEMP_mean_150m_2D.nc", &
+    dir_zm = "/project/rdenechere/TunningFEISTY/Input_4p4z/&
+        mesozoo_m_C_zint_150m_2D.nc", &
+    dir_dzm = "/project/rdenechere/TunningFEISTY/Input_4p4z/&
+        mesozoo_m_loss_zint_150m_2D.nc", &
+    dir_zl = "/project/rdenechere/TunningFEISTY/Input_4p4z/&
+        mesozoo_l_C_zint_150m_2D.nc", &
+    dir_dzl = "/project/rdenechere/TunningFEISTY/Input_4p4z/&
+        mesozoo_l_loss_zint_150m_2D.nc", &
+    dir_det = "/project/rdenechere/TunningFEISTY/Input_4p4z/&
+        pocToFloor_2_2D.nc", &
     dir_H = "/project/rdenechere/TunningFEISTY/TL319_g17.4p2z/&
         2D_data/Depth_1D.nc", &
-
     ! Input data (Spinup): --------------------------------------------
-    Dir_IniBE = '../output/BE_bio_Spinup.nc',&
-    Dir_IniSf = '../output/Sf_bio_Spinup.nc',&
-    Dir_IniSp = '../output/Sp_bio_Spinup.nc',&
-    Dir_IniSd = '../output/Sd_bio_Spinup.nc',&
-    Dir_IniMf = '../output/Mf_bio_Spinup.nc',&
-    Dir_IniMp = '../output/Mp_bio_Spinup.nc',&
-    Dir_IniMd = '../output/Md_bio_Spinup.nc',&
-    Dir_IniLp = '../output/Lp_bio_Spinup.nc',&
-    Dir_IniLd = '../output/Ld_bio_Spinup.nc'
+    Dir_IniBE = '../output/BE_bio_Spinup_4P4Z.nc',&
+    Dir_IniSf = '../output/Sf_bio_Spinup_4P4Z.nc',&
+    Dir_IniSp = '../output/Sp_bio_Spinup_4P4Z.nc',&
+    Dir_IniSd = '../output/Sd_bio_Spinup_4P4Z.nc',&
+    Dir_IniMf = '../output/Mf_bio_Spinup_4P4Z.nc',&
+    Dir_IniMp = '../output/Mp_bio_Spinup_4P4Z.nc',&
+    Dir_IniMd = '../output/Md_bio_Spinup_4P4Z.nc',&
+    Dir_IniLp = '../output/Lp_bio_Spinup_4P4Z.nc',&
+    Dir_IniLd = '../output/Ld_bio_Spinup_4P4Z.nc'
     
     ! General parameters: ---------------------------------------------
     integer, parameter  :: dp = kind(0.d0)   ! double precision
     real(dp), parameter :: zero = 0.0        ! Zero
     real(dp), parameter :: eps = 1d-200      ! Small number for divisions 
-    integer, parameter :: YR = 64            ! Number of year in Time series
+    integer, parameter :: YR = 61            ! Number of year in Time series
     integer, parameter ::  Nmonth = YR*12    ! Number of month in Time series
     integer, dimension(12), parameter ::  MNTH = (/ 31, 28, 31, 30, 31, 30, &
                                                     31, 31, 30, 31, 30, 31 /) ! Length of month (days)
@@ -101,15 +130,18 @@ module Parameters
     real(dp), parameter :: CC = 80.0               ! Carring Capacity for benthic chemostat
 
     ! Parameters feeding preferences: ---------------------------------
-    real(dp), parameter :: D = 0.750                    ! Demersal feeding in pelagic reduction
-    real(dp), parameter :: A = 0.50                     ! Adult predation reduction
+    real(dp), parameter :: Sm = 0.25                     ! Medium size feeding on Medium Zoo
+    real(dp), parameter :: D  = 0.750                    ! Demersal feeding in pelagic reduction
+    real(dp), parameter :: A  = 0.50                     ! Adult predation reduction
     
-    real(dp), parameter :: pref_Mz = 0.90               ! Preference for one mesozooplankton group
+    real(dp), parameter :: pref_Mz = 1.0                ! Preference Small fish for medium mesozooplankton group
     ! Medium Forage 
-    real(dp), parameter :: pref_Mf_Mz = 0.50* pref_Mz   ! Preference for Mesozooplankton   
+    real(dp), parameter :: pref_Mf_Mz = Sm              ! Preference for Medium Mesozooplankton   
+    real(dp), parameter :: pref_Mf_Lz = 1.0             ! Preference for Large Mesozooplankton
     real(dp), parameter :: pref_Mf_S = 1.0              ! Preference for small fish
     ! Medium pelagic 
-    real(dp), parameter :: pref_Mp_Mz = 0.50* pref_Mz   ! Preference for Mesozooplankton
+    real(dp), parameter :: pref_Mp_Mz = Sm              ! Preference for Medium Mesozooplankton
+    real(dp), parameter :: pref_Mp_Lz = 1.0             ! Preference for Large Mesozooplankton
     real(dp), parameter :: pref_Mp_S = 1.0              ! Preference for small fish
     ! Medium Demersal 
     real(dp), parameter :: pref_Md_BE = 1.0             ! Preference for Benthos
@@ -123,7 +155,12 @@ module Parameters
     real(dp), parameter :: pref_Ld_BE = 1.0             ! Preference for Benthos
 
     ! Unit conversion for input data: ---------------------------------------------- 
-    real(dp), parameter :: convers_zm  = 10.0**(-3 -2)*12.01*9.0, &                  ! zooplankton biomass 
-                           convers_det = 10.0**(-9 +4)*12.01*9.0*24.0*3600.0, &      ! detritus 
-                           convers_dZm = 10.0**(-2 -3)*12.01*9.0*24.0*3600.0         ! zooplankton loss
+    ! real(dp), parameter :: convers_zm  = 10.0**(-3 -2)*12.01*9.0, &                  ! zooplankton biomass 
+    !                        convers_det = 10.0**(-9 +4)*12.01*9.0*24.0*3600.0, &      ! detritus 
+    !                        convers_dZm = 10.0**(-2 -3)*12.01*9.0*24.0*3600.0         ! zooplankton loss
+    ! No conversion for Colleen's data: 
+    real(dp), parameter :: convers_zm  = 1, &                                        ! zooplankton biomass 
+                           convers_det = 1, &                                        ! detritus 
+                           convers_dZm = 1                                           ! zooplankton loss
+    
 end module Parameters

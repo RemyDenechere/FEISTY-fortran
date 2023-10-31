@@ -4,21 +4,22 @@ module GetNetCDFinf
     use netcdf 
 
     implicit none 
-
+ 
     contains 
 
-    subroutine Initialisation(Spinup, Var, Nspace, Ntime, Data_F_ini, Data, DataTp, DataTb, Datadz, Datadet, DataZM)
+    subroutine Initialisation(Spinup, Var, Nspace, Ntime, Data_F_ini, Data, &
+                              DataTp, DataTb, Datadzm, Datadet, DataZM, Datadzl, DataZL)
         logical, intent(in) :: Spinup
         integer, intent(inout) :: Nspace, Ntime
         type(Structure_group) :: Var
         type(ini_fish_data), intent(inout) :: Data_F_ini
         type(Save_structure2D), intent(inout) :: Data
         real(dp), dimension(:, :), allocatable, intent(inout) :: DataTp, DataTb, &
-                                                                Datadz, Datadet, &
-                                                                DataZM
+                                                                Datadzm, Datadet, &
+                                                                DataZM, Datadzl, DataZL
 
         CALL griddims2D(dir_Tb, Nspace, Ntime, var)                                                        
-        CALL ini_input2D(Nspace, Ntime, DataTp, DataTb, Datadz, Datadet, DataZM)
+        CALL ini_input2D(Nspace, Ntime, DataTp, DataTb, Datadzm, Datadet, DataZM, Datadzl, DataZL)
         Call ini_input_fish(Spinup, Nspace, Data_F_ini)
         CALL init_save_data2D(Data, Nspace)
         
@@ -32,11 +33,6 @@ module GetNetCDFinf
         Var%Md%w = 10.0**((log10(0.5)+log10(250.0))/2) 
         Var%Lp%w = 10.0**((log10(250.0)+log10(125000.0))/2)
         Var%Ld%w = 10.0**((log10(250.0)+log10(125000.0))/2)
-
-        ! print*, " Small size ", Var%Sd%w
-        ! print*, " Medium size ", Var%Md%w
-        ! print*, " Large size ", Var%Ld%w
-
     end subroutine Initialisation
     
     subroutine save_data(Spinup, that, Nspace)
@@ -68,11 +64,9 @@ module GetNetCDFinf
             call write_nc_file2D('../output/Md_bio.nc', 'Md', that%Md, Nspace, Nmonth)
             call write_nc_file2D('../output/Lp_bio.nc', 'Lp', that%Lp, Nspace, Nmonth)
             call write_nc_file2D('../output/Ld_bio.nc', 'Ld', that%Ld, Nspace, Nmonth)
-            call write_nc_file2D('../output/dZm.nc', 'dZm', that%Zcons_VS_dZm, Nspace, Nmonth)
-
+            call write_nc_file2D('../output/dZm.nc', 'dZm', that%zfm, Nspace, Nmonth)
+            call write_nc_file2D('../output/dZl.nc', 'dZl', that%zfl, Nspace, Nmonth)
         end if 
-
-
     end subroutine save_data 
 
 
@@ -172,55 +166,49 @@ module GetNetCDFinf
     !:====================================================================== 
     ! Get the input values for the given lat long and time 
     !:======================================================================  
-    subroutine Get_Environental_data3D(this, DataTp, DataTb, Datadz, Datadet, DataZM, ilat, ilong, itime)
+    subroutine Get_Environental_data3D(this, DataTp, DataTb, Datadzm, Datadet, DataZM, ilat, ilong, itime)
         type(Structure_group), intent(inout) :: this
         integer :: ilat, ilong, itime
         real(dp), dimension(:, :, :), allocatable, intent(inout) :: DataTp, DataTb, &
-                                                                    Datadz, Datadet, &
+                                                                    Datadzm, Datadet, &
                                                                     DataZM
         
         this%Tp =  DataTp(ilat, ilong, itime)
         this%Tb = DataTb(ilat, ilong, itime)
-        this%dz = Datadz(ilat, ilong, itime)
+        this%dzm = Datadzm(ilat, ilong, itime)
         this%det = Datadet(ilat, ilong, itime)
         this%Mz%B = DataZM(ilat, ilong, itime)
     end subroutine Get_Environental_data3D
 
+
     !:====================================================================== 
-    ! Get the input values for the given lat long and time 
+    ! Get the input values for the given spacial grid and time 
     !:======================================================================  
-    subroutine Get_Environental_data2D(this, DataTp, DataTb, Datadz, Datadet, DataZM, ispace, itime)
+    subroutine Get_Environental_data2D(this, DataTp, DataTb, Datadzm, Datadet,&
+                                       DataZM, DataZL, Datadzl, ispace, itime)
         type(Structure_group), intent(inout) :: this
         integer :: ispace, itime
         real(dp), dimension(:, :), allocatable, intent(inout) :: DataTp, DataTb, &
-                                                                Datadz, Datadet, &
-                                                                DataZM
+                                                                Datadzm, Datadet, &
+                                                                DataZM, DataZL, Datadzl
         
         this%Tp =  DataTp(ispace, itime)
         this%Tb = DataTb(ispace, itime)
-        this%dz = Datadz(ispace, itime)   * convers_dZm
         this%det = Datadet(ispace, itime) * convers_det
         this%Mz%B = DataZM(ispace, itime) * convers_zm
-
-        ! print*, "-------------------------------------"
-        ! print*, "     Environemental condition        "
-        ! print*, "Tp                 ", this%Tp
-        ! print*, "Tb                 ", this%Tb
-        ! print*, "dz                 ", this%dz
-        ! print*, "det                ", this%det
-        ! print*, "Mz                 ", this%Mz%B
-        ! print*, "-------------------------------------"
-
+        this%dzm = Datadzm(ispace, itime) * convers_dZm
+        this%Lz%B = DataZL(ispace, itime) * convers_zm
+        this%dzl = Datadzl(ispace, itime) * convers_dZm
     end subroutine Get_Environental_data2D
 
 
     !:====================================================================== 
     ! Load all the imput values to force the model
     !:======================================================================  
-    subroutine ini_input3D(DataTp, DataTb, Datadz, Datadet, DataZM)
+    subroutine ini_input3D(DataTp, DataTb, Datadzm, Datadet, DataZM)
         ! Declare variables
         real(dp), dimension(:, :, :), allocatable, intent(inout) :: DataTp, DataTb, &
-                                                                    Datadz, Datadet, &
+                                                                    Datadzm, Datadet, &
                                                                     DataZM
         integer :: ncid_Tb, ncid_Tp, ncid_zf, ncid_dz, ncid_det, ierr
         integer :: nvars_Tb, nvars_Tp, nvars_zf, nvars_dz, nvars_det
@@ -236,8 +224,8 @@ module GetNetCDFinf
         ! Get the input grid file: 
         CALL readgrid3D(dir_Tb, varid_Tb, Nlat, Nlong, Ntime, DataTp)
         CALL readgrid3D(dir_Tp, varid_Tp, Nlat, Nlong, Ntime, DataTb)
-        CALL readgrid3D(dir_zf, varid_zf, Nlat, Nlong, Ntime, DataZM)
-        CALL readgrid3D(dir_dz, varid_dz, Nlat, Nlong, Ntime, Datadz)
+        CALL readgrid3D(dir_zm, varid_zf, Nlat, Nlong, Ntime, DataZM)
+        CALL readgrid3D(dir_dzm, varid_dz, Nlat, Nlong, Ntime, Datadzm)
         CALL readgrid3D(dir_det, varid_det, Nlat, Nlong, Ntime, Datadet)      
 
     end subroutine ini_input3D
@@ -246,11 +234,11 @@ module GetNetCDFinf
     !:====================================================================== 
     ! Load all the imput values to force the model
     !:======================================================================  
-    subroutine ini_input2D(Nspace, Ntime, DataTp, DataTb, Datadz, Datadet, DataZM)
+    subroutine ini_input2D(Nspace, Ntime, DataTp, DataTb, Datadzm, Datadet, DataZM, DataZL, Datadzml)
         ! Declare variables
         real(dp), dimension(:, :), allocatable, intent(inout) :: DataTp, DataTb, &
-                                                                Datadz, Datadet, &
-                                                                DataZM
+                                                                Datadzm, Datadet, &
+                                                                DataZM, DataZL, Datadzml
         integer :: ncid_Tb, ncid_Tp, ncid_zf, ncid_dz, ncid_det, ierr
         integer :: nvars_Tb, nvars_Tp, nvars_zf, nvars_dz, nvars_det
         integer :: varshape_Tb, varshape_Tp, varshape_zf, varshape_dz, varshape_det
@@ -260,10 +248,11 @@ module GetNetCDFinf
         ! Get the input grid file: 
         CALL readgrid2D(dir_Tb, 1, Nspace, Ntime, DataTb)
         CALL readgrid2D(dir_Tp, 1, Nspace, Ntime, DataTp)
-        CALL readgrid2D(dir_zf, 1, Nspace, Ntime, DataZM)
-        CALL readgrid2D(dir_dz, 1, Nspace, Ntime, Datadz)
+        CALL readgrid2D(dir_zm, 1, Nspace, Ntime, DataZM)
+        CALL readgrid2D(dir_dzm, 1, Nspace, Ntime, Datadzm)
+        CALL readgrid2D(dir_zl, 1, Nspace, Ntime, DataZL)
+        CALL readgrid2D(dir_dzm, 1, Nspace, Ntime, Datadzml)
         CALL readgrid2D(dir_det, 1, Nspace, Ntime, Datadet)
-
     end subroutine ini_input2D
 
 

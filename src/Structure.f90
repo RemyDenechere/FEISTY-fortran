@@ -15,7 +15,8 @@ module Structure
         real(dp) :: V = 0               ! Encounter rate 
         real(dp) :: f = 0               ! Total feeding level
         real(dp) :: cmax = 0            ! Maximum consumption rate 
-        real(dp) :: cons_Mz = 0         ! Consumption of MesoZooplankton              
+        real(dp) :: cons_Mz = 0         ! Consumption of MesoZooplankton medium
+        real(dp) :: cons_Lz = 0         ! Consumption of MesoZooplankton medium              
         real(dp) :: cons_Fish = 0       ! Consumption of fish
         real(dp) :: cons = 0            ! Total consumption rate
         real(dp) :: met = 0             ! metabolic cost 
@@ -30,6 +31,7 @@ module Structure
   
         ! Feeding level for each prey : ------------------------------------------------
         real(dp) :: f_Zm = 0            
+        real(dp) :: f_Zl = 0            ! --         
         real(dp) :: f_Sf = 0            ! --
         real(dp) :: f_Sp = 0            ! --
         real(dp) :: f_Sd = 0            ! --
@@ -41,7 +43,8 @@ module Structure
         real(dp) :: f_BE = 0
 
          ! consumption for each prey : ------------------------------------------------
-        real(dp) :: cons_Zm = 0            
+        real(dp) :: cons_Zm = 0   
+        real(dp) :: cons_Zl = 0            ! --         
         real(dp) :: cons_Sf = 0            ! --
         real(dp) :: cons_Sp = 0            ! --
         real(dp) :: cons_Sd = 0            ! --
@@ -59,21 +62,22 @@ module Structure
     end type Structure_Resource
     
     type :: Structure_group
-        type(Structure_Resource) :: Mz, BE
+        type(Structure_Resource) :: Mz, Lz, BE
         type(Structure_Fish) :: Sf, Sp, Sd, &
                                 Mf, Mp, Md, & 
                                 Lp, Ld
 
         ! Global variable ()
-        real(dp) :: zf = 0                   ! Fraction of zooplankton mortality loss consumed  
+        real(dp) :: zfm = 0                  ! Fraction of zooplankton mortality loss consumed
+        real(dp) :: zfl = 0                  ! Fraction of zooplankton mortality loss consumed  
         real(dp) :: Tp = 0                   ! Pelagic temperature
         real(dp) :: Tb = 0                   ! Benthic temperature
-        real(dp) :: dz = 0                   ! Biomass consumed by top predators 
+        real(dp) :: dzm = 0                  ! Biomass of medium zooplankton consumed by top predators 
+        real(dp) :: dzl = 0                  ! Biomass of Large zooplankton consumed by top predators 
         real(dp) :: det = 0                  ! Detritus flux to benthic community
         real(dp) :: H = 20000.0              ! Depth (set up deeper than max depth to avoid problem with demersal tdiff if depth is not setup from environemental data)
         real(dp), dimension(nDeriv) :: dudt  ! variable containing the derivative 
-        real(dp) :: Zcons_VS_dZm = 0         ! Zm consumption from FEISTY over dZm estmated
-        
+
         real(dp) :: Nlat
         real(dp) :: Nlong
         real(dp) :: Ntime
@@ -85,11 +89,11 @@ module Structure
     end type
 
     type :: Save_structure2D
-        real(dp), dimension(:, :), allocatable :: Sf, Sp, Sd, Mf, Mp, Md, Lp, Ld, BE, Zcons_VS_dZm
+        real(dp), dimension(:, :), allocatable :: Sf, Sp, Sd, Mf, Mp, Md, Lp, Ld, BE, zfm, zfl
     end type
 
     type :: Save_structure1D
-        real(dp), dimension(:), allocatable :: Sf, Sp, Sd, Mf, Mp, Md, Lp, Ld, BE, Zcons_VS_dZm
+        real(dp), dimension(:), allocatable :: Sf, Sp, Sd, Mf, Mp, Md, Lp, Ld, BE, zfm, zfl
     end type
 
     type :: ini_fish_data
@@ -155,7 +159,8 @@ module Structure
         allocate(this%Md(Nspace, Nmonth))
         allocate(this%Lp(Nspace, Nmonth))
         allocate(this%Ld(Nspace, Nmonth))
-        allocate(this%Zcons_VS_dZm(Nspace, Nmonth))
+        allocate(this%zfm(Nspace, Nmonth))
+        allocate(this%zfl(Nspace, Nmonth))
     end subroutine init_save_data2D
 
     subroutine init_store_MNTH(this, Ndays)
@@ -170,7 +175,8 @@ module Structure
         allocate(this%Md(Ndays))
         allocate(this%Lp(Ndays))
         allocate(this%Ld(Ndays))
-        allocate(this%Zcons_VS_dZm(Ndays))
+        allocate(this%zfm(Ndays))
+        allocate(this%zfl(Ndays))
     end subroutine init_store_MNTH
 
     subroutine store_MNTH(this, that, iDAY)
@@ -186,7 +192,8 @@ module Structure
         this%Md(iDAY) = that%Md%B
         this%Lp(iDAY) = that%Lp%B
         this%Ld(iDAY) = that%Ld%B
-        this%Zcons_VS_dZm(iDay) = that%Zcons_VS_dZm
+        this%zfm(iDay) = that%zfm
+        this%zfl(iDay) = that%zfl
     end subroutine store_MNTH
 
     subroutine store_data2D(this, that, ispace, imonth, Ndays)
@@ -203,7 +210,8 @@ module Structure
         this%Md(ispace, imonth) = sum(that%Md)/Ndays
         this%Lp(ispace, imonth) = sum(that%Lp)/Ndays
         this%Ld(ispace, imonth) = sum(that%Ld)/Ndays
-        this%Zcons_VS_dZm(ispace, imonth) = sum(that%Zcons_VS_dZm)/Ndays
+        this%zfm(ispace, imonth) = sum(that%zfm)/Ndays
+        this%zfl(ispace, imonth) = sum(that%zfl)/Ndays
 
         deallocate(that%BE)
         deallocate(that%Sf)
@@ -214,7 +222,8 @@ module Structure
         deallocate(that%Md)
         deallocate(that%Lp)
         deallocate(that%Ld)
-        deallocate(that%Zcons_VS_dZm)
+        deallocate(that%zfm)
+        deallocate(that%zfl)
     end subroutine store_data2D
 
 

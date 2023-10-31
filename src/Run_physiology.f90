@@ -14,14 +14,15 @@ program Run_physiology
     type(ini_fish_data) :: Data_F_ini
     integer :: Ntime, Nspace
     real(dp), dimension(:, :), allocatable :: DataTp, DataTb, Datadz, &
-                                              Datadet, DataZM
+                                              Datadet, DataZM, Datadzl, DataZL
     integer :: ispace, count, itime, iDAY, iYR, imonth
     real(dp) :: T1, T2, T3
-    logical :: Spinup = .false. ! .true. !  
+    logical :: Spinup = .false. ! .true. ! 
     CALL cpu_time(T1)
 
     ! Initialisation: ----------------------------------------------------------
-    CALL Initialisation(Spinup, Var, Nspace, Ntime, Data_F_ini, Data, DataTp, DataTb, Datadz, Datadet, DataZM)
+    CALL Initialisation(Spinup, Var, Nspace, Ntime, Data_F_ini, Data,&
+                        DataTp, DataTb, Datadz, Datadet, DataZM, Datadzl, DataZL)
     CALL cpu_time(T2)
 
     print *, "-------------------------------------"
@@ -49,7 +50,8 @@ program Run_physiology
                         itime = itime + 1                                       ! Counts the days to get input
                     end if                                        
                     CALL Get_Environental_data2D(Var, DataTp, DataTb, &         ! Get the environemntal data for
-                                 Datadz, Datadet, DataZM, ispace, itime)        ! that specific day
+                                 Datadz, Datadet, DataZM,DataZL, Datadzl, &     ! that specific day
+                                 ispace, itime)                                 
                     CALL CalcBiomass(Var)                                       ! Calcul biomass at day+1    
                     CALL store_MNTH(Data_MNTH, Var, iDAY)                       ! Store the monthly data 
                 end Do ! End Loop Days

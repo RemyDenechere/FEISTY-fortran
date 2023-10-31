@@ -34,8 +34,8 @@ program OpenNetCDFFiles
   print *, "----------------------------------------"
   CALL GetVariableInfo(dir_Tb, 1, varname_Tb)  
   CALL GetVariableInfo(dir_Tp, 1, varname_Tp)
-  CALL GetVariableInfo(dir_zf, 1, varname_zf) 
-  CALL GetVariableInfo(dir_dz, 1, varname_dz) 
+  CALL GetVariableInfo(dir_zm, 1, varname_zf) 
+  CALL GetVariableInfo(dir_dzm, 1, varname_dz) 
   CALL GetVariableInfo(dir_det, 1, varname_det)
 
 
