@@ -73,6 +73,7 @@ module Structure
         real(dp) :: H = 20000.0              ! Depth (set up deeper than max depth to avoid problem with demersal tdiff if depth is not setup from environemental data)
         real(dp), dimension(nDeriv) :: dudt  ! variable containing the derivative 
         real(dp) :: Zcons_VS_dZm = 0         ! Zm consumption from FEISTY over dZm estmated
+        real(dp) :: tpel_Ld = 0              ! Time in pelagic of large demersal depending on depth and abundance of resource
         
         real(dp) :: Nlat
         real(dp) :: Nlong
@@ -106,15 +107,15 @@ module Structure
         type(ini_fish_data)  , intent(inout) :: Data_F_ini
     
         if (Spinup) then
-            this%BE%B = 0.01
-            this%Sf%B = 0.01
-            this%Sp%B = 0.01
-            this%Sd%B = 0.01
-            this%Mf%B = 0.01
-            this%Mp%B = 0.01
-            this%Md%B = 0.01
-            this%Lp%B = 0.01
-            this%Ld%B = 0.01
+            this%BE%B = 0.00001
+            this%Sf%B = 0.00001
+            this%Sp%B = 0.00001
+            this%Sd%B = 0.00001
+            this%Mf%B = 0.00001
+            this%Mp%B = 0.00001
+            this%Md%B = 0.00001
+            this%Lp%B = 0.00001
+            this%Ld%B = 0.00001
         else 
             this%BE%B = Data_F_ini%IniBE(ispace)
             this%Sf%B = Data_F_ini%IniSf(ispace)

@@ -24,16 +24,14 @@ module Physiology
         real(dp), dimension(3) :: Texp, T_e, T_met, tpel 
         integer :: i
         tpel(1) = 1.0 ! Pelagic type of life (100% time spent in the pelagic zone)
-        tpel(2) = 0.0 ! benthic type of lige (0% time spent in the pelagic zone)
-        CALL tdif_dem(this, tpel(3))
-        ! Calc Tdiff for large demersals: 
-        ! Pelagic preys Biomass : 
-        ! Demersal preys biomass : 
+        tpel(2) = 0.0 ! benthic type of life (0% time spent in the pelagic zone)
+        CALL tdif_dem(this, tpel(3)) ! time in pelagic of large demersals. 
+        this%tpel_Ld = tpel(3)
         
         DO i = 1, 3
             ! Calc of the average temperature experienced 
             Texp(i) = (this%Tp * tpel(i)) + (this%Tb*(1.0-tpel(i)))
-        
+
             ! Calc Temperature correction  
             T_e(i) = exp(ke * (Texp(i)-10.0))      ! for encounter rate and Cmax
             T_met(i) = exp(kmet * (Texp(i)-10.0))  ! for metabolism
@@ -105,7 +103,7 @@ module Physiology
         ! dZ test should be remove for online simulation 
         !:======================================================================
         class(Structure_group), intent(inout) :: this
-        real(dp) :: Cons_Zm, frac_Sf, frac_Sp, frac_Sd, frac_Mf, frac_Mp
+        real(dp) :: Cons_Zm, frac_Sf, frac_Sp, frac_Sd, frac_Mf, frac_Mp, pred_pel
 
         ! Calcul clearance rate: -------------------------------------------------------
         this%Sf%V = this%Sf%Tcorr_e * gamma * this%Sf%w **(-b_enc)/365.0
@@ -168,17 +166,28 @@ module Physiology
         this%Md%f = this%Md%f_BE
 
         ! Large Demersal: 
-        this%Ld%f_Mf = this%Ld%V * pref_Ld_Mf * this%Mf%B /(this%Ld%V * &
-            (pref_Ld_Mf * this%Mf%B + pref_Ld_Mp * this%Mp%B + pref_Ld_Md * this%Md%B + pref_Ld_BE * this%BE%B) + this%Ld%cmax)
+        ! If large demersal don't spend time in pelagic zone then predation on forage and pelagics = 0; 
+        if (this%tpel_Ld == 0.0) then 
+            pred_pel = 0.0
+        else 
+            pred_pel = 1.0
+        end if  
 
-        this%Ld%f_Mp = this%Ld%V * pref_Ld_Mp * this%Mp%B /(this%Ld%V* &
-            (pref_Ld_Mf * this%Mf%B + pref_Ld_Mp * this%Mp%B + pref_Ld_Md * this%Md%B + pref_Ld_BE * this%BE%B) + this%Ld%cmax)
+        this%Ld%f_Mf = this%Ld%V * pred_pel * pref_Ld_Mf * this%Mf%B /(this%Ld%V * &
+            (pred_pel * pref_Ld_Mf * this%Mf%B + pred_pel * pref_Ld_Mp * this%Mp%B + &
+             pref_Ld_Md * this%Md%B + pref_Ld_BE * this%BE%B) + this%Ld%cmax)
+
+        this%Ld%f_Mp = pred_pel * this%Ld%V * pred_pel * pref_Ld_Mp * this%Mp%B /(this%Ld%V* &
+            (pred_pel * pref_Ld_Mf * this%Mf%B + pred_pel * pref_Ld_Mp * this%Mp%B + &
+             pref_Ld_Md * this%Md%B + pref_Ld_BE * this%BE%B) + this%Ld%cmax)
 
         this%Ld%f_Md = this%Ld%V * pref_Ld_Md * this%Md%B /(this%Ld%V* &
-            (pref_Ld_Mf * this%Mf%B + pref_Ld_Mp * this%Mp%B + pref_Ld_Md * this%Md%B + pref_Ld_BE * this%BE%B) + this%Ld%cmax)
+            (pred_pel * pref_Ld_Mf * this%Mf%B + pred_pel * pref_Ld_Mp * this%Mp%B + & 
+            pref_Ld_Md * this%Md%B + pref_Ld_BE * this%BE%B) + this%Ld%cmax)
 
         this%Ld%f_BE = this%Ld%V * pref_Ld_BE * this%BE%B /(this%Ld%V* &
-            (pref_Ld_Mf * this%Mf%B + pref_Ld_Mp * this%Mp%B + pref_Ld_Md * this%Md%B + pref_Ld_BE * this%BE%B) + this%Ld%cmax)
+            (pred_pel * pref_Ld_Mf * this%Mf%B + pred_pel * pref_Ld_Mp * this%Mp%B + & 
+            pref_Ld_Md * this%Md%B + pref_Ld_BE * this%BE%B) + this%Ld%cmax)
 
         this%Ld%f = this%Ld%f_Mf + this%Ld%f_Mp + this%Ld%f_Md + this%Ld%f_BE
 
@@ -215,8 +224,9 @@ module Physiology
         this%Mp%cons_Sp = this%Mp%f_Sp * this%Mp%cmax 
         this%Mp%cons_Sd = this%Mp%f_Sd * this%Mp%cmax
 
-        ! Medium Demersal consumption on fish
+        ! Medium Demersal consumption on Benthic
         this%Md%cons_BE = this%Md%f_BE * this%Md%cmax
+
         ! Large Pelagic:
         this%Lp%cons_Mf = this%Lp%f_Mf * this%Lp%cmax
         this%Lp%cons_Mp = this%Lp%f_Mp * this%Lp%cmax
@@ -278,7 +288,7 @@ module Physiology
         ! The folowing groups don't feed on zooplankton: ------------------------------------
         this%Md%cons = this%Md%cons_BE
         this%Lp%cons = this%Lp%f * this%Lp%cmax
-        this%Ld%cons = this%Ld%f * this%Lp%cmax
+        this%Ld%cons = this%Ld%f * this%Ld%cmax
 
     end subroutine Consumption
 
@@ -390,14 +400,14 @@ module Physiology
         this%Ld%E_A = eps_a * this%Ld%cons - this%Ld%met
 
         ! The model does not account for storage then E_A has to be positive: 
-        this%Sf%E_A = max(zero, this%Sf%E_A) 
-        this%Sp%E_A = max(zero, this%Sp%E_A)
-        this%Sd%E_A = max(zero, this%Sd%E_A)
-        this%Mf%E_A = max(zero, this%Mf%E_A)
-        this%Mp%E_A = max(zero, this%Mp%E_A)
-        this%Md%E_A = max(zero, this%Md%E_A)
-        this%Lp%E_A = max(zero, this%Lp%E_A)
-        this%Ld%E_A = max(zero, this%Ld%E_A)
+        ! this%Sf%E_A = max(zero, this%Sf%E_A) 
+        ! this%Sp%E_A = max(zero, this%Sp%E_A)
+        ! this%Sd%E_A = max(zero, this%Sd%E_A)
+        ! this%Mf%E_A = max(zero, this%Mf%E_A)
+        ! this%Mp%E_A = max(zero, this%Mp%E_A)
+        ! this%Md%E_A = max(zero, this%Md%E_A)
+        ! this%Lp%E_A = max(zero, this%Lp%E_A)
+        ! this%Ld%E_A = max(zero, this%Ld%E_A)
 
     end subroutine Available_energy
 
@@ -441,9 +451,9 @@ module Physiology
         type(Structure_group), intent(inout) :: this
 
         ! Only Medium forage, large pelagic and demersal reproduce: 
-        this%Mf%Repro = (1.0 - kappa_a) * this%Mf%E_A + this%Mf%Fout
-        this%Lp%Repro = (1.0 - kappa_a) * this%Lp%E_A + this%Lp%Fout
-        this%Ld%Repro = (1.0 - kappa_a) * this%Ld%E_A + this%Ld%Fout
+        this%Mf%Repro = max((1.0 - kappa_a) * this%Mf%E_A + this%Mf%Fout, 0.0)
+        this%Lp%Repro = max((1.0 - kappa_a) * this%Lp%E_A + this%Lp%Fout, 0.0)
+        this%Ld%Repro = max((1.0 - kappa_a) * this%Ld%E_A + this%Ld%Fout, 0.0)
 
         ! Fout for Adult are set up to 0: (sub_rep function in matlab)
         this%Mf%Fout = 0 
