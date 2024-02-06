@@ -17,14 +17,14 @@ program Run_physiology
                                               Datadet, DataZM
     integer :: ispace, count, itime, iDAY, iYR, imonth, Year, Stop_count
     real(dp) :: T1, T2, T3, sim_time
-    logical :: Spinup = .false. ! .true. !  
+    logical :: Spinup = .false. !  
     CALL cpu_time(T1)
 
     ! Initialisation: ----------------------------------------------------------
     CALL Initialisation(Spinup, Var, Nspace, Ntime, Data_F_ini, Data, DataTp, DataTb, Datadz, Datadet, DataZM)
     CALL cpu_time(T2)
 
-     ! Increasing the spinup time! 
+    ! Increasing the spinup time! 
     if (Spinup) then 
         Year = 200
         sim_time = 110
@@ -40,7 +40,7 @@ program Run_physiology
     print *, '# Year              ', Year
     print *, '# Spacial grid      ', Nspace
     print *, "Initialisation time " , T2-T1, "sec"
-    print *, "Start simulation, takes ~", trim(sim_time), "min"
+    print *, "Start simulation, takes ~", sim_time, "min"
     print *, "-------------------------------------"
     
    
@@ -67,16 +67,16 @@ program Run_physiology
                     ! if (Stop_count .eq. 5) then 
                         ! Print biomass out 
         
-	    !print*, 'Print Bio out ---------------------------'
-        !print*, 'Sf Bio out  ', Var%Sf%B
-        !print*, 'Sp Bio out  ', Var%Sp%B
-        !print*, 'Sd Bio out  ', Var%Sd%B
-        !print*, 'Mf Bio out  ', Var%Mf%B
-        !print*, 'Mp Bio out  ', Var%Mp%B
-        !print*, 'Md Bio out  ', Var%Md%B
-        !print*, 'Lp Bio out  ', Var%Lp%B
-        !print*, 'Ld Bio out  ', Var%Ld%B
-        !print*, '------------------------------------------'
+	                    !print*, 'Print Bio out ---------------------------'
+                        !print*, 'Sf Bio out  ', Var%Sf%B
+                        !print*, 'Sp Bio out  ', Var%Sp%B
+                        !print*, 'Sd Bio out  ', Var%Sd%B
+                        !print*, 'Mf Bio out  ', Var%Mf%B
+                        !print*, 'Mp Bio out  ', Var%Mp%B
+                        !print*, 'Md Bio out  ', Var%Md%B
+                        !print*, 'Lp Bio out  ', Var%Lp%B
+                        !print*, 'Ld Bio out  ', Var%Ld%B
+                        !print*, '------------------------------------------'
                     !     stop
                     ! end if 
                 end Do ! End Loop Days
@@ -95,9 +95,6 @@ program Run_physiology
     print *, "-------------------------------------"
 
 end program Run_physiology
-
-    
-
     ! ----------------------------------------------------
     ! Test Biomass all group
     ! ----------------------------------------------------

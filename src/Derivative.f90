@@ -270,36 +270,71 @@ module Derivative
         ! small value. 
         !:====================================================================== 
         type(Structure_group), intent(inout) :: this
+
+        ! Check for negative values: -----------------------------------------------
         if (this%BE%B <= zero) then  ! Benthic biomass 
-            this%BE%B = eps
+            this%BE%B = 1d-5
         end if 
         if (this%Mz%B <= zero) then  ! Zooplankton Biomass
-            this%Mz%B = eps
+            this%Mz%B = 1d-5
         end if 
         if (this%Sf%B <= zero) then  ! Small forage 
-            this%Sf%B = eps
+            this%Sf%B = 1d-5
         end if 
         if (this%Sp%B <= zero) then  ! Small Pelagic
-            this%Sp%B = eps
+            this%Sp%B = 1d-5
         end if 
         if (this%Sd%B <= zero) then  ! Small Demersal
-            this%Sd%B = eps
+            this%Sd%B = 1d-5
         end if 
         if (this%Mf%B <= zero) then  ! Medium Forage 
-            this%Mf%B = eps
+            this%Mf%B = 1d-5
         end if 
         if (this%Mp%B <= zero) then  ! Medium Pelagics 
-            this%Mp%B = eps
+            this%Mp%B = 1d-5
         end if 
         if (this%Md%B <= zero) then  ! Medium demersal
-            this%Md%B = eps
+            this%Md%B = 1d-5
         end if 
         if (this%Lp%B <= zero) then  ! Large pelagic
-            this%Lp%B = eps
+            this%Lp%B = 1d-5
         end if 
         if (this%Ld%B <= zero) then  ! Large demersal
-            this%Ld%B = eps
+            this%Ld%B = 1d-5
         end if
+
+        ! Check for NA values: ----------------------------------------------------
+        if (isnan(this%BE%B)) then  ! Benthic biomass 
+            this%BE%B = 1d-5
+        end if 
+        if (isnan(this%Mz%B)) then  ! Zooplankton Biomass
+            this%Mz%B = 1d-5
+        end if 
+        if (isnan(this%Sf%B)) then  ! Small forage 
+            this%Sf%B = 1d-5
+        end if 
+        if (isnan(this%Sp%B)) then  ! Small Pelagic
+            this%Sp%B = 1d-5
+        end if 
+        if (isnan(this%Sd%B)) then  ! Small Demersal
+            this%Sd%B = 1d-5
+        end if 
+        if (isnan(this%Mf%B)) then  ! Medium Forage 
+            this%Mf%B = 1d-5
+        end if 
+        if (isnan(this%Mp%B)) then  ! Medium Pelagics 
+            this%Mp%B = 1d-5
+        end if 
+        if (isnan(this%Md%B)) then  ! Medium demersal
+            this%Md%B = 1d-5
+        end if 
+        if (isnan(this%Lp%B)) then  ! Large pelagic
+            this%Lp%B = 1d-5
+        end if 
+        if (isnan(this%Ld%B)) then  ! Large demersal
+            this%Ld%B = 1d-5
+        end if
+
     end subroutine Biomass_check
 
 

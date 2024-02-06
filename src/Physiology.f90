@@ -478,7 +478,7 @@ module Physiology
         ! This%BE%B          : Benthic biomass 
         ! Bent_eff =  0.075  :  Benthic Efficiency from detritus to benthic biomass
         ! CC = 80            : Carring Capacity for benthic chemostat
-       !:======================================================================
+        !:======================================================================
         type(Structure_group), intent(inout) :: this 
         real(dp) :: r       ! benthic growth rate ((g/m2/d) / (g/m2))
         real(dp) :: pred    ! predation from demersals (g/m2/d)
