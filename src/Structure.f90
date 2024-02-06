@@ -190,11 +190,12 @@ module Structure
         this%Zcons_VS_dZm(iDay) = that%Zcons_VS_dZm
     end subroutine store_MNTH
 
-    subroutine store_data2D(this, that, ispace, imonth, Ndays)
-        type(Save_structure2D) :: this
-        type(Save_structure1D) :: that
+    subroutine store_data_MNT(this, that, ispace, imonth, Ndays)
+        type(Save_structure2D) :: this         ! Storage (Space, month)
+        type(Save_structure1D) :: that         ! Daily data for the month 
         integer, intent(in) :: ispace, imonth, Ndays
 
+        ! Store the average biomass of each group for the month
         this%BE(ispace, imonth) = sum(that%BE)/Ndays
         this%Sf(ispace, imonth) = sum(that%Sf)/Ndays
         this%Sp(ispace, imonth) = sum(that%Sp)/Ndays
@@ -206,6 +207,7 @@ module Structure
         this%Ld(ispace, imonth) = sum(that%Ld)/Ndays
         this%Zcons_VS_dZm(ispace, imonth) = sum(that%Zcons_VS_dZm)/Ndays
 
+        ! Deallocating the vectors to store next month daily values: 
         deallocate(that%BE)
         deallocate(that%Sf)
         deallocate(that%Sp)
@@ -216,7 +218,7 @@ module Structure
         deallocate(that%Lp)
         deallocate(that%Ld)
         deallocate(that%Zcons_VS_dZm)
-    end subroutine store_data2D
+    end subroutine store_data_MNT
 
 
 end module Structure

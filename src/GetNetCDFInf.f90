@@ -34,13 +34,14 @@ module GetNetCDFinf
         Var%Ld%w = 10.0**((log10(250.0)+log10(125000.0))/2)
     end subroutine Initialisation
     
-    subroutine save_data(Spinup, that, Nspace)
+    subroutine save_data(Spinup, that, Nspace, Count_MNT)
         logical, intent(in) :: Spinup
         type(Save_structure2D) :: that
-        integer, intent(in) :: Nspace
+        integer, intent(in) :: Nspace, Count_MNT
         integer :: i
     
         if (Spinup) then 
+
             ! Write each variable to a separate NetCDF file : ---------------------------
             call write_nc_file1D(Dir_IniBE, 'BE', that%BE(1:Nspace, Nmonth), Nspace)
             call write_nc_file1D(Dir_IniSf, 'Sf', that%Sf(1:Nspace, Nmonth), Nspace)
