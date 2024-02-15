@@ -6,17 +6,16 @@
 
 %% Initialisation 
 close all
-Rockfish = true; 
-
+Rockfish = false; 
 
 % Data directory from rockfish or local computer
 if Rockfish
-    rootdir = '/project/';
+    param.rootdir = '/project/';
 else 
-    rootdir = 'Z:/';
+    param.rootdir = 'Z:/';
 end
-directory_save = [rootdir 'rdenechere/TunningFEISTY/TL319_g17.4p2z/2D_data/'];
-addpath([rootdir 'rdenechere/matalb_functions/'])
+directory_save = [param.rootdir 'rdenechere/TunningFEISTY/TL319_g17.4p2z/2D_data/'];
+addpath([param.rootdir 'rdenechere/Programing/Matlab/matalb_functions/'])
 
 VAR_NAMES2 = {'TEMP_BOTTOM_2_var', 'TEMP_mean_150m_var', 'mesozooC_zint_150m_var',...
     'pocToFloor_2_var', 'mesozoo_loss_zint_150m_var'};
@@ -146,6 +145,19 @@ title('dZm')
 
 save_graph(gcf, 'pdf', '../Fig/Visualise_2D_Input_data_FEISTY_fortran', 16, 10)
 
+%% 
+
+Sp_file = "../output/Sp_bio_Spinup.nc"; 
+Sp = ncread(Sp_file, 'Sp');
+
+axesm('Robinson','MapLatLimit', latlim,'MapLonLimit', lonlim,'frame','on',...
+    'Grid','off','FLineWidth',1)
+surfm(TLAT,TLONG, log10(Sp))
+colormap("copper")
+h=patchm(coastlat+0.5,coastlon+0.5,'w','FaceColor',[0.75 0.75 0.75]);
+hcb = colorbar('v');
+
+title('dZm')
 
 
 
