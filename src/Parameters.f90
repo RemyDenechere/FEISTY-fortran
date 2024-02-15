@@ -86,7 +86,7 @@ module Parameters
     ! General parameters: ---------------------------------------------
     integer, parameter  :: dp = kind(0.d0)   ! double precision
     real(dp), parameter :: zero = 0.0        ! Zero
-    real(dp), parameter :: eps = 1d-200      ! Small number for divisions 
+    real(dp), parameter :: eps = 1d-30      ! Small number for divisions 
     integer, parameter :: YR = 61            ! Number of year in Time series
     integer, parameter ::  Nmonth = YR*12    ! Number of month in Time series
     integer, dimension(12), parameter ::  MNTH = (/ 31, 28, 31, 30, 31, 30, &
