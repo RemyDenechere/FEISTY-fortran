@@ -14,6 +14,7 @@ module Derivative
     ! considering the environemental conditions 
     !:============================================= 
         type(Structure_group) :: this
+        
         call Calc_Q10(this)             ! Physiological adjustment to temperature  
         call Consumption(this)          ! 
         call Mortality(this)
@@ -30,9 +31,10 @@ module Derivative
     ! print*, "Fout                               ", this%Mf%Fout
 
        call Reproduction(this)
-    ! ----------------------------------------------------
-    ! test physioloical calc
-    ! ----------------------------------------------------
+    !----------------------------------------------------
+    !test physioloical calc
+    !----------------------------------------------------
+    ! print *, '----------------------------------------------------'
     ! print*, "Temperature Pel       ", this%Tp
     ! print*, "Temperature bot       ", this%Tb
     ! print*, "Sf Biomass Zoo        ", this%Mz%B
@@ -52,12 +54,29 @@ module Derivative
     ! print*, "Sf Met loss           ", this%Sf%met
     ! print*, "Sf Available energy   ", this%Sf%E_A
     ! print*, "Sf Fout               ", this%Sf%Fout 
+    ! print*, "Sf Recruitment        ", this%Mf%Repro
     ! print*, "Sf Repro flux         ", this%Sf%Repro 
+    ! print*, "Sf Recruitment flux   ", this%Mf%Repro * eps_R
+    ! print*, "Mf Repro flux         ", this%Mf%Repro
+    ! print *, '----------------------------------------------------'
     ! print*, "BE biomass            ", this%BE%B
-    ! ----------------------------------------------------
+
+    ! print *, '----------------------------------------------------'
+    ! print *, 'Element of the derivative: MF' 
     ! print*, "Mf Clearance rate Sf  ", this%Mf%V
     ! print*, "Mf Cmax               ", this%Mf%cmax
     ! print*, "Mf feeding level      ", this%Mf%f
+    ! print*, "Mf Total mort         ", this%Mf%mu
+    ! print*, "Mf Predation mort     ", this%Mf%mu_p
+    ! print*, "Mf Natur mort         ", this%Mf%mu_a
+    ! print*, "Mf Fishng mort        ", this%Mf%mu_f
+    ! print*, "Mf Met loss           ", this%Mf%met
+    ! print*, "Mf Available energy   ", this%Mf%E_A
+    ! print*, "Mf Fout               ", this%Mf%Fout 
+    ! print*, "Mf Reproduction       ", this%Mf%Repro
+    ! print*, "Mf biomass            ", this%Sf%B
+    ! print *, '----------------------------------------------------'
+    ! print *, 'MF consumption ' 
     ! print*, "Consumption Mp to Sf  ", this%Mp%cons_Sf
     ! print*, "Consumption Mf to Sf  ", this%Mf%cons_Sf
     ! print*, "feeding level Mf to Zm", this%Mf%f_Zm
@@ -71,12 +90,16 @@ module Derivative
     ! print*, "Pref Mf to Zm         ", pref_Mf_Mz 
     ! print*, "Pref Mf to S          ", pref_Mf_S
     ! print*, "Zooplankton biomass   ", this%Mz%B
-    ! print*, "Sf biomass            ", this%Sf%B
-    ! ----------------------------------------------------
+    ! print *, '----------------------------------------------------'
+    ! print *, 'MF predators ' 
+    ! print*, "Consumption Lp to Mf  ", this%Lp%cons_Mf
+    ! print*, "Consumption Ld to Mf  ", this%Ld%cons_Mf
+
+    ! print *, '----------------------------------------------------'
     ! print*, "Frac Zoo lost         ", this%zf
     ! print*, "Large Dem Cons        ", this%Ld%cons
-    ! ----------------------------------------------------
-    ! Element of the derivative: Mf
+    ! print *, '----------------------------------------------------'
+    ! print *, 'Element of the derivative: MD' 
     ! print*, "dMf                   ", this%Sf%Fout * this%Sf%B + (this%Mf%E_A - this%Mf%Repro - this%Mf%mu) * this%Mf%B
     ! print*, "Md E_available        ", this%Md%E_A
     ! print*, "Md consumption        ", this%Md%cons
@@ -85,31 +108,63 @@ module Derivative
     ! print*, "Md Cmax               ", this%Md%cmax
     ! print*, "Md metabolism         ", this%Md%met
     ! print*, "Md feeding lvl        ", this%Md%f_BE
-    ! print*, "Md feeding lvl 2      ",this%Md%V *pref_Md_BE * this%BE%B/((this%Md%V * pref_Md_BE * this%BE%B) + this%Md%cmax)
+    ! print*, "Md feeding lvl 2      ", this%Md%V *pref_Md_BE * this%BE%B/((this%Md%V * pref_Md_BE * this%BE%B) + this%Md%cmax)
     ! print*, "Biomass Bent          ", this%BE%B
-    ! print*, "MF mortality          ", this%Md%mu 
-    ! print*, "MF pred mort          ", this%Md%mu_p
-    ! print*, "MF Nat mort           ", this%Md%mu_a
-    ! print*, "MF Fish mort          ", this%Md%mu_f
+    ! print*, "Md mortality          ", this%Md%mu 
+    ! print*, "Md pred mort          ", this%Md%mu_p
+    ! print*, "Md Nat mort           ", this%Md%mu_a
+    ! print*, "Md Fish mort          ", this%Md%mu_f
     ! print*, "Sf_Fout               ", this%Sd%Fout
+    ! print*, "Md recr               ", this%Sd%Fout * this%Sd%B
     ! print*, "Sf_Bio                ", this%Md%B
-    ! print*, "Mf Repro              ", this%Md%Repro
-    ! print*, "Fout  2               ", this%Md%Fout
-    ! print*, "Pred Lp to Mf         ", this%Lp%cons_Md
-    ! print*, "Pred Ld to Mf         ", this%Ld%cons_Md 
-    ! ! ----------------------------------------------------
+    ! print*, "Md Repro              ", this%Md%Repro
+    ! print*, "Md Fout               ", this%Md%Fout
+    ! print*, "Md Bio                ", this%Md%B
+
+       
+
+
+    
+    ! print *, '----------------------------------------------------'
+    ! print *, 'cmax and clearance rate for large predators' 
+    ! print*, "Lp Encounter rate     ", this%Lp%V
+    ! print*, "Lp Cmax               ", this%Lp%cmax
+
+    ! ----------------------------------------------------
         call Euler(this)
+
+        ! print *, '----------------------------------------------------'
+        ! print *, 'Element of the derivative: LD' 
+        ! print*, "Ld E_available        ", this%Ld%E_A
+        ! print*, "Ld consumption        ", this%Ld%cons
+        ! print*, "Ld Clearance rate     ", this%Ld%V
+        ! print*, "Ld Encounter rate     ", this%Ld%V *pref_Ld_BE * this%BE%B
+        ! print*, "Ld Cmax               ", this%Ld%cmax
+        ! print*, "Ld metabolism         ", this%Ld%met
+        ! print*, "Ld feeding lvl        ", this%Ld%f_BE
+        ! print*, "Ld feeding lvl 2      ", this%Ld%V *pref_Ld_BE * this%BE%B/((this%Ld%V * pref_Ld_BE * this%BE%B) + this%Ld%cmax)
+        ! print*, "Biomass Bent          ", this%BE%B
+        ! print*, "Ld mortality          ", this%Ld%mu 
+        ! print*, "Ld pred mort          ", this%Ld%mu_p
+        ! print*, "Ld Nat mort           ", this%Ld%mu_a
+        ! print*, "Ld Fish mort          ", this%Ld%mu_f
+        ! print*, "Md_Fout               ", this%Md%Fout
+        ! print*, "Ld recr               ", this%Md%Fout * this%Md%B
+        ! print*, "Sf_Bio                ", this%Ld%B
+        ! print*, "Ld Repro              ", this%Ld%Repro
+        ! print*, "Ld Fout               ", this%Ld%Fout
+        ! print*, "Ld Bio                ", this%Ld%B
+        ! print*, "Benthic biomass       ", this%BE%B
+ 
+        !  print*, "Pred Ld to Md         ", this%Ld%cons_Md 
+        !  print*, "Pred Ld to Mp         ", this%Ld%cons_Mp
+        !  print*, "Pred Ld to Mf         ", this%Ld%cons_Mf
+        !  print*, "Pred Ld to Be         ", this%Ld%cons_BE
+
+        !  stop
+
         call Biomass_check(this)
-    ! ! Print biomass out 
-    ! print*, 'Sf Bio out  ', this%Sf%B
-    ! print*, 'Sp Bio out  ', this%Sp%B
-    ! print*, 'Sd Bio out  ', this%Sd%B
-    ! print*, 'Mf Bio out  ', this%Mf%B
-    ! print*, 'Mp Bio out  ', this%Mp%B
-    ! print*, 'Md Bio out  ', this%Md%B
-    ! print*, 'Lp Bio out  ', this%Lp%B
-    ! print*, 'Ld Bio out  ', this%Ld%B
-    ! stop
+    
 
     end subroutine CalcBiomass
 
@@ -127,14 +182,14 @@ module Derivative
     !:====================================================================== 
         type(Structure_group), intent(inout) :: this
         
-        real(dp) :: dSf = 0
-        real(dp) :: dSp = 0
-        real(dp) :: dSd = 0
-        real(dp) :: dMf = 0
-        real(dp) :: dMp = 0
-        real(dp) :: dMd = 0
-        real(dp) :: dLp = 0
-        real(dp) :: dLd = 0
+        real(dp) :: dSf = 0.0
+        real(dp) :: dSp = 0.0
+        real(dp) :: dSd = 0.0
+        real(dp) :: dMf = 0.0
+        real(dp) :: dMp = 0.0
+        real(dp) :: dMd = 0.0
+        real(dp) :: dLp = 0.0
+        real(dp) :: dLd = 0.0
 
         ! Calcul new Benthic biomass 
         call Benthic_chemostat(this)
@@ -173,18 +228,38 @@ module Derivative
         this%Lp%B = this%Lp%B + Delta_t * dLp
         this%Ld%B = this%Ld%B + Delta_t * dLd
 
-        ! print *, "---------------------------------------------------------"
-        ! print *, "                 Derivative values                       "
-        ! print *, "Small forgage         ",  dSf
-        ! print *, "Small pelagic         ",  dSp
-        ! print *, "Small demerdal        ",  dSd 
-        ! print *, "Medium Forage         ",  dMf  
-        ! print *, "Medium pelagic        ",  dMp
-        ! print *, "Medium demerdal       ",  dMd
-        ! print *, "Large pelagic         ",  dLp   
-        ! print *, "Large demerdal        ",  dLd
-        ! print *, "---------------------------------------------------------"
-        ! stop
+        
+
+        !  print *, "---------------------------------------------------------"
+        !  print *, "                 Derivative values                       "
+        !  print *, "Small forgage         ",  dSf
+        !  print *, "Small pelagic         ",  dSp
+        !  print *, "Small demerdal        ",  dSd 
+        !  print *, "Medium Forage         ",  dMf  
+        !  print *, "Medium pelagic        ",  dMp
+        !  print *, "Medium demerdal       ",  dMd
+        !  print *, "Large pelagic         ",  dLp   
+        !  print *, "Large demerdal        ",  dLd
+        !  print *, "---------------------------------------------------------"
+        ! print *, "Small forgage         ",  Delta_t * dSf
+        ! print *, "Small pelagic         ",  Delta_t * dSp
+        ! print *, "Small demerdal        ",  Delta_t * dSd 
+        ! print *, "Medium Forage         ",  Delta_t * dMf  
+        ! print *, "Medium pelagic        ",  Delta_t * dMp
+        ! print *, "Medium demerdal       ",  Delta_t * dMd
+        ! print *, "Large pelagic         ",  Delta_t * dLp   
+        ! print *, "Large demerdal        ",  Delta_t * dLd
+        ! print *, Delta_t
+        !  print *, "---------------------------------------------------------"
+	    !  print *, " New biomass "
+        !  print *, this%Sf%B
+        !  print *, this%Sp%B
+        !  print *, this%Sd%B
+        !  print *, this%Mf%B
+        !  print *, this%Mp%B
+        !  print *, this%Md%B
+        !  print *, this%Lp%B
+        !  print *, this%Ld%B
 
     end subroutine Euler
 
@@ -195,36 +270,71 @@ module Derivative
         ! small value. 
         !:====================================================================== 
         type(Structure_group), intent(inout) :: this
+
+        ! Check for negative values: -----------------------------------------------
         if (this%BE%B <= zero) then  ! Benthic biomass 
-            this%BE%B = eps
+            this%BE%B = 1d-5
         end if 
         if (this%Mz%B <= zero) then  ! Zooplankton Biomass
-            this%Mz%B = eps
+            this%Mz%B = 1d-5
         end if 
         if (this%Sf%B <= zero) then  ! Small forage 
-            this%Sf%B = eps
+            this%Sf%B = 1d-5
         end if 
         if (this%Sp%B <= zero) then  ! Small Pelagic
-            this%Sp%B = eps
+            this%Sp%B = 1d-5
         end if 
         if (this%Sd%B <= zero) then  ! Small Demersal
-            this%Sd%B = eps
+            this%Sd%B = 1d-5
         end if 
         if (this%Mf%B <= zero) then  ! Medium Forage 
-            this%Mf%B = eps
+            this%Mf%B = 1d-5
         end if 
         if (this%Mp%B <= zero) then  ! Medium Pelagics 
-            this%Mp%B = eps
+            this%Mp%B = 1d-5
         end if 
         if (this%Md%B <= zero) then  ! Medium demersal
-            this%Md%B = eps
+            this%Md%B = 1d-5
         end if 
         if (this%Lp%B <= zero) then  ! Large pelagic
-            this%Lp%B = eps
+            this%Lp%B = 1d-5
         end if 
         if (this%Ld%B <= zero) then  ! Large demersal
-            this%Ld%B = eps
+            this%Ld%B = 1d-5
         end if
+
+        ! Check for NA values: ----------------------------------------------------
+        if (isnan(this%BE%B)) then  ! Benthic biomass 
+            this%BE%B = 1d-5
+        end if 
+        if (isnan(this%Mz%B)) then  ! Zooplankton Biomass
+            this%Mz%B = 1d-5
+        end if 
+        if (isnan(this%Sf%B)) then  ! Small forage 
+            this%Sf%B = 1d-5
+        end if 
+        if (isnan(this%Sp%B)) then  ! Small Pelagic
+            this%Sp%B = 1d-5
+        end if 
+        if (isnan(this%Sd%B)) then  ! Small Demersal
+            this%Sd%B = 1d-5
+        end if 
+        if (isnan(this%Mf%B)) then  ! Medium Forage 
+            this%Mf%B = 1d-5
+        end if 
+        if (isnan(this%Mp%B)) then  ! Medium Pelagics 
+            this%Mp%B = 1d-5
+        end if 
+        if (isnan(this%Md%B)) then  ! Medium demersal
+            this%Md%B = 1d-5
+        end if 
+        if (isnan(this%Lp%B)) then  ! Large pelagic
+            this%Lp%B = 1d-5
+        end if 
+        if (isnan(this%Ld%B)) then  ! Large demersal
+            this%Ld%B = 1d-5
+        end if
+
     end subroutine Biomass_check
 
 

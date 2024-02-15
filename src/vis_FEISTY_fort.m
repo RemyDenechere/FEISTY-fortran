@@ -483,8 +483,8 @@ COmz(GRD.ID)=Cmz_stover5;
 % cmBP3(11,:) = [0 0 0];
 % save('cmBP2.mat', 'cmBP2')
 % save('cmBP3.mat', 'cmBP3')
-load('cmBP2')
-load('cmBP3')
+load('../../TunningFEISTY/Tunning_FEISTY_Code/Colors/cmBP2')
+load('../../TunningFEISTY/Tunning_FEISTY_Code/Colors/cmBP3')
 %% 2 plots of both maps
 figure(8)
 %1 - m frac
@@ -520,6 +520,6 @@ screenposition = get(gcf,'Position'); % get the figure size
 set(gcf, 'PaperUnits','centimeters',...
     'PaperPosition',[0 0 screenposition(3:4)],...
     'PaperSize', [screenposition(3:4)]); % make the print paper size fits the figure size
-print('-dpng',[ppath 'FOSI_', param.save_name '_global_zoop_overcon.png'])
+print('-dpng',[fpath, 'global_zoop_overcon.png'])
 
 

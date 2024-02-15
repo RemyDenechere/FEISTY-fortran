@@ -6,7 +6,7 @@ program Run_physiology
     use GetNetCDFInf
     use OMP_LIB
 
-    implicit none 
+    implicit none
     
     type(Structure_group) :: Var
     type(Save_structure2D) :: Data
@@ -15,52 +15,64 @@ program Run_physiology
     integer :: Ntime, Nspace
     real(dp), dimension(:, :), allocatable :: DataTp, DataTb, Datadz, &
                                               Datadet, DataZM, Datadzl, DataZL
-    integer :: ispace, count, itime, iDAY, iYR, imonth
-    real(dp) :: T1, T2, T3
-    logical :: Spinup = .false. ! .true. ! 
+    integer :: ispace, Count_MNT, itime, iDAY, iYR, imonth, Year, Stop_count
+    real(dp) :: T1, T2, T3, sim_time
+    logical :: Spinup =  .true. ! .false. !  
     CALL cpu_time(T1)
 
     ! Initialisation: ----------------------------------------------------------
-    CALL Initialisation(Spinup, Var, Nspace, Ntime, Data_F_ini, Data,&
-                        DataTp, DataTb, Datadz, Datadet, DataZM, Datadzl, DataZL)
+    CALL Initialisation(Spinup, Var, Nspace, Ntime, Data_F_ini, Data, DataTp, DataTb, Datadz, Datadet, DataZM)
     CALL cpu_time(T2)
+
+    ! Increasing the spinup time! 
+    if (Spinup) then 
+        Year = 200
+        sim_time = 110
+    else 
+        Year = YR
+        sim_time = 35
+    end if 
 
     print *, "-------------------------------------"
     print *, "     Simulation parameters    "
-    print *, '# Days              ', Ntime
-    print *, '# month             ', Nmonth
-    print *, '# Year              ', Ntime/365
+    print *, '# Days              ', Year * 365
+    print *, '# month             ', Year * 12
+    print *, '# Year              ', Year
     print *, '# Spacial grid      ', Nspace
     print *, "Initialisation time " , T2-T1, "sec"
-    print *, "Start simulation, takes ~ 30min"
+    print *, "Start simulation, takes ~", sim_time, "min"
     print *, "-------------------------------------"
 
-    ! Loops over space and time: ---------------------------------
+    ! Loops over space ----------------------------------------------------------
     Do ispace = 1, Nspace
         CALL initPhysiology(Spinup, ispace, Data_F_ini, Var)    ! Give initial conditions for the system 
         itime = 0                                               ! Restart days counter
-        count = 0                                               ! Restart month counter
-        Do iYr = 1, YR ! Loop Year
-            Do imonth = 1, 12 ! Loop Month
+        Count_MNT = 0                                           ! Restart month counter
+        ! Loops over time ----------------------------------------------------------
+        Do iYr = 1, Year ! Loop Year
+            if (Spinup) then                                    ! If spinup: run only over one year                                       
+                itime = 0                                       ! Restart days counter
+            end if
+            ! Loop Month:
+            Do imonth = 1, 12
                 CALL init_store_MNTH(Data_MNTH, MNTH(imonth))                   ! Define size vector to store daily data in a month 
-                Do iDAY = 1, MNTH(imonth) ! Loop Days
-                    if (Spinup) then                                        
-                        itime = 1
-                    else 
-                        itime = itime + 1                                       ! Counts the days to get input
-                    end if                                        
+                ! Loop Day:
+                Do iDAY = 1, MNTH(imonth)                                       ! Loop Days
+                    itime = itime + 1                                           ! Counts the days to get input                                   
                     CALL Get_Environental_data2D(Var, DataTp, DataTb, &         ! Get the environemntal data for
                                  Datadz, Datadet, DataZM,DataZL, Datadzl, &     ! that specific day
                                  ispace, itime)                                 
                     CALL CalcBiomass(Var)                                       ! Calcul biomass at day+1    
                     CALL store_MNTH(Data_MNTH, Var, iDAY)                       ! Store the monthly data 
                 end Do ! End Loop Days
-                count = count + 1                                               ! Counts the month to save data
-                CALL store_data2D(Data, Data_MNTH, ispace, count, MNTH(imonth)) ! Calcul and store the monthly average
+                Count_MNT = Count_MNT + 1                                       ! Counts the month to save data
+                CALL store_data_MNT(Data, Data_MNTH, ispace, Count_MNT, &
+                                    MNTH(imonth))                              ! Calcul and store the monthly average
             end Do ! End Loop Month
         end Do ! End Loop Year
     end Do
-    CALL save_data(Spinup, Data, Nspace)  ! Save Netcdf 
+    print*, 'Number of Month simulated', Count_MNT
+    CALL save_data(Spinup, Data, Nspace, Count_MNT)  ! Save Netcdf 
 
     CALL cpu_time(T3)
     print *, "-------------------------------------"
