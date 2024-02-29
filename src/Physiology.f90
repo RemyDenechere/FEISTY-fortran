@@ -102,7 +102,7 @@ module Physiology
         ! dZ test should be remove for online simulation 
         !:======================================================================
         class(Structure_group), intent(inout) :: this
-        real(dp) :: Cons_Zm, Cons_Zl, frac_Sf, frac_Sp, frac_Sd, frac_Mf, frac_Mp
+        real(dp) :: Cons_Zm, Cons_Zl, frac_Sf, frac_Sp, frac_Sd, frac_Mf, frac_Mp, pred_pel
 
         ! Calcul clearance rate: -------------------------------------------------------
         this%Sf%V = this%Sf%Tcorr_e * gamma * this%Sf%w **(-b_enc)/365.0
@@ -252,8 +252,8 @@ module Physiology
         Cons_Zl = (this%Mf%cons_Lz * this%Mf%B + this%Mp%cons_Lz * this%Mp%B)
         
         ! Calcul of fraction of Zoo consumption over estimated zoop consumption:
-        this%zfm = Cons_Zm/(this%dzm + eps)
-        this%zfl = Cons_Zl/(this%dzl + eps)
+        this%Zcons_VS_dZm = Cons_Zm/(this%dzm + eps)
+        this%Zcons_VS_dZl = Cons_Zl/(this%dzl + eps)
 
         ! If calculated consumtiion is higher than estimated recalcul the fraction of Z consumed 
         ! depending on every group relative fraction of consumtion on Z. 

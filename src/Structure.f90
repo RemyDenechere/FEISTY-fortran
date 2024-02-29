@@ -41,7 +41,7 @@ module Structure
         real(dp) :: f_Lp = 0            ! --
         real(dp) :: f_Ld = 0            ! --
         real(dp) :: f_BE = 0
-
+ 
          ! consumption for each prey : ------------------------------------------------
         real(dp) :: cons_Zm = 0   
         real(dp) :: cons_Zl = 0            ! --         

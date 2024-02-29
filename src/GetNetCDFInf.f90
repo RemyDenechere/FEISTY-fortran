@@ -64,8 +64,8 @@ module GetNetCDFinf
             call write_nc_file2D('../output/Md_bio.nc', 'Md', that%Md, Nspace, Nmonth)
             call write_nc_file2D('../output/Lp_bio.nc', 'Lp', that%Lp, Nspace, Nmonth)
             call write_nc_file2D('../output/Ld_bio.nc', 'Ld', that%Ld, Nspace, Nmonth)
-            call write_nc_file2D('../output/dZm.nc', 'dZm', that%zfm, Nspace, Nmonth)
-            call write_nc_file2D('../output/dZl.nc', 'dZl', that%zfl, Nspace, Nmonth)
+            call write_nc_file2D('../output/dZm.nc', 'dZm', that%Zcons_VS_dZm, Nspace, Nmonth)
+            call write_nc_file2D('../output/dZl.nc', 'dZl', that%Zcons_VS_dZl, Nspace, Nmonth)
         end if 
     end subroutine save_data 
 

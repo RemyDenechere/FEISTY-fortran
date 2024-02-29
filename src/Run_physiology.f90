@@ -13,15 +13,16 @@ program Run_physiology
     type(Save_structure1D) :: Data_MNTH
     type(ini_fish_data) :: Data_F_ini
     integer :: Ntime, Nspace
-    real(dp), dimension(:, :), allocatable :: DataTp, DataTb, Datadz, &
-                                              Datadet, DataZM, Datadzl, DataZL
+    real(dp), dimension(:, :), allocatable :: DataTp, DataTb, Datadet, &
+                                              DataZM, Datadzm, DataZL, Datadzl
     integer :: ispace, Count_MNT, itime, iDAY, iYR, imonth, Year, Stop_count
     real(dp) :: T1, T2, T3, sim_time
-    logical :: Spinup =  .true. ! .false. !  
+    logical :: Spinup =  .false. ! .true. ! 
     CALL cpu_time(T1)
 
     ! Initialisation: ----------------------------------------------------------
-    CALL Initialisation(Spinup, Var, Nspace, Ntime, Data_F_ini, Data, DataTp, DataTb, Datadz, Datadet, DataZM)
+    CALL Initialisation(Spinup, Var, Nspace, Ntime, Data_F_ini, Data, &
+                        DataTp, DataTb, Datadzm, Datadet, DataZM, Datadzl, DataZL)
     CALL cpu_time(T2)
 
     ! Increasing the spinup time! 
@@ -60,14 +61,14 @@ program Run_physiology
                 Do iDAY = 1, MNTH(imonth)                                       ! Loop Days
                     itime = itime + 1                                           ! Counts the days to get input                                   
                     CALL Get_Environental_data2D(Var, DataTp, DataTb, &         ! Get the environemntal data for
-                                 Datadz, Datadet, DataZM,DataZL, Datadzl, &     ! that specific day
-                                 ispace, itime)                                 
+                                Datadzm, Datadet, DataZM, DataZL, Datadzl, &    ! that specific day
+                                ispace, itime)                                 
                     CALL CalcBiomass(Var)                                       ! Calcul biomass at day+1    
                     CALL store_MNTH(Data_MNTH, Var, iDAY)                       ! Store the monthly data 
                 end Do ! End Loop Days
                 Count_MNT = Count_MNT + 1                                       ! Counts the month to save data
                 CALL store_data_MNT(Data, Data_MNTH, ispace, Count_MNT, &
-                                    MNTH(imonth))                              ! Calcul and store the monthly average
+                                    MNTH(imonth))                               ! Calcul and store the monthly average
             end Do ! End Loop Month
         end Do ! End Loop Year
     end Do
