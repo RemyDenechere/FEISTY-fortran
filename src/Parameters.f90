@@ -56,22 +56,16 @@ module Parameters
 
     ! 2D data for 4P4Z : ----------------------------------------------
     ! Base on colleen's data (check matlab code)
-    dir_Tb = "/project/rdenechere/TunningFEISTY/Input_4p4z/&
-        TEMP_BOTTOM_2_2D.nc", &
-    dir_Tp = "/project/rdenechere/TunningFEISTY/Input_4p4z/& 
-        TEMP_mean_150m_2D.nc", &
-    dir_zm = "/project/rdenechere/TunningFEISTY/Input_4p4z/&
-        mesozoo_m_C_zint_150m_2D.nc", &
-    dir_dzm = "/project/rdenechere/TunningFEISTY/Input_4p4z/&
-        mesozoo_m_loss_zint_150m_2D.nc", &
-    dir_zl = "/project/rdenechere/TunningFEISTY/Input_4p4z/&
-        mesozoo_l_C_zint_150m_2D.nc", &
-    dir_dzl = "/project/rdenechere/TunningFEISTY/Input_4p4z/&
-        mesozoo_l_loss_zint_150m_2D.nc", &
-    dir_det = "/project/rdenechere/TunningFEISTY/Input_4p4z/&
-        pocToFloor_2_2D.nc", &
-    dir_H = "/project/rdenechere/TunningFEISTY/TL319_g17.4p2z/&
-        2D_data/Depth_1D.nc", &
+    root_dir = "/project/rdenechere/TunningFEISTY/Input_4p4z/",&
+    root_dir2 = "/project/rdenechere/TunningFEISTY/TL319_g17.4p2z/",&
+    dir_Tb =  trim(root_dir) // "TEMP_BOTTOM_2_2D.nc", &
+    dir_Tp =  trim(root_dir) // "TEMP_mean_150m_2D.nc", &
+    dir_zm =  trim(root_dir) // "mesozoo_m_C_zint_150m_2D.nc", &
+    dir_dzm = trim(root_dir) // "mesozoo_m_loss_zint_150m_2D.nc", &
+    dir_zl =  trim(root_dir) // "mesozoo_l_C_zint_150m_2D.nc", &
+    dir_dzl = trim(root_dir) // "mesozoo_l_loss_zint_150m_2D.nc", &
+    dir_det = trim(root_dir) // "pocToFloor_2_2D.nc", &
+    dir_H =  trim(root_dir2) // "2D_data/Depth_1D.nc", &
     ! Input data (Spinup): --------------------------------------------
     Dir_IniBE = '../output/BE_bio_Spinup_4P4Z.nc',&
     Dir_IniSf = '../output/Sf_bio_Spinup_4P4Z.nc',&
@@ -81,7 +75,8 @@ module Parameters
     Dir_IniMp = '../output/Mp_bio_Spinup_4P4Z.nc',&
     Dir_IniMd = '../output/Md_bio_Spinup_4P4Z.nc',&
     Dir_IniLp = '../output/Lp_bio_Spinup_4P4Z.nc',&
-    Dir_IniLd = '../output/Ld_bio_Spinup_4P4Z.nc'
+    Dir_IniLd = '../output/Ld_bio_Spinup_4P4Z.nc',&
+    exp = "4P4Z_"
     
     ! General parameters: ---------------------------------------------
     integer, parameter  :: dp = kind(0.d0)   ! double precision
@@ -94,6 +89,8 @@ module Parameters
 
     ! Environemental data for test: -----------------------------------
     real(dp), parameter :: PI_be_cutoff = 200 ! Benthic-pelagic coupling cutoff (depth, m)
+    logical, parameter :: diagnostic = .true.
+    logical, parameter :: prod_constrained = .false. 
 
     ! Groupe information: ---------------------------------------------
     integer, parameter :: nFishGroup = 8                      ! Number of fish functional group

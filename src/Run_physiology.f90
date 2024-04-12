@@ -17,14 +17,14 @@ program Run_physiology
                                               DataZM, Datadzm, DataZL, Datadzl
     integer :: ispace, Count_MNT, itime, iDAY, iYR, imonth, Year, Stop_count
     real(dp) :: T1, T2, T3, sim_time
-    logical :: Spinup =  .false. ! .true. ! 
+    logical :: Spinup =  .true. ! .false. !
     CALL cpu_time(T1)
 
     ! Initialisation: ----------------------------------------------------------
     CALL Initialisation(Spinup, Var, Nspace, Ntime, Data_F_ini, Data, &
-                        DataTp, DataTb, Datadzm, Datadet, DataZM, Datadzl, DataZL)
+                        DataTp, DataTb, Datadet, Datadzm, DataZM, Datadzl, DataZL)
     CALL cpu_time(T2)
-
+ 
     ! Increasing the spinup time! 
     if (Spinup) then 
         Year = 200

@@ -4,22 +4,23 @@ module GetNetCDFinf
     use netcdf 
 
     implicit none 
- 
+
     contains 
 
     subroutine Initialisation(Spinup, Var, Nspace, Ntime, Data_F_ini, Data, &
-                              DataTp, DataTb, Datadzm, Datadet, DataZM, Datadzl, DataZL)
+                              DataTp, DataTb, Datadet, Datadzm, DataZM, Datadzl, DataZL)
         logical, intent(in) :: Spinup
         integer, intent(inout) :: Nspace, Ntime
         type(Structure_group) :: Var
         type(ini_fish_data), intent(inout) :: Data_F_ini
         type(Save_structure2D), intent(inout) :: Data
-        real(dp), dimension(:, :), allocatable, intent(inout) :: DataTp, DataTb, &
-                                                                Datadzm, Datadet, &
-                                                                DataZM, Datadzl, DataZL
+        real(dp), dimension(:, :), allocatable, intent(inout) ::DataTp, DataTb, &
+                                                                Datadet, &
+                                                                Datadzm, DataZM, &
+                                                                Datadzl, DataZL
 
         CALL griddims2D(dir_Tb, Nspace, Ntime, var)                                                        
-        CALL ini_input2D(Nspace, Ntime, DataTp, DataTb, Datadzm, Datadet, DataZM, Datadzl, DataZL)
+        CALL ini_input2D(Nspace, Ntime, DataTp, DataTb, Datadet, Datadzm, DataZM, Datadzl, DataZL)
         Call ini_input_fish(Spinup, Nspace, Data_F_ini)
         CALL init_save_data2D(Data, Nspace)
         
@@ -42,6 +43,7 @@ module GetNetCDFinf
         integer :: i
     
         if (Spinup) then 
+
             ! Write each variable to a separate NetCDF file : ---------------------------
             call write_nc_file1D(Dir_IniBE, 'BE', that%BE(1:Nspace, Nmonth), Nspace)
             call write_nc_file1D(Dir_IniSf, 'Sf', that%Sf(1:Nspace, Nmonth), Nspace)
@@ -54,18 +56,18 @@ module GetNetCDFinf
             call write_nc_file1D(Dir_IniLd, 'Ld', that%Ld(1:Nspace, Nmonth), Nspace)
             
         else
-            ! Write each variable to a separate NetCDF file : ---------------------------
-            call write_nc_file2D('../output/BE_bio.nc', 'BE', that%BE, Nspace, Nmonth)
-            call write_nc_file2D('../output/Sf_bio.nc', 'Sf', that%Sf, Nspace, Nmonth)
-            call write_nc_file2D('../output/Sp_bio.nc', 'Sp', that%Sp, Nspace, Nmonth)
-            call write_nc_file2D('../output/Sd_bio.nc', 'Sd', that%Sd, Nspace, Nmonth)
-            call write_nc_file2D('../output/Mf_bio.nc', 'Mf', that%Mf, Nspace, Nmonth)
-            call write_nc_file2D('../output/Mp_bio.nc', 'Mp', that%Mp, Nspace, Nmonth)
-            call write_nc_file2D('../output/Md_bio.nc', 'Md', that%Md, Nspace, Nmonth)
-            call write_nc_file2D('../output/Lp_bio.nc', 'Lp', that%Lp, Nspace, Nmonth)
-            call write_nc_file2D('../output/Ld_bio.nc', 'Ld', that%Ld, Nspace, Nmonth)
-            call write_nc_file2D('../output/dZm.nc', 'dZm', that%Zcons_VS_dZm, Nspace, Nmonth)
-            call write_nc_file2D('../output/dZl.nc', 'dZl', that%Zcons_VS_dZl, Nspace, Nmonth)
+            ! Write each variable to a separate NetCDF : ---------------------------
+            call write_nc_file2D('../output/' // trim(exp) //  'BE_bio.nc', 'BE', that%BE, Nspace, Nmonth)
+            call write_nc_file2D('../output/' // trim(exp) //  'Sf_bio.nc', 'Sf', that%Sf, Nspace, Nmonth)
+            call write_nc_file2D('../output/' // trim(exp) //  'Sp_bio.nc', 'Sp', that%Sp, Nspace, Nmonth)
+            call write_nc_file2D('../output/' // trim(exp) //  'Sd_bio.nc', 'Sd', that%Sd, Nspace, Nmonth)
+            call write_nc_file2D('../output/' // trim(exp) //  'Mf_bio.nc', 'Mf', that%Mf, Nspace, Nmonth)
+            call write_nc_file2D('../output/' // trim(exp) //  'Mp_bio.nc', 'Mp', that%Mp, Nspace, Nmonth)
+            call write_nc_file2D('../output/' // trim(exp) //  'Md_bio.nc', 'Md', that%Md, Nspace, Nmonth)
+            call write_nc_file2D('../output/' // trim(exp) //  'Lp_bio.nc', 'Lp', that%Lp, Nspace, Nmonth)
+            call write_nc_file2D('../output/' // trim(exp) //  'Ld_bio.nc', 'Ld', that%Ld, Nspace, Nmonth)
+            call write_nc_file2D('../output/' // trim(exp) //  'dZm.nc', 'dZm', that%Zcons_VS_dZm, Nspace, Nmonth)
+            call write_nc_file2D('../output/' // trim(exp) //  'dZl.nc', 'dZl', that%Zcons_VS_dZl, Nspace, Nmonth)
         end if 
     end subroutine save_data 
 
@@ -91,7 +93,7 @@ module GetNetCDFinf
         
         ! Write the variable data
         status = nf90_put_var(ncid, varid, var)
-
+ 
         ! add a unit attribute 
         status = nf90_put_att(ncid, varid, 'units', 'gWW m-2')
         
@@ -129,54 +131,74 @@ module GetNetCDFinf
         status = nf90_close(ncid)
     end subroutine write_nc_file1D
 
-
-
     !:====================================================================== 
-    ! Get the input values for the given spacial grid and time 
+    ! Get the input values for the given lat long and time 
     !:======================================================================  
-    subroutine Get_Environental_data2D(this, DataTp, DataTb, Datadzm, Datadet,&
-                                       DataZM, DataZL, Datadzl, ispace, itime)
+    subroutine Get_Environental_data2D(this, DataTp, DataTb, Datadet, Datadzm, DataZM, Datadzl, DataZL, ispace, itime)
         type(Structure_group), intent(inout) :: this
         integer :: ispace, itime
-        real(dp), dimension(:, :), allocatable, intent(inout) :: DataTp, DataTb, &
+        real(dp), dimension(:, :), allocatable, intent(inout) ::DataTp, DataTb, &
                                                                 Datadzm, Datadet, &
-                                                                DataZM, DataZL, Datadzl
+                                                                DataZM, &
+                                                                Datadzl, DataZL
         
-        this%Tp =  DataTp(ispace, itime)
-        this%Tb = DataTb(ispace, itime)
-        this%det = Datadet(ispace, itime) * convers_det
-        this%Mz%B = DataZM(ispace, itime) * convers_zm
-        this%dzm = Datadzm(ispace, itime) * convers_dZm
-        this%Lz%B = DataZL(ispace, itime) * convers_zm
-        this%dzl = Datadzl(ispace, itime) * convers_dZm
+        if (diagnostic) then 
+            this%Tp =  20.588572332253598
+            this%Tb = 0.0
+            this%det = 0.0
+            this%Mz%B = 5.8770968308468755E-005 * 6.625*12.01*9.0
+            this%dzm = 0.0
+            this%Lz%B = 3.1586583957953118E-005 * 6.625*12.01*9.0
+            this%dzl = 0.0
+        else
+            this%Tp =  DataTp(ispace, itime)
+            this%Tb = DataTb(ispace, itime)
+            this%det = Datadet(ispace, itime) * convers_det
+            this%Mz%B = DataZM(ispace, itime) * convers_zm
+            this%dzm = Datadzm(ispace, itime)   * convers_dZm
+            this%Lz%B = DataZL(ispace, itime) * convers_zm
+            this%dzl = Datadzl(ispace, itime)   * convers_dZm
+        end if 
+        
     end subroutine Get_Environental_data2D
 
 
     !:====================================================================== 
     ! Load all the imput values to force the model
     !:======================================================================  
-    subroutine ini_input2D(Nspace, Ntime, DataTp, DataTb, Datadzm, Datadet, DataZM, DataZL, Datadzml)
+    subroutine ini_input2D(Nspace, Ntime, DataTp, DataTb, Datadet, Datadzm, DataZM, Datadzl, DataZL)
         ! Declare variables
         real(dp), dimension(:, :), allocatable, intent(inout) :: DataTp, DataTb, &
                                                                 Datadzm, Datadet, &
-                                                                DataZM, DataZL, Datadzml
-        integer :: ncid_Tb, ncid_Tp, ncid_zf, ncid_dz, ncid_det, ierr
-        integer :: nvars_Tb, nvars_Tp, nvars_zf, nvars_dz, nvars_det
-        integer :: varshape_Tb, varshape_Tp, varshape_zf, varshape_dz, varshape_det
-        character(250) :: varname_Tb, varname_Tp, varname_zf, varname_dz, varname_det
+                                                                DataZM, &
+                                                                Datadzl, DataZL
         integer :: Nspace, Ntime
 
-        ! Get the input grid file: 
-        CALL readgrid2D(dir_Tb, 1, Nspace, Ntime, DataTb)
-        CALL readgrid2D(dir_Tp, 1, Nspace, Ntime, DataTp)
-        CALL readgrid2D(dir_zm, 1, Nspace, Ntime, DataZM)
-        CALL readgrid2D(dir_dzm, 1, Nspace, Ntime, Datadzm)
-        CALL readgrid2D(dir_zl, 1, Nspace, Ntime, DataZL)
-        CALL readgrid2D(dir_dzm, 1, Nspace, Ntime, Datadzml)
-        CALL readgrid2D(dir_det, 1, Nspace, Ntime, Datadet)
+        ! Get the input grid data to force the model: 
+        if (diagnostic) then 
+            print*, " checkpoint #1"
+            CALL readgrid2D(dir_Tb, 1, Nspace, Ntime, DataTb)
+            print*, trim(dir_Tb), " loaded"
+            CALL readgrid2D(dir_Tp, 1, Nspace, Ntime, DataTp)
+            print*, trim(dir_Tp), " loaded"
+            CALL readgrid2D(dir_zm, 1, Nspace, Ntime, DataZM)
+            print*, trim(dir_zm), " loaded"
+            CALL readgrid2D(dir_dzm, 1, Nspace, Ntime, Datadzm)
+            print*, trim(dir_dzm), " loaded"
+            CALL readgrid2D(dir_det, 1, Nspace, Ntime, Datadet)
+            print*, trim(dir_det), " loaded"
+            CALL readgrid2D(dir_zl, 1, Nspace, Ntime, DataZL)
+            print*, trim(dir_zl), " loaded"
+            CALL readgrid2D(dir_dzl, 1, Nspace, Ntime, Datadzl)
+            print*, trim(dir_dzl), " loaded"
+        end if 
+
     end subroutine ini_input2D
 
 
+    !:====================================================================== 
+    ! Load all the Spinup Initial condition to force the FEISTY
+    !:======================================================================  
     subroutine ini_input_fish(Spinup, Nspace, this)
         type(ini_fish_data) :: this
         logical, intent(in) :: Spinup
@@ -198,8 +220,6 @@ module GetNetCDFinf
 
     end subroutine ini_input_fish
 
-
-
     !:====================================================================== 
     ! Get the dimension of the netCDF 3D gridfile
     !:======================================================================  
@@ -220,7 +240,15 @@ module GetNetCDFinf
         
         !inquire about the dimensions: ----------------------------
         ierr = nf90_inquire_dimension(ncid, 1, xname, Nspace)
+        if (ierr /= NF90_NOERR) then
+            print *, "nf90_inquire_dimension ", trim(dir)
+            STOP
+        end if
         ierr = nf90_inquire_dimension(ncid, 2, yname, Ntime)
+        if (ierr /= NF90_NOERR) then
+            print *, "nf90_inquire_dimension ", trim(dir)
+            STOP
+        end if
         
         
         !Close netCDF file
@@ -236,7 +264,6 @@ module GetNetCDFinf
         this%Nspace = Nspace
         this%Ntime = Ntime
     end subroutine griddims2D
-
 
     !:====================================================================== 
     ! read a netCDF gridfile
@@ -255,17 +282,33 @@ module GetNetCDFinf
         ierr = nf90_open(dir, NF90_NOWRITE, ncid)
         if (ierr /= NF90_NOERR) then
             print *, "Error opening file: ", trim(dir)
+            print *, NF90_STRERROR(ierr)
             stop
         end if
         
         ! Get the values of the coordinates and put them in xpos & ypos 
         ierr = nf90_inquire_variable(ncid, varid, varname, vartype, ndims, nAtts = nAtts)
-        
+        if (ierr /= NF90_NOERR) then
+            print *, "nf90_inquire_variable ", trim(dir)
+            print *, NF90_STRERROR(ierr)
+            STOP
+        end if
+
         ! Get values of the variable 
         ierr = nf90_get_var(ncid, varid, values)
+        if (ierr /= NF90_NOERR) then
+            print *, "nf90_get_var ", trim(dir)
+            print *, NF90_STRERROR(ierr)
+            STOP
+        end if
         
         ! Close the netCDF files : ----------------------------------------------------------------
         ierr = nf90_close(ncid)
+        if (ierr /= NF90_NOERR) then
+            print *, "nf90_get_var ", trim(dir)
+            print *, NF90_STRERROR(ierr)
+            STOP
+        end if
     end subroutine readgrid2D
 
     subroutine readgrid(dir, varid, Nspace, values)

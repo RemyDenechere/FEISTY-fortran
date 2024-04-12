@@ -32,8 +32,8 @@ module Physiology
             Texp(i) = (this%Tp * tpel(i)) + (this%Tb*(1.0-tpel(i)))
         
             ! Calc Temperature correction  
-            T_e(i) = exp(ke * (Texp(i)-10.0))      ! for encounter rate and Cmax
-            T_met(i) = exp(kmet * (Texp(i)-10.0))  ! for metabolism
+            T_e(i) = dexp(ke * (Texp(i)-10.0))      ! for encounter rate and Cmax
+            T_met(i) = dexp(kmet * (Texp(i)-10.0))  ! for metabolism
         END DO 
         
         ! Save temperature correction for encounter and cmax 
@@ -258,7 +258,7 @@ module Physiology
         ! If calculated consumtiion is higher than estimated recalcul the fraction of Z consumed 
         ! depending on every group relative fraction of consumtion on Z. 
         ! Mz: 
-        if (Cons_Zm > this%dzm) then
+        if (Cons_Zm > this%dzm .and. prod_constrained) then
             ! Calcul fraction of consumption over total consumption of zoo
             frac_Sf = this%Sf%cons_Mz * this%Sf%B / (this%Sf%cons_Mz * this%Sf%B + this%Sp%cons_Mz * this%Sp%B + &
                    this%Sd%cons_Mz * this%Sd%B + this%Mf%cons_Mz * this%Mf%B + &
@@ -286,15 +286,15 @@ module Physiology
         end if  
         
         ! Lz:
-        if (Cons_Zl > this%dzl) then
+        if (Cons_Zl > this%dzl .and. prod_constrained) then
             ! Calcul fraction of consumption over total consumption of zoo
             frac_Mf = this%Mf%cons_Lz * this%Mf%B / (this%Mf%cons_Lz * this%Mf%B + this%Mp%cons_Lz * this%Mp%B)
             frac_Mp = this%Mp%cons_Lz * this%Mp%B / (this%Mf%cons_Lz * this%Mf%B + this%Mp%cons_Lz * this%Mp%B)
 
             ! Actual consumption as the faction of consumption * dz: -------------------------
             ! Divide the biomass consumed by the biomass of the predator to get a per g of predator rate. 
-            this%Mf%cons_Mz = frac_Mf * this%dzl / this%Mf%B
-            this%Mp%cons_Mz = frac_Mp * this%dzl / this%Mp%B
+            this%Mf%cons_Lz = frac_Mf * this%dzl / this%Mf%B
+            this%Mp%cons_Lz = frac_Mp * this%dzl / this%Mp%B
         end if 
 
         ! Total consumption rate with adjusted consumption on zooplankton: ------------------
