@@ -14,7 +14,7 @@ module Derivative
     ! considering the environemental conditions 
     !:============================================= 
         type(Structure_group) :: this
-        
+
         call Calc_Q10(this)             ! Physiological adjustment to temperature  
         call Consumption(this)          ! 
         call Mortality(this)
@@ -23,103 +23,104 @@ module Derivative
         call Fout(this)
         call Reproduction(this)
     
-    if (diagnostic) then 
-        !----------------------------------------------------
-        !test physioloical calc
-        !----------------------------------------------------
-        print*, '----------------------------------------------------'
-        print*, "Temperature Pel       ", this%Tp
-        print*, "Temperature bot       ", this%Tb
-        print*, "Sf Biomass Zoo        ", this%Mz%B
-        print*, "Sf Tcorr_e            ", this%Sf%Tcorr_e
-        print*, "Sf Tcorr_met          ", this%Sf%Tcorr_met
-        print*, "Md Tcorr_e            ", this%Md%Tcorr_e
-        print*, "Md Tcorr_met          ", this%Md%Tcorr_met
-        print*, "Sf Clearance rate Sf  ", this%Sf%V
-        print*, "Sf Cmax Sf            ", this%Sf%cmax
-        print*, "Sf feeding level Sf   ", this%Sf%f
-        print*, "Sf Total consumption  ", this%Sf%cons 
-        print*, "Sf consumption Mz     ", this%Sf%cons_Mz 
-        print*, "Sf Total mort         ", this%Sf%mu
-        print*, "Sf Predation mort     ", this%Sf%mu_p
-        print*, "Sf Natur mort         ", this%Sf%mu_a
-        print*, "Sf Fishng mort        ", this%Sf%mu_f
-        print*, "Sf Met loss           ", this%Sf%met
-        print*, "Sf Available energy   ", this%Sf%E_A
-        print*, "Sf Fout               ", this%Sf%Fout 
-        print*, "Sf Recruitment        ", this%Mf%Repro
-        print*, "Sf Repro flux         ", this%Sf%Repro 
-        print*, "Sf Recruitment flux   ", this%Mf%Repro * eps_R
-        print*, "Mf Repro flux         ", this%Mf%Repro
-        print *, '----------------------------------------------------'
-        print*, "BE biomass            ", this%BE%B
+        if (diagnostic) then 
+            !----------------------------------------------------
+            !test physioloical calc
+            !----------------------------------------------------
+            print*, '----------------------------------------------------'
+            print*, "Temperature Pel       ", this%Tp
+            print*, "Temperature bot       ", this%Tb
+            print*, "Sf Biomass Zoo m      ", this%Mz%B
+            print*, "Sf Biomass Zoo l      ", this%Lz%B
+            print*, "Sf Tcorr_e            ", this%Sf%Tcorr_e
+            print*, "Sf Tcorr_met          ", this%Sf%Tcorr_met
+            print*, "Md Tcorr_e            ", this%Md%Tcorr_e
+            print*, "Md Tcorr_met          ", this%Md%Tcorr_met
+            print*, "Sf Clearance rate Sf  ", this%Sf%V
+            print*, "Sf Cmax Sf            ", this%Sf%cmax
+            print*, "Sf feeding level Sf   ", this%Sf%f
+            print*, "Sf Total consumption  ", this%Sf%cons 
+            print*, "Sf consumption Mz     ", this%Sf%cons_Mz 
+            print*, "Sf Total mort         ", this%Sf%mu
+            print*, "Sf Predation mort     ", this%Sf%mu_p
+            print*, "Sf Natur mort         ", this%Sf%mu_a
+            print*, "Sf Fishng mort        ", this%Sf%mu_f
+            print*, "Sf Met loss           ", this%Sf%met
+            print*, "Sf Available energy   ", this%Sf%E_A
+            print*, "Sf Fout               ", this%Sf%Fout 
+            print*, "Sf Recruitment        ", this%Mf%Repro
+            print*, "Sf Repro flux         ", this%Sf%Repro 
+            print*, "Sf Recruitment flux   ", this%Mf%Repro * eps_R
+            print*, "Mf Repro flux         ", this%Mf%Repro
+            print *, '----------------------------------------------------'
+            print*, "BE biomass            ", this%BE%B
 
-        print *, '----------------------------------------------------'
-        print *, 'Element of the derivative: MF' 
-        print*, "Mf Clearance rate Sf  ", this%Mf%V
-        print*, "Mf Cmax               ", this%Mf%cmax
-        print*, "Mf feeding level      ", this%Mf%f
-        print*, "Mf Total mort         ", this%Mf%mu
-        print*, "Mf Predation mort     ", this%Mf%mu_p
-        print*, "Mf Natur mort         ", this%Mf%mu_a
-        print*, "Mf Fishng mort        ", this%Mf%mu_f
-        print*, "Mf Met loss           ", this%Mf%met
-        print*, "Mf Available energy   ", this%Mf%E_A
-        print*, "Mf Fout               ", this%Mf%Fout 
-        print*, "Mf Reproduction       ", this%Mf%Repro
-        print*, "Mf biomass            ", this%Sf%B
-        print *, '----------------------------------------------------'
-        print *, 'MF consumption ' 
-        print*, "Consumption Mp to Sf  ", this%Mp%cons_Sf
-        print*, "Consumption Mf to Sf  ", this%Mf%cons_Sf
-        print*, "feeding level Mf to Zm", this%Mf%f_Zm
-        print*, "feeding level Mf to Sf", this%Mf%f_Sf
-        print*, "feeding level Mf to Sp", this%Mf%f_Sp
-        print*, "feeding level Mf to Sd", this%Mf%f_Sd
-        print*, "Encounter Mf to Zm    ", this%Mf%V * pref_Mf_Mz * this%Mz%B
-        print*, "Encounter Mf to Sf    ", this%Mf%V *pref_Mf_S* this%Sf%B
-        print*, "Encounter Mf to Sp    ", this%Mf%V *pref_Mf_S* this%Sp%B
-        print*, "Encounter Mf to Sd    ", this%Mf%V *pref_Mf_S* this%Sd%B
-        print*, "Pref Mf to Zm         ", pref_Mf_Mz 
-        print*, "Pref Mf to S          ", pref_Mf_S
-        print*, "Zooplankton biomass   ", this%Mz%B
-        print *, '----------------------------------------------------'
-        print *, 'MF predators ' 
-        print*, "Consumption Lp to Mf  ", this%Lp%cons_Mf
-        print*, "Consumption Ld to Mf  ", this%Ld%cons_Mf
+            print *, '----------------------------------------------------'
+            print *, 'Element of the derivative: MF' 
+            print*, "Mf Clearance rate Sf  ", this%Mf%V
+            print*, "Mf Cmax               ", this%Mf%cmax
+            print*, "Mf feeding level      ", this%Mf%f
+            print*, "Mf Total mort         ", this%Mf%mu
+            print*, "Mf Predation mort     ", this%Mf%mu_p
+            print*, "Mf Natur mort         ", this%Mf%mu_a
+            print*, "Mf Fishng mort        ", this%Mf%mu_f
+            print*, "Mf Met loss           ", this%Mf%met
+            print*, "Mf Available energy   ", this%Mf%E_A
+            print*, "Mf Fout               ", this%Mf%Fout 
+            print*, "Mf Reproduction       ", this%Mf%Repro
+            print*, "Mf biomass            ", this%Sf%B
+            print *, '----------------------------------------------------'
+            print *, 'MF consumption ' 
+            print*, "Consumption Mp to Sf  ", this%Mp%cons_Sf
+            print*, "Consumption Mf to Sf  ", this%Mf%cons_Sf
+            print*, "feeding level Mf to Zm", this%Mf%f_Zm
+            print*, "feeding level Mf to Sf", this%Mf%f_Sf
+            print*, "feeding level Mf to Sp", this%Mf%f_Sp
+            print*, "feeding level Mf to Sd", this%Mf%f_Sd
+            print*, "Encounter Mf to Zm    ", this%Mf%V * pref_Mf_Mz * this%Mz%B
+            print*, "Encounter Mf to Sf    ", this%Mf%V *pref_Mf_S* this%Sf%B
+            print*, "Encounter Mf to Sp    ", this%Mf%V *pref_Mf_S* this%Sp%B
+            print*, "Encounter Mf to Sd    ", this%Mf%V *pref_Mf_S* this%Sd%B
+            print*, "Pref Mf to Zm         ", pref_Mf_Mz 
+            print*, "Pref Mf to S          ", pref_Mf_S
+            print*, "Zooplankton biomass   ", this%Mz%B
+            print *, '----------------------------------------------------'
+            print *, 'MF predators ' 
+            print*, "Consumption Lp to Mf  ", this%Lp%cons_Mf
+            print*, "Consumption Ld to Mf  ", this%Ld%cons_Mf
 
-        print *, '----------------------------------------------------'
-        print*, "Frac Zoo lost M       ", this%Zcons_VS_dZm
-        print*, "Frac Zoo lost L       ", this%Zcons_VS_dZl
-        print*, "Large Dem Cons        ", this%Ld%cons
-        print *, '----------------------------------------------------'
-        print *, 'Element of the derivative: MD' 
-        print*, "dMf                   ", this%Sf%Fout * this%Sf%B + (this%Mf%E_A - this%Mf%Repro - this%Mf%mu) * this%Mf%B
-        print*, "Md E_available        ", this%Md%E_A
-        print*, "Md consumption        ", this%Md%cons
-        print*, "Md Clearance rate     ", this%Md%V
-        print*, "Md Encounter rate     ", this%Md%V *pref_Md_BE * this%BE%B
-        print*, "Md Cmax               ", this%Md%cmax
-        print*, "Md metabolism         ", this%Md%met
-        print*, "Md feeding lvl        ", this%Md%f_BE
-        print*, "Md feeding lvl 2      ", this%Md%V *pref_Md_BE * this%BE%B/((this%Md%V * pref_Md_BE * this%BE%B) + this%Md%cmax)
-        print*, "Biomass Bent          ", this%BE%B
-        print*, "Md mortality          ", this%Md%mu 
-        print*, "Md pred mort          ", this%Md%mu_p
-        print*, "Md Nat mort           ", this%Md%mu_a
-        print*, "Md Fish mort          ", this%Md%mu_f
-        print*, "Sf_Fout               ", this%Sd%Fout
-        print*, "Md recr               ", this%Sd%Fout * this%Sd%B
-        print*, "Sf_Bio                ", this%Md%B
-        print*, "Md Repro              ", this%Md%Repro
-        print*, "Md Fout               ", this%Md%Fout
-        print*, "Md Bio                ", this%Md%B
+            print *, '----------------------------------------------------'
+            print*, "Frac Zoo lost M       ", this%Zcons_VS_dZm
+            print*, "Frac Zoo lost L       ", this%Zcons_VS_dZl
+            print*, "Large Dem Cons        ", this%Ld%cons
+            print *, '----------------------------------------------------'
+            print *, 'Element of the derivative: MD' 
+            print*, "dMf                   ", this%Sf%Fout * this%Sf%B + (this%Mf%E_A - this%Mf%Repro - this%Mf%mu) * this%Mf%B
+            print*, "Md E_available        ", this%Md%E_A
+            print*, "Md consumption        ", this%Md%cons
+            print*, "Md Clearance rate     ", this%Md%V
+            print*, "Md Encounter rate     ", this%Md%V *pref_Md_BE * this%BE%B
+            print*, "Md Cmax               ", this%Md%cmax
+            print*, "Md metabolism         ", this%Md%met
+            print*, "Md feeding lvl        ", this%Md%f_BE
+            print*, "Md feeding lvl 2  ", this%Md%V *pref_Md_BE * this%BE%B/((this%Md%V * pref_Md_BE * this%BE%B) + this%Md%cmax)
+            print*, "Biomass Bent          ", this%BE%B
+            print*, "Md mortality          ", this%Md%mu 
+            print*, "Md pred mort          ", this%Md%mu_p
+            print*, "Md Nat mort           ", this%Md%mu_a
+            print*, "Md Fish mort          ", this%Md%mu_f
+            print*, "Sf_Fout               ", this%Sd%Fout
+            print*, "Md recr               ", this%Sd%Fout * this%Sd%B
+            print*, "Sf_Bio                ", this%Md%B
+            print*, "Md Repro              ", this%Md%Repro
+            print*, "Md Fout               ", this%Md%Fout
+            print*, "Md Bio                ", this%Md%B
 
-        print *, '----------------------------------------------------'
-        print *, 'cmax and clearance rate for large predators' 
-        print*, "Lp Encounter rate     ", this%Lp%V
-        print*, "Lp Cmax               ", this%Lp%cmax
-    end if 
+            print *, '----------------------------------------------------'
+            print *, 'cmax and clearance rate for large predators' 
+            print*, "Lp Encounter rate     ", this%Lp%V
+            print*, "Lp Cmax               ", this%Lp%cmax
+        end if 
 
     ! ----------------------------------------------------
         call Euler(this)

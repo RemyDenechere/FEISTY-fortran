@@ -146,9 +146,9 @@ module GetNetCDFinf
             this%Tp =  20.588572332253598
             this%Tb = 0.0
             this%det = 0.0
-            this%Mz%B = 5.8770968308468755E-005 * 6.625*12.01*9.0
+            this%Mz%B = 5.8770968308468755E-005
             this%dzm = 0.0
-            this%Lz%B = 3.1586583957953118E-005 * 6.625*12.01*9.0
+            this%Lz%B = 3.1586583957953118E-005
             this%dzl = 0.0
         else
             this%Tp =  DataTp(ispace, itime)

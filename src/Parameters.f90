@@ -91,6 +91,7 @@ module Parameters
     real(dp), parameter :: PI_be_cutoff = 200 ! Benthic-pelagic coupling cutoff (depth, m)
     logical, parameter :: diagnostic = .true.
     logical, parameter :: prod_constrained = .false. 
+    logical, parameter :: test_COBALT = .true.
 
     ! Groupe information: ---------------------------------------------
     integer, parameter :: nFishGroup = 8                      ! Number of fish functional group
