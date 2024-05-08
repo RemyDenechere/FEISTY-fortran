@@ -5,7 +5,7 @@ program Run_physiology
     use Derivative
     use GetNetCDFInf
     use OMP_LIB
-
+ 
     implicit none
     
     type(Structure_group) :: Var
@@ -17,10 +17,11 @@ program Run_physiology
                                               DataZM, Datadzm, DataZL, Datadzl
     integer :: ispace, Count_MNT, itime, iDAY, iYR, imonth, Year, Stop_count
     real(dp) :: T1, T2, T3, sim_time
-    logical :: Spinup =  .true. ! .false. !
+    logical :: Spinup = .true. ! .false. ! 
     CALL cpu_time(T1)
 
     ! Initialisation: ----------------------------------------------------------
+    ! print*, "Checkpoint 1"
     CALL Initialisation(Spinup, Var, Nspace, Ntime, Data_F_ini, Data, &
                         DataTp, DataTb, Datadet, Datadzm, DataZM, Datadzl, DataZL)
     CALL cpu_time(T2)
@@ -49,6 +50,7 @@ program Run_physiology
         CALL initPhysiology(Spinup, ispace, Data_F_ini, Var)    ! Give initial conditions for the system 
         itime = 0                                               ! Restart days counter
         Count_MNT = 0                                           ! Restart month counter
+
         ! Loops over time ----------------------------------------------------------
         Do iYr = 1, Year ! Loop Year
             if (Spinup) then                                    ! If spinup: run only over one year                                       
@@ -59,10 +61,10 @@ program Run_physiology
                 CALL init_store_MNTH(Data_MNTH, MNTH(imonth))                   ! Define size vector to store daily data in a month 
                 ! Loop Day:
                 Do iDAY = 1, MNTH(imonth)                                       ! Loop Days
-                    itime = itime + 1                                           ! Counts the days to get input                                   
+                    itime = itime + 1                                           ! Counts the days to get input                                                           
                     CALL Get_Environental_data2D(Var, DataTp, DataTb, &         ! Get the environemntal data for
                                 Datadzm, Datadet, DataZM, DataZL, Datadzl, &    ! that specific day
-                                ispace, itime)                                 
+                                ispace, itime)                                
                     CALL CalcBiomass(Var)                                       ! Calcul biomass at day+1    
                     CALL store_MNTH(Data_MNTH, Var, iDAY)                       ! Store the monthly data 
                 end Do ! End Loop Days
@@ -81,11 +83,8 @@ program Run_physiology
     print *, "Running time",  (T3-T2)/60, "min"
     print *, "Total time  ",  (T3-T1)/60, "min"
     print *, "-------------------------------------"
- 
 
 end program Run_physiology
-
-    
 
     ! ----------------------------------------------------
     ! Test Biomass all group

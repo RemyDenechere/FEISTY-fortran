@@ -30,8 +30,13 @@ module Derivative
             print*, '----------------------------------------------------'
             print*, "Temperature Pel       ", this%Tp
             print*, "Temperature bot       ", this%Tb
+            print*, "Detritus flux         ", this%det
             print*, "Sf Biomass Zoo m      ", this%Mz%B
             print*, "Sf Biomass Zoo l      ", this%Lz%B
+            print*, "Sf MORT Zoo m         ", this%dzm
+            print*, "Sf MORT Zoo l         ", this%dzl    
+
+
             print*, "Sf Tcorr_e            ", this%Sf%Tcorr_e
             print*, "Sf Tcorr_met          ", this%Sf%Tcorr_met
             print*, "Md Tcorr_e            ", this%Md%Tcorr_e
@@ -121,7 +126,7 @@ module Derivative
             print*, "Lp Encounter rate     ", this%Lp%V
             print*, "Lp Cmax               ", this%Lp%cmax
         end if 
-
+ 
     ! ----------------------------------------------------
         call Euler(this)
 

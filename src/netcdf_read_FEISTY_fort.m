@@ -10,9 +10,10 @@ param = param_setup(param);
 
 %! get directory containing output
 dir = '../output/'; 
+exp = '4P4Z_';
 
 %% Small Pelagic SP
-ncid = netcdf.open([dir 'Sp' '_bio.nc'],'NC_NOWRITE');
+ncid = netcdf.open([dir exp 'Sp' '_bio.nc'],'NC_NOWRITE');
 [~, nvars, ~, ~] = netcdf.inq(ncid);
 for i = 1:nvars
     varname = netcdf.inqVar(ncid, i-1);
@@ -28,7 +29,7 @@ clear Sp
 time = 1:nt;
 
 %% SF
-ncid = netcdf.open([dir 'Sf' '_bio.nc'],'NC_NOWRITE');
+ncid = netcdf.open([dir exp 'Sf' '_bio.nc'],'NC_NOWRITE');
 [~, nvars, ~, ~] = netcdf.inq(ncid);
 for i = 1:nvars
     varname = netcdf.inqVar(ncid, i-1);
@@ -41,7 +42,7 @@ SF.bio = Sf;
 clear Sf
 
 % SD
-ncid = netcdf.open([dir 'Sd' '_bio.nc'],'NC_NOWRITE');
+ncid = netcdf.open([dir exp 'Sd' '_bio.nc'],'NC_NOWRITE');
 [~, nvars, ~, ~] = netcdf.inq(ncid);
 for i = 1:nvars
     varname = netcdf.inqVar(ncid, i-1);
@@ -54,7 +55,7 @@ SD.bio = Sd;
 clear Sd
 
 % MP
-ncid = netcdf.open([dir 'Mp' '_bio.nc'],'NC_NOWRITE');
+ncid = netcdf.open([dir exp 'Mp' '_bio.nc'],'NC_NOWRITE');
 [~, nvars, ~, ~] = netcdf.inq(ncid);
 for i = 1:nvars
     varname = netcdf.inqVar(ncid, i-1);
@@ -67,7 +68,7 @@ MP.bio = Mp;
 clear Mp
 
 % MF
-ncid = netcdf.open([dir 'Mf' '_bio.nc'],'NC_NOWRITE');
+ncid = netcdf.open([dir exp 'Mf' '_bio.nc'],'NC_NOWRITE');
 [~, nvars, ~, ~] = netcdf.inq(ncid);
 for i = 1:nvars
     varname = netcdf.inqVar(ncid, i-1);
@@ -80,7 +81,7 @@ MF.bio = Mf;
 clear Mf
 
 % MD
-ncid = netcdf.open([dir 'Md' '_bio.nc'],'NC_NOWRITE');
+ncid = netcdf.open([dir exp 'Md' '_bio.nc'],'NC_NOWRITE');
 [~, nvars, ~, ~] = netcdf.inq(ncid);
 for i = 1:nvars
     varname = netcdf.inqVar(ncid, i-1);
@@ -93,7 +94,7 @@ MD.bio = Md;
 clear Md
 
 % LP
-ncid = netcdf.open([dir 'Lp' '_bio.nc'],'NC_NOWRITE');
+ncid = netcdf.open([dir exp 'Lp' '_bio.nc'],'NC_NOWRITE');
 [~, nvars, ~, ~] = netcdf.inq(ncid);
 for i = 1:nvars
     varname = netcdf.inqVar(ncid, i-1);
@@ -106,7 +107,7 @@ LP.bio = Lp;
 clear Lp
 
 % LD
-ncid = netcdf.open([dir 'Ld' '_bio.nc'],'NC_NOWRITE');
+ncid = netcdf.open([dir exp 'Ld' '_bio.nc'],'NC_NOWRITE');
 [~, nvars, ~, ~] = netcdf.inq(ncid);
 for i = 1:nvars
     varname = netcdf.inqVar(ncid, i-1);
@@ -119,7 +120,7 @@ LD.bio = Ld;
 clear Ld
 
 % Benthic material
-ncid = netcdf.open([dir 'BE' '_bio.nc'],'NC_NOWRITE');
+ncid = netcdf.open([dir exp 'BE' '_bio.nc'],'NC_NOWRITE');
 [~, nvars, ~, ~] = netcdf.inq(ncid);
 for i = 1:nvars
     varname = netcdf.inqVar(ncid, i-1);
@@ -132,7 +133,7 @@ Bent.bio = BE;
 clear BE
 
 %% MZ loss
-ncid = netcdf.open([dir 'dZm.nc'],'NC_NOWRITE');
+ncid = netcdf.open([dir exp 'dZm.nc'],'NC_NOWRITE');
 [~, nvars, ~, ~] = netcdf.inq(ncid);
 for i = 1:nvars
     varname = netcdf.inqVar(ncid, i-1);
@@ -143,6 +144,19 @@ netcdf.close(ncid);
 
 MZ.frac = dZm;
 clear dZm
+
+%% LZ loss
+ncid = netcdf.open([dir exp 'dZl.nc'],'NC_NOWRITE');
+[~, nvars, ~, ~] = netcdf.inq(ncid);
+for i = 1:nvars
+    varname = netcdf.inqVar(ncid, i-1);
+    eval([ varname ' = netcdf.getVar(ncid,i-1);']);
+    eval([ varname '(' varname ' == 99999) = NaN;']);
+end
+netcdf.close(ncid);
+
+LZ.frac = dZl;
+clear dZl
 
 %% Take means for visualization
 
@@ -157,6 +171,7 @@ lp_tmean = nanmean(LP.bio, 1);
 ld_tmean = nanmean(LD.bio, 1);
 b_tmean  = nanmean(Bent.bio,1);
 mz_tmfrac =nanmean(MZ.frac,1);
+lz_tmfrac =nanmean(LZ.frac,1);
 
 %% Space
 
@@ -170,8 +185,9 @@ lp_sbio = nanmean(LP.bio,2);
 ld_sbio = nanmean(LD.bio,2);
 b_sbio  = nanmean(Bent.bio,2);
 mz_smfrac= nanmean(MZ.frac,2);
+lz_smfrac= nanmean(LZ.frac,2);
 
-%% Total times overcon happens
+%% Total times overcon happens MZ
 MZ.over = nan*ones(size(MZ.frac));
 MZ.over(MZ.frac > 1) = ones;
 MZ.over(MZ.frac <= 1) = zeros;
@@ -180,15 +196,26 @@ mz_ttf=nansum(MZ.over,1);
 % Space
 mz_stf=nansum(MZ.over,2);
 
+%% Total times overcon happens LZ
+LZ.over = nan*ones(size(LZ.frac));
+LZ.over(LZ.frac > 1) = ones;
+LZ.over(LZ.frac <= 1) = zeros;
+% Time
+lz_ttf=nansum(LZ.over,1);
+% Space
+lz_stf=nansum(LZ.over,2);
+
 %% Annual means
 nyr = nt/12;
 st=1:12:length(time);
 en=12:12:length(time);
 mz_mtf = nan*ones(ni,nyr);
+lz_mtf = nan*ones(ni,nyr);
 
 for n=1:length(st)
     % total overcon
     mz_mtf(:,n)=nansum(MZ.over(:,st(n):en(n)),2);
+    lz_mtf(:,n)=nansum(LZ.over(:,st(n):en(n)),2);
 
     % mean biomass
     sp_abio(:,n)=nanmean(SP.bio(:,st(n):en(n)),2);
@@ -226,23 +253,23 @@ if ~exist(save_dir)
     mkdir(save_dir)
 end
 
-save([save_dir 'Time_Means_FOSI' '.mat'],'time',...
+save([save_dir exp 'Time_Means_FOSI' '.mat'],'time',...
     'sf_tmean','sp_tmean','sd_tmean',...
     'mf_tmean','mp_tmean','md_tmean',...
-    'lp_tmean','ld_tmean','b_tmean', 'mz_ttf')
+    'lp_tmean','ld_tmean','b_tmean', 'mz_ttf', 'lz_ttf')
 
-save([save_dir 'Space_Means_FOSI' '.mat'],'time',...
+save([save_dir exp 'Space_Means_FOSI' '.mat'],'time',...
     'sf_sbio','sp_sbio','sd_sbio',...
     'mf_sbio','mp_sbio','md_sbio',...
     'lp_sbio','ld_sbio','b_sbio', ...
-    'mz_smfrac', 'mz_stf')
+    'mz_smfrac', 'mz_stf', ...
+    'lz_smfrac', 'lz_stf')
 
-save([save_dir 'Annual_Means_FOSI' '.mat'],'time',...
+save([save_dir exp 'Annual_Means_FOSI' '.mat'],'time',...
     'sf_abio','sp_abio','sd_abio',...
     'mf_abio','mp_abio','md_abio',...
-    'lp_abio','ld_abio','b_abio', 'mz_mtf')
-
-% STOPPED HERE 
+    'lp_abio','ld_abio','b_abio', ...
+    'mz_mtf', 'lz_mtf')
 
 %%
 % mo = time/12;

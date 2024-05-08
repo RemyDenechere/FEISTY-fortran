@@ -142,22 +142,22 @@ module GetNetCDFinf
                                                                 DataZM, &
                                                                 Datadzl, DataZL
         
+        this%Tp =  DataTp(ispace, itime)
+        this%Tb = DataTb(ispace, itime)
+        this%det = Datadet(ispace, itime) * convers_det
+        this%Mz%B = DataZM(ispace, itime) * convers_zm
+        this%dzm = Datadzm(ispace, itime)   * convers_dZm
+        this%Lz%B = DataZL(ispace, itime) * convers_zm
+        this%dzl = Datadzl(ispace, itime)   * convers_dZm
+
         if (diagnostic) then 
-            this%Tp =  20.588572332253598
-            this%Tb = 0.0
-            this%det = 0.0
-            this%Mz%B = 5.8770968308468755E-005
-            this%dzm = 0.0
-            this%Lz%B = 3.1586583957953118E-005
+            ! this%Tp =  20.588572332253598
+            ! this%Tb = 0.0
+            ! this%det = 0.0
+            ! this%Mz%B = 5.8770968308468755E-005
+            ! this%dzm = 0.0
+            this%Lz%B = this%Mz%B
             this%dzl = 0.0
-        else
-            this%Tp =  DataTp(ispace, itime)
-            this%Tb = DataTb(ispace, itime)
-            this%det = Datadet(ispace, itime) * convers_det
-            this%Mz%B = DataZM(ispace, itime) * convers_zm
-            this%dzm = Datadzm(ispace, itime)   * convers_dZm
-            this%Lz%B = DataZL(ispace, itime) * convers_zm
-            this%dzl = Datadzl(ispace, itime)   * convers_dZm
         end if 
         
     end subroutine Get_Environental_data2D
@@ -175,8 +175,6 @@ module GetNetCDFinf
         integer :: Nspace, Ntime
 
         ! Get the input grid data to force the model: 
-        if (diagnostic) then 
-            print*, " checkpoint #1"
             CALL readgrid2D(dir_Tb, 1, Nspace, Ntime, DataTb)
             print*, trim(dir_Tb), " loaded"
             CALL readgrid2D(dir_Tp, 1, Nspace, Ntime, DataTp)
@@ -191,7 +189,6 @@ module GetNetCDFinf
             print*, trim(dir_zl), " loaded"
             CALL readgrid2D(dir_dzl, 1, Nspace, Ntime, Datadzl)
             print*, trim(dir_dzl), " loaded"
-        end if 
 
     end subroutine ini_input2D
 
@@ -214,6 +211,16 @@ module GetNetCDFinf
             CALL readgrid(dir_IniLp, 1, Nspace, this%IniLp)
             CALL readgrid(dir_IniLd, 1, Nspace, this%IniLd)
             CALL readgrid(dir_IniBE, 1, Nspace, this%IniBE)
+        ! else 
+        !     this%IniSf = 10.0**(-5)
+        !     this%IniSp = 10.0**(-5)
+        !     this%IniSd = 10.0**(-5)
+        !     this%IniMf = 10.0**(-5)
+        !     this%IniMp = 10.0**(-5)
+        !     this%IniMd = 10.0**(-5)
+        !     this%IniLp = 10.0**(-5)
+        !     this%IniLd = 10.0**(-5)
+        !     this%IniBE = 10.0**(-5)
         end if
 
         CALL readgrid(dir_H, 1, Nspace, this%H)

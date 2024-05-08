@@ -89,9 +89,9 @@ module Parameters
 
     ! Environemental data for test: -----------------------------------
     real(dp), parameter :: PI_be_cutoff = 200 ! Benthic-pelagic coupling cutoff (depth, m)
-    logical, parameter :: diagnostic = .true.
-    logical, parameter :: prod_constrained = .false. 
-    logical, parameter :: test_COBALT = .true.
+    logical, parameter :: diagnostic = .false.
+    logical, parameter :: prod_constrained = .true. 
+    logical, parameter :: test_COBALT = .false.
 
     ! Groupe information: ---------------------------------------------
     integer, parameter :: nFishGroup = 8                      ! Number of fish functional group
@@ -141,7 +141,7 @@ module Parameters
     real(dp), parameter :: pref_Mp_Mz = Sm              ! Preference for Medium Mesozooplankton
     real(dp), parameter :: pref_Mp_Lz = 1.0             ! Preference for Large Mesozooplankton
     real(dp), parameter :: pref_Mp_S = 1.0              ! Preference for small fish
-    ! Medium Demersal 
+    ! Medium Demersal  
     real(dp), parameter :: pref_Md_BE = 1.0             ! Preference for Benthos
     ! Large Pelagic
     real(dp), parameter :: pref_Lp_Mf = 1.0 * A         ! Preference for Medium forage

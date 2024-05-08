@@ -15,13 +15,13 @@ if (~isfolder(fpath))
 end
 
 % Load Data: -------------------------------------------------------------- 
-load([dir 'Time_Means_FOSI.mat']);
-load([dir 'Space_Means_FOSI.mat']);
-load([dir 'Annual_Means_FOSI.mat'], 'mz_mtf'); % 
+load([dir exp 'Time_Means_FOSI.mat']);
+load([dir exp 'Space_Means_FOSI.mat']);
+load([dir exp 'Annual_Means_FOSI.mat'], 'mz_mtf'); % 
 
 % Map data
-load([param.rootdir 'Feisty/GCM_Data/CESM/FOSI/gridspec_POP_gx1v6_noSeas.mat']);
-load([param.rootdir 'Feisty/GCM_Data/CESM/FOSI/Data_grid_POP_gx1v6_noSeas.mat']);
+load([param.rootdir 'Feisty/GCM_Data/CESM/4P4Z/gridspec_POP_gx1v6_4p4z.mat']);
+load([param.rootdir 'Feisty/GCM_Data/CESM/4P4Z/Data_grid_POP_gx1v6_4p4z.mat']);
 
 % Set these bounds for your data ------------------------------------------
 [ni, nj]=size(TLONG);
@@ -46,6 +46,8 @@ cm10=[0.5 0.5 0;... %tan/army
     0 0 0.75;...    %b
     0.5 0.5 0.5; ...%med grey
     0 0 0];...      %black
+
+exp = '4P4Z_';
 
 set(groot,'defaultAxesColorOrder',cm10);
 
@@ -78,7 +80,7 @@ xlabel('Time (y)')
 ylabel('log_1_0 Biomass (g m^-^2)')
 title('FOSI')
 % stamp(mod)
-print('-dpng',[fpath, 'all_sizes.png'])
+print('-dpng',[fpath exp 'all_sizes.png'])
 
 %% Types together
 F = sf_tmean + mf_tmean;
@@ -99,7 +101,7 @@ xlabel('Time (y)')
 ylabel('log_1_0 Biomass (g m^-^2)')
 title('FOSI')
 % stamp(param.save_name)
-print('-dpng', [fpath, 'all_types.png'])
+print('-dpng', [fpath exp 'all_types.png'])
 
 %% Plots in space
 
@@ -241,7 +243,7 @@ xticklabels({'Zsf', 'Zsp', 'Zsd', 'Zmf', 'Zmp', 'Zmd', 'Zlp', 'Zld'})
 title('Non Subtropical average biomass')
 title(t, 'FOSI log10 mean benthic biomass (g m^-^2)')
 
-print('-dpng',[fpath, 'subtrop_biomass.png'])
+print('-dpng',[fpath exp 'subtrop_biomass.png'])
 
 %% bent
 figure(3)
@@ -255,7 +257,7 @@ hcb = colorbar('h');
 set(gcf,'renderer','painters')
 title('FOSI log10 mean benthic biomass (g m^-^2)')
 % stamp('')
-print('-dpng',[fpath, 'global_BENT.png'])
+print('-dpng',[fpath exp 'global_BENT.png'])
 
 %% All 4 on subplots
 figure(4)
@@ -313,7 +315,7 @@ set(gcf, 'PaperUnits','centimeters',...
     'PaperPosition',[0 0 screenposition(3:4)],...
     'PaperSize', [screenposition(3:4)]); % make the print paper size fits the figure size
 
-print('-dpng',[fpath, 'global_All_subplot.png'])
+print('-dpng',[fpath exp 'global_All_subplot.png'])
 
 
 %% Small forage and small to large pelagics: 
@@ -391,7 +393,7 @@ set(gcf, 'PaperUnits','centimeters',...
     'PaperPosition',[0 0 screenposition(3:4)],...
     'PaperSize', [screenposition(3:4)]); % make the print paper size fits the figure size
 
-print('-dpng',[fpath,  'global_Pelagics.png'])
+print('-dpng',[fpath exp  'global_Pelagics.png'])
 
 %% Ratios on subplots red-white-blue
 % 3 figure subplot P:D, P:F, M:L
@@ -439,7 +441,7 @@ screenposition = get(gcf,'Position'); % get the figure size
 set(gcf, 'PaperUnits','centimeters',...
     'PaperPosition',[0 0 screenposition(3:4)],...
     'PaperSize', [screenposition(3:4)]); % make the print paper size fits the figure size
-print('-dpng',[fpath, 'global_ratios_subplot.png'])
+print('-dpng',[fpath exp 'global_ratios_subplot.png'])
 
 %% MZ loss plots
 [nx,nt] = size(mz_mtf);
@@ -466,7 +468,7 @@ figure(7)
 plot(y, Cmz_ttover,'k','LineWidth',2); hold on;
 xlabel('Years')
 ylabel('Fraction of grid cells over-consumed')
-print('-dpng',[fpath, 'timeseries_zoop_overcon.png'])
+print('-dpng',[fpath exp 'timeseries_zoop_overcon.png'])
 
 %% Plots in space
 CFmz=NaN*ones(ni,nj);
@@ -520,6 +522,6 @@ screenposition = get(gcf,'Position'); % get the figure size
 set(gcf, 'PaperUnits','centimeters',...
     'PaperPosition',[0 0 screenposition(3:4)],...
     'PaperSize', [screenposition(3:4)]); % make the print paper size fits the figure size
-print('-dpng',[fpath, 'global_zoop_overcon.png'])
+print('-dpng',[fpath exp 'global_zoop_overcon.png'])
 
 
