@@ -3,87 +3,43 @@ module Parameters
     implicit none 
 
     ! input files: ----------------------------------------------------
+    character(LEN=280), parameter :: root_dir = "/project/rdenechere/COBALT_output/COBALT_offline_forcing_files/"
+    character(LEN=280) , parameter :: exp = "COBALT_offline"
+
     character(LEN=280), parameter :: &
-    
-    ! To use in UCAR -----------------------------------------------------------------
-    ! dir_Tb = "/glade/campaign/cesm/development/bgcwg/projects/CESM2-OMIP2-like-4p2z-run/g.e22.GOMIPECOIAF_JRA-1p4-2018.TL319_g17.4p2z.001branch/ocn/proc/tseries/day_1/g.e22.GOMIPECOIAF_JRA-1p4-2018.TL319_g17.4p2z.001branch.pop.h.ecosys.nday1.TEMP_BOTTOM_2.19580101-20211231.nc", &
-    ! dir_Tp = "/glade/campaign/cesm/development/bgcwg/projects/CESM2-OMIP2-like-4p2z-run/g.e22.GOMIPECOIAF_JRA-1p4-2018.TL319_g17.4p2z.001branch/ocn/proc/tseries/day_1/g.e22.GOMIPECOIAF_JRA-1p4-2018.TL319_g17.4p2z.001branch.pop.h.ecosys.nday1.TEMP_mean_150m.19580101-20211231.nc", &
-    ! dir_zf = "/glade/campaign/cesm/development/bgcwg/projects/CESM2-OMIP2-like-4p2z-run/g.e22.GOMIPECOIAF_JRA-1p4-2018.TL319_g17.4p2z.001branch/ocn/proc/tseries/day_1/g.e22.GOMIPECOIAF_JRA-1p4-2018.TL319_g17.4p2z.001branch.pop.h.ecosys.nday1.mesozooC_zint_100m.19580101-20211231.nc", &
-    ! dir_dz = "/glade/campaign/cesm/development/bgcwg/projects/CESM2-OMIP2-like-4p2z-run/g.e22.GOMIPECOIAF_JRA-1p4-2018.TL319_g17.4p2z.001branch/ocn/proc/tseries/day_1/g.e22.GOMIPECOIAF_JRA-1p4-2018.TL319_g17.4p2z.001branch.pop.h.ecosys.nday1.mesozoo_loss_zint_150m.19580101-20211231.nc", &
-    ! dir_det = "/glade/campaign/cesm/development/bgcwg/projects/CESM2-OMIP2-like-4p2z-run/g.e22.GOMIPECOIAF_JRA-1p4-2018.TL319_g17.4p2z.001branch/ocn/proc/tseries/day_1/g.e22.GOMIPECOIAF_JRA-1p4-2018.TL319_g17.4p2z.001branch.pop.h.ecosys.nday1.pocToFloor_2.19580101-20211231.nc"
+        dir_Temp = trim(root_dir) // "20040101.ocean_feisty_forcing_offline.nc", &
+        dir_zm = trim(root_dir) //   "20040101.ocean_feisty_forcing_offline.nc", &
+        dir_dzm = trim(root_dir) //  "20040101.ocean_feisty_forcing_offline.nc", &
+        dir_zl = trim(root_dir) //   "20040101.ocean_feisty_forcing_offline.nc", &
+        dir_dzl = trim(root_dir) //  "20040101.ocean_feisty_forcing_offline.nc", &
+        dir_det = trim(root_dir) //  "20040101.ocean_feisty_forcing_offline_detritus.nc", &
+        var_Temp =  "thetao" , &
+        var_zm =  "nmdz" , &
+        var_dzm =  "jhploss_n_Mdz", &
+        var_zl =  "nlgz" , &
+        var_dzl =  "jhploss_n_Lgz",& 
+        var_det = "Pop_btm"
 
-    ! Last FEISTY tunning data -------------------------------------------------------
-    ! dir_Tb = "/project/rdenechere/TunningFEISTY/TL319_g17.4p2z/&
-    ! g.e22.GOMIPECOIAF_JRA-1p4-2018.TL319_g17.4p2z.001branch&
-    ! .pop.h.ecosys.nday1.TEMP_mean_150m.19580101-20211231.nc", &
-    ! dir_Tp = "/project/rdenechere/TunningFEISTY/TL319_g17.4p2z/& 
-    ! g.e22.GOMIPECOIAF_JRA-1p4-2018.TL319_g17.4p2z.001branch.&
-    ! pop.h.ecosys.nday1.TEMP_BOTTOM_2.19580101-20211231.nc", &
-    ! dir_zf = "/project/rdenechere/TunningFEISTY/TL319_g17.4p2z/&
-    ! g.e22.GOMIPECOIAF_JRA-1p4-2018.TL319_g17.4p2z.001branch.&
-    ! pop.h.ecosys.nday1.mesozooC_zint_150m.19580101-20211231.nc", &
-    ! dir_dz = "/project/rdenechere/TunningFEISTY/TL319_g17.4p2z/&
-    ! g.e22.GOMIPECOIAF_JRA-1p4-2018.TL319_g17.4p2z.001branch.&
-    ! pop.h.ecosys.nday1.mesozoo_loss_zint_150m.19580101-20211231.nc", &
-    ! dir_det = "/project/rdenechere/TunningFEISTY/TL319_g17.4p2z/&
-    ! g.e22.GOMIPECOIAF_JRA-1p4-2018.TL319_g17.4p2z.001branch.&
-    ! pop.h.ecosys.nday1.pocToFloor_2.19580101-20211231.nc"
-
-    ! ! 2D data from last FEISTY tunning: ----------------------------------------------
-    ! dir_Tb = "/project/rdenechere/TunningFEISTY/TL319_g17.4p2z/&
-    !     2D_data/TEMP_BOTTOM_2_2D.nc", &
-    ! dir_Tp = "/project/rdenechere/TunningFEISTY/TL319_g17.4p2z/& 
-    !     2D_data/TEMP_mean_150m_2D.nc", &
-    ! dir_zf = "/project/rdenechere/TunningFEISTY/TL319_g17.4p2z/&
-    !     2D_data/mesozooC_zint_150m_2D.nc", &
-    ! dir_dz = "/project/rdenechere/TunningFEISTY/TL319_g17.4p2z/&
-    !     2D_data/mesozoo_loss_zint_150m_2D.nc", &
-    ! dir_det = "/project/rdenechere/TunningFEISTY/TL319_g17.4p2z/&
-    !     2D_data/pocToFloor_2_2D.nc", &
-    ! dir_H = "/project/rdenechere/TunningFEISTY/TL319_g17.4p2z/&
-    !     2D_data/Depth_1D.nc", &
-
-    ! ! Input data (Spinup): --------------------------------------------
-    ! Dir_IniBE = '../output/BE_bio_Spinup.nc',&
-    ! Dir_IniSf = '../output/Sf_bio_Spinup.nc',&
-    ! Dir_IniSp = '../output/Sp_bio_Spinup.nc',&
-    ! Dir_IniSd = '../output/Sd_bio_Spinup.nc',&
-    ! Dir_IniMf = '../output/Mf_bio_Spinup.nc',&
-    ! Dir_IniMp = '../output/Mp_bio_Spinup.nc',&
-    ! Dir_IniMd = '../output/Md_bio_Spinup.nc',&
-    ! Dir_IniLp = '../output/Lp_bio_Spinup.nc',&
-    ! Dir_IniLd = '../output/Ld_bio_Spinup.nc'
-
-    ! 2D data for 4P4Z : ----------------------------------------------
-    ! Base on colleen's data (check matlab code)
-    root_dir = "/project/rdenechere/TunningFEISTY/Input_4p4z/",&
-    root_dir2 = "/project/rdenechere/TunningFEISTY/TL319_g17.4p2z/",&
-    dir_Tb =  trim(root_dir) // "TEMP_BOTTOM_2_2D.nc", &
-    dir_Tp =  trim(root_dir) // "TEMP_mean_150m_2D.nc", &
-    dir_zm =  trim(root_dir) // "mesozoo_m_C_zint_150m_2D.nc", &
-    dir_dzm = trim(root_dir) // "mesozoo_m_loss_zint_150m_2D.nc", &
-    dir_zl =  trim(root_dir) // "mesozoo_l_C_zint_150m_2D.nc", &
-    dir_dzl = trim(root_dir) // "mesozoo_l_loss_zint_150m_2D.nc", &
-    dir_det = trim(root_dir) // "pocToFloor_2_2D.nc", &
-    dir_H =  trim(root_dir2) // "2D_data/Depth_1D.nc", &
     ! Input data (Spinup): --------------------------------------------
-    Dir_IniBE = '../output/BE_bio_Spinup_4P4Z.nc',&
-    Dir_IniSf = '../output/Sf_bio_Spinup_4P4Z.nc',&
-    Dir_IniSp = '../output/Sp_bio_Spinup_4P4Z.nc',&
-    Dir_IniSd = '../output/Sd_bio_Spinup_4P4Z.nc',&
-    Dir_IniMf = '../output/Mf_bio_Spinup_4P4Z.nc',&
-    Dir_IniMp = '../output/Mp_bio_Spinup_4P4Z.nc',&
-    Dir_IniMd = '../output/Md_bio_Spinup_4P4Z.nc',&
-    Dir_IniLp = '../output/Lp_bio_Spinup_4P4Z.nc',&
-    Dir_IniLd = '../output/Ld_bio_Spinup_4P4Z.nc',&
-    exp = "4P4Z_"
+    character(LEN=280), parameter :: &
+        Dir_IniBE = "../output/" // trim(exp) // "_BE_bio_Spinup.nc",&
+        Dir_IniSf = "../output/" // trim(exp) // "_Sf_bio_Spinup.nc",&
+        Dir_IniSp = "../output/" // trim(exp) // "_Sp_bio_Spinup.nc",&
+        Dir_IniSd = "../output/" // trim(exp) // "_Sd_bio_Spinup.nc",&
+        Dir_IniMf = "../output/" // trim(exp) // "_Mf_bio_Spinup.nc",&
+        Dir_IniMp = "../output/" // trim(exp) // "_Mp_bio_Spinup.nc",&
+        Dir_IniMd = "../output/" // trim(exp) // "_Md_bio_Spinup.nc",&
+        Dir_IniLp = "../output/" // trim(exp) // "_Lp_bio_Spinup.nc",&
+        Dir_IniLd = "../output/" // trim(exp) // "_Ld_bio_Spinup.nc"
+ 
     
     ! General parameters: ---------------------------------------------
     integer, parameter  :: dp = kind(0.d0)   ! double precision
     real(dp), parameter :: zero = 0.0        ! Zero
     real(dp), parameter :: eps = 1d-30      ! Small number for divisions 
-    integer, parameter :: YR = 61            ! Number of year in Time series
-    integer, parameter ::  Nmonth = YR*12    ! Number of month in Time series
+    integer, parameter  :: YR = 1            ! Number of year in Time series
+    integer, parameter  :: Nmonth = YR*12    ! Number of month in Time series
+    integer, parameter  :: Year_2_Spinup = 200
     integer, dimension(12), parameter ::  MNTH = (/ 31, 28, 31, 30, 31, 30, &
                                                     31, 31, 30, 31, 30, 31 /) ! Length of month (days)
 
@@ -92,6 +48,7 @@ module Parameters
     logical, parameter :: diagnostic = .false.
     logical, parameter :: prod_constrained = .true. 
     logical, parameter :: test_COBALT = .false.
+    logical, parameter :: Spinup_Time_Serie = .true.
 
     ! Groupe information: ---------------------------------------------
     integer, parameter :: nFishGroup = 8                      ! Number of fish functional group
@@ -157,8 +114,8 @@ module Parameters
     !                        convers_det = 10.0**(-9 +4)*12.01*9.0*24.0*3600.0, &      ! detritus 
     !                        convers_dZm = 10.0**(-2 -3)*12.01*9.0*24.0*3600.0         ! zooplankton loss
     ! No conversion for Colleen's data: 
-    real(dp), parameter :: convers_zm  = 1, &                                        ! zooplankton biomass 
+    real(dp), parameter :: convers_zm  = 6.625*12.01*9.0, &                                        ! zooplankton biomass 
                            convers_det = 1, &                                        ! detritus 
-                           convers_dZm = 1                                           ! zooplankton loss
+                           convers_dZm = 6.625*12.01*9.0*24.0*3600.0                                            ! zooplankton loss
     
 end module Parameters

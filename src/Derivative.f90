@@ -28,8 +28,7 @@ module Derivative
             !test physioloical calc
             !----------------------------------------------------
             print*, '----------------------------------------------------'
-            print*, "Temperature Pel       ", this%Tp
-            print*, "Temperature bot       ", this%Tb
+            print*, "Temperature           ", this%Temp
             print*, "Detritus flux         ", this%det
             print*, "Sf Biomass Zoo m      ", this%Mz%B
             print*, "Sf Biomass Zoo l      ", this%Lz%B

@@ -24,88 +24,29 @@ module Physiology
         real(dp), dimension(3) :: Texp = 0.0, T_e = 0.0, T_met = 0.0, tpel = 0.0
         integer :: i
 
-        if (test_COBALT) then 
-            T_e(1) = dexp(ke * (this%Tp-10.0))      ! for encounter rate and Cmax
-            T_met(1) = dexp(kmet * (this%Tp-10.0))  ! for metabolism
+        T_e(1) = dexp(ke * (this%Temp-10.0))      ! for encounter rate and Cmax
+        T_met(1) = dexp(kmet * (this%Temp-10.0))  ! for metabolism
 
-            ! Save temperature correction for encounter and cmax 
-            this%Sf%Tcorr_e = T_e(1)
-            this%Sp%Tcorr_e = T_e(1)
-            this%Sd%Tcorr_e = T_e(1)
-            this%Mf%Tcorr_e = T_e(1)
-            this%Mp%Tcorr_e = T_e(1)
-            this%Md%Tcorr_e = T_e(1)
-            this%Lp%Tcorr_e = T_e(1)
-            this%Ld%Tcorr_e = T_e(1)
+        ! Save temperature correction for encounter and cmax 
+        this%Sf%Tcorr_e = T_e(1)
+        this%Sp%Tcorr_e = T_e(1)
+        this%Sd%Tcorr_e = T_e(1)
+        this%Mf%Tcorr_e = T_e(1)
+        this%Mp%Tcorr_e = T_e(1)
+        this%Md%Tcorr_e = T_e(1)
+        this%Lp%Tcorr_e = T_e(1)
+        this%Ld%Tcorr_e = T_e(1)
 
-            ! Save temperature correction for metabolism
-            this%Sf%Tcorr_met = T_met(1)
-            this%Sp%Tcorr_met = T_met(1)
-            this%Sd%Tcorr_met = T_met(1)
-            this%Mf%Tcorr_met = T_met(1)
-            this%Mp%Tcorr_met = T_met(1)
-            this%Md%Tcorr_met = T_met(1)
-            this%Lp%Tcorr_met = T_met(1)
-            this%Ld%Tcorr_met = T_met(1)
-
-        else 
-            tpel(1) = 1.0 ! Pelagic type of life (100% time spent in the pelagic zone)
-            tpel(2) = 0.0 ! benthic type of life (0% time spent in the pelagic zone)
-            CALL tdif_dem(this, tpel(3)) ! time in pelagic of large demersals. 
-            this%tpel_Ld = tpel(3)
-            do i = 1, 3
-                ! Calc of the average temperature experienced 
-                Texp(i) = (this%Tp * tpel(i)) + (this%Tb*(1.0-tpel(i)))
-            
-                ! Calc Temperature correction  
-                T_e(i) = dexp(ke * (Texp(i)-10.0))      ! for encounter rate and Cmax
-                T_met(i) = dexp(kmet * (Texp(i)-10.0))  ! for metabolism
-            end do  
-
-            ! Save temperature correction for encounter and cmax 
-            this%Sf%Tcorr_e = T_e(1)
-            this%Sp%Tcorr_e = T_e(1)
-            this%Sd%Tcorr_e = T_e(1)
-            this%Mf%Tcorr_e = T_e(1)
-            this%Mp%Tcorr_e = T_e(1)
-            this%Md%Tcorr_e = T_e(2)
-            this%Lp%Tcorr_e = T_e(1)
-            this%Ld%Tcorr_e = T_e(3)
-
-            ! Save temperature correction for metabolism
-            this%Sf%Tcorr_met = T_met(1)
-            this%Sp%Tcorr_met = T_met(1)
-            this%Sd%Tcorr_met = T_met(1)
-            this%Mf%Tcorr_met = T_met(1)
-            this%Mp%Tcorr_met = T_met(1)
-            this%Md%Tcorr_met = T_met(2)
-            this%Lp%Tcorr_met = T_met(1)
-            this%Ld%Tcorr_met = T_met(3)
-        end if 
+        ! Save temperature correction for metabolism
+        this%Sf%Tcorr_met = T_met(1)
+        this%Sp%Tcorr_met = T_met(1)
+        this%Sd%Tcorr_met = T_met(1)
+        this%Mf%Tcorr_met = T_met(1)
+        this%Mp%Tcorr_met = T_met(1)
+        this%Md%Tcorr_met = T_met(1)
+        this%Lp%Tcorr_met = T_met(1)
+        this%Ld%Tcorr_met = T_met(1)
     end subroutine Calc_Q10
-
-     
-    subroutine tdif_dem(this, tdiff)
-        !:======================================================================
-        ! Calc Tdiff the fraction of time spent in pelagic for large demersals 
-        ! The calculation uses the biomass of benthic resources versus 
-        ! pelagic resources 
-        ! Pelagic preys Biomass : Medium forage and medium Pelagic 
-        ! Demersal preys biomass : Medium Demersal and benthic resource 
-        !:======================================================================
-        type(Structure_group), intent(in) :: this
-        real(dp), intent(inout) :: tdiff 
-        real(dp) :: biop, biob
-
-        biop =  pref_Ld_Mf * this%Mf%B + pref_Ld_Mp * this%Md%B
-        biob = pref_Ld_Md *this%Md%B  + pref_Ld_BE * this%BE%B
-
-        if (this%H < PI_be_cutoff) then 
-            tdiff = biop / (biop + biob)
-        else 
-            tdiff = 0.0
-        end if 
-    end subroutine tdif_dem
     
     subroutine Consumption(This)
         !:======================================================================

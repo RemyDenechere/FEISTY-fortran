@@ -9,73 +9,58 @@ program Run_physiology
     implicit none
     
     type(Structure_group) :: Var
-    type(Save_structure2D) :: Data
+    type(Save_structure4D) :: Data
     type(Save_structure1D) :: Data_MNTH
     type(ini_fish_data) :: Data_F_ini
-    integer :: Ntime, Nspace
-    real(dp), dimension(:, :), allocatable :: DataTp, DataTb, Datadet, &
-                                              DataZM, Datadzm, DataZL, Datadzl
-    integer :: ispace, Count_MNT, itime, iDAY, iYR, imonth, Year, Stop_count
+    integer :: Ntime, Nlayer, Nlath, Nlongh
+    real(dp), dimension(:, :, :, :), allocatable :: DataTemp, Datadet, &
+                                                    DataZM, Datadzm, DataZL, Datadzl
+    integer :: ispace, Count_MNT, itime, iDAY, iYR, imonth, Year, Stop_count, ilayer, ilath, ilongh
     real(dp) :: T1, T2, T3, sim_time
     logical :: Spinup = .false. ! .true. ! 
-    CALL cpu_time(T1)
 
     ! Initialisation: ----------------------------------------------------------
-    ! print*, "Checkpoint 1"
-    CALL Initialisation(Spinup, Var, Nspace, Ntime, Data_F_ini, Data, &
-                        DataTp, DataTb, Datadet, Datadzm, DataZM, Datadzl, DataZL)
+    CALL cpu_time(T1)
+    CALL Initialisation(Spinup, Var, Ntime, Nlayer, Nlath, Nlongh, Data_F_ini, Data, &
+                        DataTemp, Datadet, Datadzm, DataZM, Datadzl, DataZL)
     CALL cpu_time(T2)
  
     ! Increasing the spinup time! 
     if (Spinup) then 
-        Year = 200
-        sim_time = 110
+        Year = Ntime / 365
+        sim_time = 1.6546143499999999
     else 
-        Year = YR
-        sim_time = 35
+        Year = Ntime /365
+        sim_time = 1.6546143499999999/200.0 
     end if 
 
     print *, "-------------------------------------"
     print *, "     Simulation parameters    "
-    print *, '# Days              ', Year * 365
-    print *, '# month             ', Year * 12
+    print *, '# Days              ', Ntime
+    print *, '# month             ', Year *12
     print *, '# Year              ', Year
-    print *, '# Spacial grid      ', Nspace
+    print *, '# Layer             ', Nlayer
+    print *, '# Latitude          ', Nlath
+    print *, '# Longitude         ', Nlongh
     print *, "Initialisation time " , T2-T1, "sec"
     print *, "Start simulation, takes ~", sim_time, "min"
     print *, "-------------------------------------"
 
-    ! Loops over space ----------------------------------------------------------
-    Do ispace = 1, Nspace
-        CALL initPhysiology(Spinup, ispace, Data_F_ini, Var)    ! Give initial conditions for the system 
-        itime = 0                                               ! Restart days counter
-        Count_MNT = 0                                           ! Restart month counter
+    ! Loops over layers, latitude and longitude ----------------------------------------------------------
+    Do ilayer = 1, Nlayer; Do ilath = 1, Nlath; Do ilongh = 1, Nlongh
+        CALL initPhysiology(Spinup, ilayer, ilath, ilongh, Data_F_ini, Var)    ! Give initial conditions for the system 
 
         ! Loops over time ----------------------------------------------------------
-        Do iYr = 1, Year ! Loop Year
-            if (Spinup) then                                    ! If spinup: run only over one year                                       
-                itime = 0                                       ! Restart days counter
-            end if
-            ! Loop Month:
-            Do imonth = 1, 12
-                CALL init_store_MNTH(Data_MNTH, MNTH(imonth))                   ! Define size vector to store daily data in a month 
-                ! Loop Day:
-                Do iDAY = 1, MNTH(imonth)                                       ! Loop Days
-                    itime = itime + 1                                           ! Counts the days to get input                                                           
-                    CALL Get_Environental_data2D(Var, DataTp, DataTb, &         ! Get the environemntal data for
-                                Datadzm, Datadet, DataZM, DataZL, Datadzl, &    ! that specific day
-                                ispace, itime)                                
-                    CALL CalcBiomass(Var)                                       ! Calcul biomass at day+1    
-                    CALL store_MNTH(Data_MNTH, Var, iDAY)                       ! Store the monthly data 
-                end Do ! End Loop Days
-                Count_MNT = Count_MNT + 1                                       ! Counts the month to save data
-                CALL store_data_MNT(Data, Data_MNTH, ispace, Count_MNT, &
-                                    MNTH(imonth))                               ! Calcul and store the monthly average
-            end Do ! End Loop Month
-        end Do ! End Loop Year
-    end Do
-    print*, 'Number of Month simulated', Count_MNT
-    CALL save_data(Spinup, Data, Nspace, Count_MNT)  ! Save Netcdf 
+        Do iYr = 1, Year; Do iDAY = 1, 365                                       ! Loop Days  
+                CALL Get_Environental_data(Var, DataTemp, Datadet, &
+                            Datadzm, DataZM, Datadzl, DataZL, &
+                            iDAY, ilayer, ilath, ilongh)                                                                                  
+                CALL CalcBiomass(Var)                                       ! Calcul biomass at day+1
+                CALL store_daily_data(Data, Var, iDAY, ilayer, ilath, ilongh)        ! Calcul and store the monthly average
+        end do; end do ! End Loop Year and day
+    enddo ; enddo; enddo ! } longh; lat; layer
+
+    CALL save_data(Spinup, Data, Ntime, Nlayer, Nlath, Nlongh)  ! Save Netcdf 
 
     CALL cpu_time(T3)
     print *, "-------------------------------------"
@@ -86,18 +71,4 @@ program Run_physiology
 
 end program Run_physiology
 
-    ! ----------------------------------------------------
-    ! Test Biomass all group
-    ! ----------------------------------------------------
-    ! print*, "----------------------------------"
-    ! print*, "lat =  ", ilat
-    ! print*, "long = ", ilong
-    ! print*, "----------------------------------"
-    ! print*, "Biomass Sf   ", Var%Sf%B
-    ! print*, "Biomass Sp   ", Var%Sp%B
-    ! print*, "Biomass Sd   ", Var%Sd%B
-    ! print*, "Biomass Mf   ", Var%Mf%B
-    ! print*, "Biomass Mp   ", Var%Mp%B
-    ! print*, "Biomass Md   ", Var%Md%B
-    ! print*, "Biomass Lp   ", Var%Lp%B
-    ! print*, "Biomass Ld   ", Var%Ld%B
+   

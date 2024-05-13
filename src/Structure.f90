@@ -4,10 +4,10 @@ module Structure
     implicit none 
 
     type :: Structure_Fish
-    !------------------------------------
-    ! Structure type for all the physiological 
-    ! functions 
-    !------------------------------------------------------------------------------------
+        !------------------------------------
+        ! Structure type for all the physiological 
+        ! functions 
+        !------------------------------------------------------------------------------------
         real(dp) :: B                   ! Biomass
         real(dp) :: w                   ! weight
         real(dp) :: Tcorr_e = 0         ! temperature correction for Encounter and Cmax
@@ -70,29 +70,23 @@ module Structure
         ! Global variable ()
         real(dp) :: zfm = 0                  ! Fraction of zooplankton mortality loss consumed
         real(dp) :: zfl = 0                  ! Fraction of zooplankton mortality loss consumed  
-        real(dp) :: Tp = 0                   ! Pelagic temperature
-        real(dp) :: Tb = 0                   ! Benthic temperature
+        real(dp) :: Temp = 0                   ! Pelagic temperature
         real(dp) :: dzm = 0                  ! Biomass of medium zooplankton consumed by top predators 
         real(dp) :: dzl = 0                  ! Biomass of Large zooplankton consumed by top predators 
         real(dp) :: det = 0                  ! Detritus flux to benthic community
-        real(dp) :: H = 20000.0              ! Depth (set up deeper than max depth to avoid problem with demersal tdiff if depth is not setup from environemental data)
         real(dp), dimension(nDeriv) :: dudt  ! variable containing the derivative 
         real(dp) :: Zcons_VS_dZm = 0         ! Zm consumption from FEISTY over dZm estmated
         real(dp) :: Zcons_VS_dZl = 0         ! Zm consumption from FEISTY over dZl estmated
         real(dp) :: tpel_Ld = 0              ! Time in pelagic of large demersal depending on depth and abundance of resource
 
-        real(dp) :: Nlat
-        real(dp) :: Nlong
+        real(dp) :: Nlath
+        real(dp) :: Nlongh
         real(dp) :: Ntime
-        real(dp) :: Nspace
+        real(dp) :: Nlayer
     end type Structure_group
     
-    type :: Save_structure3D
-        real(dp), dimension(:, :, :), allocatable :: Sf, Sp, Sd, Mf, Mp, Md, Lp, Ld
-    end type
-
-    type :: Save_structure2D
-        real(dp), dimension(:, :), allocatable :: Sf, Sp, Sd, Mf, Mp, Md, Lp, Ld, BE, Zcons_VS_dZm, Zcons_VS_dZl
+    type :: Save_structure4D
+        real(dp), dimension(:, :, :, :), allocatable :: Sf, Sp, Sd, Mf, Mp, Md, Lp, Ld, BE, Zcons_VS_dZm, Zcons_VS_dZl
     end type
 
     type :: Save_structure1D
@@ -100,15 +94,15 @@ module Structure
     end type
 
     type :: ini_fish_data
-        real(dp), dimension(:), allocatable :: IniSf, IniSp, IniSd, IniMf, IniMp, IniMd , IniLp, IniLd, IniBE, H
+        real(dp), dimension(:, :, :), allocatable :: IniSf, IniSp, IniSd, IniMf, IniMp, IniMd , IniLp, IniLd, IniBE
     end type 
 
     contains 
 
     ! Define initial condition for a grid cell
-    subroutine initPhysiology(Spinup, ispace, Data_F_ini, this)
+    subroutine initPhysiology(Spinup, ilayer, ilath, ilongh, Data_F_ini, this)
         logical, intent(in) :: Spinup
-        integer, intent(in) :: ispace
+        integer, intent(in) :: ilayer, ilath, ilongh
         type(Structure_group), intent(inout) :: this
         type(ini_fish_data)  , intent(inout) :: Data_F_ini
     
@@ -123,49 +117,36 @@ module Structure
             this%Lp%B = 0.00001
             this%Ld%B = 0.00001
         else 
-            this%BE%B = Data_F_ini%IniBE(ispace)
-            this%Sf%B = Data_F_ini%IniSf(ispace)
-            this%Sp%B = Data_F_ini%IniSp(ispace)
-            this%Sd%B = Data_F_ini%IniSd(ispace)
-            this%Mf%B = Data_F_ini%IniMf(ispace)
-            this%Mp%B = Data_F_ini%IniMp(ispace)
-            this%Md%B = Data_F_ini%IniMd(ispace)
-            this%Lp%B = Data_F_ini%IniLp(ispace)
-            this%Ld%B = Data_F_ini%IniLd(ispace)
+            this%BE%B = Data_F_ini%IniBE(ilayer, ilath, ilongh)
+            this%Sf%B = Data_F_ini%IniSf(ilayer, ilath, ilongh)
+            this%Sp%B = Data_F_ini%IniSp(ilayer, ilath, ilongh)
+            this%Sd%B = Data_F_ini%IniSd(ilayer, ilath, ilongh)
+            this%Mf%B = Data_F_ini%IniMf(ilayer, ilath, ilongh)
+            this%Mp%B = Data_F_ini%IniMp(ilayer, ilath, ilongh)
+            this%Md%B = Data_F_ini%IniMd(ilayer, ilath, ilongh)
+            this%Lp%B = Data_F_ini%IniLp(ilayer, ilath, ilongh)
+            this%Ld%B = Data_F_ini%IniLd(ilayer, ilath, ilongh)
         end if 
-            this%H = Data_F_ini%H(ispace)
+
     end subroutine initPhysiology
     
 
-    subroutine init_save_data3D(this, Nlat, Nlong)
-        type(Save_structure3D) :: this
-        integer :: Nlat, Nlong
-        allocate(this%Sf(Nlat, Nlong, Nmonth))
-        allocate(this%Sp(Nlat, Nlong, Nmonth))
-        allocate(this%Sd(Nlat, Nlong, Nmonth))
-        allocate(this%Mf(Nlat, Nlong, Nmonth))
-        allocate(this%Mp(Nlat, Nlong, Nmonth))
-        allocate(this%Md(Nlat, Nlong, Nmonth))
-        allocate(this%Lp(Nlat, Nlong, Nmonth))
-        allocate(this%Ld(Nlat, Nlong, Nmonth))
-    end subroutine init_save_data3D
+    subroutine init_save_data4D(this, Ntime, Nlayer, Nlath, Nlongh)
+        type(Save_structure4D) :: this
+        integer :: Ntime, Nlayer, Nlath, Nlongh
 
-
-    subroutine init_save_data2D(this, Nspace)
-        type(Save_structure2D) :: this
-        integer, intent(in) :: Nspace
-        allocate(this%BE(Nspace, Nmonth))
-        allocate(this%Sf(Nspace, Nmonth))
-        allocate(this%Sp(Nspace, Nmonth))
-        allocate(this%Sd(Nspace, Nmonth))
-        allocate(this%Mf(Nspace, Nmonth))
-        allocate(this%Mp(Nspace, Nmonth))
-        allocate(this%Md(Nspace, Nmonth))
-        allocate(this%Lp(Nspace, Nmonth))
-        allocate(this%Ld(Nspace, Nmonth))
-        allocate(this%Zcons_VS_dZm(Nspace, Nmonth))
-        allocate(this%Zcons_VS_dZl(Nspace, Nmonth))
-    end subroutine init_save_data2D
+        allocate(this%Sf(Ntime, Nlayer, Nlath, Nlongh))
+        allocate(this%Sp(Ntime, Nlayer, Nlath, Nlongh))
+        allocate(this%Sd(Ntime, Nlayer, Nlath, Nlongh))
+        allocate(this%Mf(Ntime, Nlayer, Nlath, Nlongh))
+        allocate(this%Mp(Ntime, Nlayer, Nlath, Nlongh))
+        allocate(this%Md(Ntime, Nlayer, Nlath, Nlongh))
+        allocate(this%Lp(Ntime, Nlayer, Nlath, Nlongh))
+        allocate(this%Ld(Ntime, Nlayer, Nlath, Nlongh))
+        allocate(this%BE(Ntime, Nlayer, Nlath, Nlongh))
+        allocate(this%Zcons_VS_dZm(Ntime, Nlayer, Nlath, Nlongh))
+        allocate(this%Zcons_VS_dZl(Ntime, Nlayer, Nlath, Nlongh))
+    end subroutine init_save_data4D
 
 
     subroutine init_store_MNTH(this, Ndays)
@@ -201,23 +182,23 @@ module Structure
         this%Zcons_VS_dZl(iDay) = that%Zcons_VS_dZl
     end subroutine store_MNTH
 
-    subroutine store_data_MNT(this, that, ispace, imonth, Ndays)
-        type(Save_structure2D) :: this         ! Storage (Space, month)
+    subroutine store_data_MNT(this, that, imonth, ilayer, ilath, ilongh, Ndays)
+        type(Save_structure4D) :: this         ! Storage (Space, month)
         type(Save_structure1D) :: that         ! Daily data for the month 
-        integer, intent(in) :: ispace, imonth, Ndays
+        integer, intent(in) :: imonth, ilayer, ilath, ilongh, Ndays
 
         ! Store the average biomass of each group for the month
-        this%BE(ispace, imonth) = sum(that%BE)/Ndays
-        this%Sf(ispace, imonth) = sum(that%Sf)/Ndays
-        this%Sp(ispace, imonth) = sum(that%Sp)/Ndays
-        this%Sd(ispace, imonth) = sum(that%Sd)/Ndays
-        this%Mf(ispace, imonth) = sum(that%Mf)/Ndays
-        this%Mp(ispace, imonth) = sum(that%Mp)/Ndays
-        this%Md(ispace, imonth) = sum(that%Md)/Ndays
-        this%Lp(ispace, imonth) = sum(that%Lp)/Ndays
-        this%Ld(ispace, imonth) = sum(that%Ld)/Ndays
-        this%Zcons_VS_dZm(ispace, imonth) = sum(that%Zcons_VS_dZm)/Ndays
-        this%Zcons_VS_dZl(ispace, imonth) = sum(that%Zcons_VS_dZl)/Ndays
+        this%BE(imonth, ilayer, ilath, ilongh) = sum(that%BE)/Ndays
+        this%Sf(imonth, ilayer, ilath, ilongh) = sum(that%Sf)/Ndays
+        this%Sp(imonth, ilayer, ilath, ilongh) = sum(that%Sp)/Ndays
+        this%Sd(imonth, ilayer, ilath, ilongh) = sum(that%Sd)/Ndays
+        this%Mf(imonth, ilayer, ilath, ilongh) = sum(that%Mf)/Ndays
+        this%Mp(imonth, ilayer, ilath, ilongh) = sum(that%Mp)/Ndays
+        this%Md(imonth, ilayer, ilath, ilongh) = sum(that%Md)/Ndays
+        this%Lp(imonth, ilayer, ilath, ilongh) = sum(that%Lp)/Ndays
+        this%Ld(imonth, ilayer, ilath, ilongh) = sum(that%Ld)/Ndays
+        this%Zcons_VS_dZm(imonth, ilayer, ilath, ilongh) = sum(that%Zcons_VS_dZm)/Ndays
+        this%Zcons_VS_dZl(imonth, ilayer, ilath, ilongh) = sum(that%Zcons_VS_dZl)/Ndays
 
         ! Deallocating the vectors to store next month daily values: 
         deallocate(that%BE)
@@ -233,5 +214,23 @@ module Structure
         deallocate(that%Zcons_VS_dZl)
     end subroutine store_data_MNT
 
+    subroutine store_daily_data(this, that, itime, ilayer, ilath, ilongh)
+        type(Save_structure4D) :: this         ! Storage (Space, month)
+        type(Structure_group) :: that         ! Daily data for the month 
+        integer, intent(in) :: itime, ilayer, ilath, ilongh
+
+        ! Store the average biomass of each group for the month
+        this%BE(itime, ilayer, ilath, ilongh) = that%BE%B
+        this%Sf(itime, ilayer, ilath, ilongh) = that%Sf%B
+        this%Sp(itime, ilayer, ilath, ilongh) = that%Sp%B
+        this%Sd(itime, ilayer, ilath, ilongh) = that%Sd%B
+        this%Mf(itime, ilayer, ilath, ilongh) = that%Mf%B
+        this%Mp(itime, ilayer, ilath, ilongh) = that%Mp%B
+        this%Md(itime, ilayer, ilath, ilongh) = that%Md%B
+        this%Lp(itime, ilayer, ilath, ilongh) = that%Lp%B
+        this%Ld(itime, ilayer, ilath, ilongh) = that%Ld%B
+        this%Zcons_VS_dZm(itime, ilayer, ilath, ilongh) = that%Zcons_VS_dZm
+        this%Zcons_VS_dZl(itime, ilayer, ilath, ilongh) = that%Zcons_VS_dZl
+    end subroutine store_daily_data
 
 end module Structure

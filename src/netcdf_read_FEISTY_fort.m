@@ -3,8 +3,7 @@
 % close all
 
 %% Root directory: 
-param.Rockfish =  true; % false; % 
-param.newColor = false; 
+param.Rockfish =  true; % false; %
 
 param = param_setup(param);
 
