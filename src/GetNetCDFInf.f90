@@ -65,28 +65,28 @@ module GetNetCDFinf
             
             if (Spinup_Time_Serie) then 
                 ! Write each variable to a separate NetCDF file : ---------------------------
-            call write_nc_file4D('../output/' // trim(exp) // '_BE_bio_Spinup_Time_Serie.nc', &
-                                    'BE', that%BE, Ntime, Nlayer, Nlath, Nlongh)
-            call write_nc_file4D('../output/' // trim(exp) // '_Sf_bio_Spinup_Time_Serie.nc', &
-                                    'Sf', that%Sf, Ntime, Nlayer, Nlath, Nlongh)
-            call write_nc_file4D('../output/' // trim(exp) // '_Sp_bio_Spinup_Time_Serie.nc', &
-                                    'Sp', that%Sp, Ntime, Nlayer, Nlath, Nlongh)
-            call write_nc_file4D('../output/' // trim(exp) // '_Sd_bio_Spinup_Time_Serie.nc', &
-                                    'Sd', that%Sd, Ntime, Nlayer, Nlath, Nlongh)
-            call write_nc_file4D('../output/' // trim(exp) // '_Mf_bio_Spinup_Time_Serie.nc', & 
-                                    'Mf', that%Mf, Ntime, Nlayer, Nlath, Nlongh)
-            call write_nc_file4D('../output/' // trim(exp) // '_Mp_bio_Spinup_Time_Serie.nc', &
-                                    'Mp', that%Mp, Ntime, Nlayer, Nlath, Nlongh)
-            call write_nc_file4D('../output/' // trim(exp) // '_Md_bio_Spinup_Time_Serie.nc', &
-                                    'Md', that%Md, Ntime, Nlayer, Nlath, Nlongh)
-            call write_nc_file4D('../output/' // trim(exp) // '_Lp_bio_Spinup_Time_Serie.nc', &
-                                    'Lp', that%Lp, Ntime, Nlayer, Nlath, Nlongh)
-            call write_nc_file4D('../output/' // trim(exp) // '_Ld_bio_Spinup_Time_Serie.nc', &
-                                    'Ld', that%Ld, Ntime, Nlayer, Nlath, Nlongh)
-            call write_nc_file4D('../output/' // trim(exp) // '_dZm_Spinup_Time_Serie.nc', &
-                                    'dZm', that%Zcons_VS_dZm, Ntime, Nlayer, Nlath, Nlongh)
-            call write_nc_file4D('../output/' // trim(exp) // '_dZl_Spinup_Time_Serie.nc', &
-                                    'dZl', that%Zcons_VS_dZl, Ntime, Nlayer, Nlath, Nlongh)
+                call write_nc_file4D('../output/' // trim(exp) // '_BE_bio_Spinup_Time_Serie.nc', &
+                                        'BE', that%BE, Ntime, Nlayer, Nlath, Nlongh)
+                call write_nc_file4D('../output/' // trim(exp) // '_Sf_bio_Spinup_Time_Serie.nc', &
+                                        'Sf', that%Sf, Ntime, Nlayer, Nlath, Nlongh)
+                call write_nc_file4D('../output/' // trim(exp) // '_Sp_bio_Spinup_Time_Serie.nc', &
+                                        'Sp', that%Sp, Ntime, Nlayer, Nlath, Nlongh)
+                call write_nc_file4D('../output/' // trim(exp) // '_Sd_bio_Spinup_Time_Serie.nc', &
+                                        'Sd', that%Sd, Ntime, Nlayer, Nlath, Nlongh)
+                call write_nc_file4D('../output/' // trim(exp) // '_Mf_bio_Spinup_Time_Serie.nc', & 
+                                        'Mf', that%Mf, Ntime, Nlayer, Nlath, Nlongh)
+                call write_nc_file4D('../output/' // trim(exp) // '_Mp_bio_Spinup_Time_Serie.nc', &
+                                        'Mp', that%Mp, Ntime, Nlayer, Nlath, Nlongh)
+                call write_nc_file4D('../output/' // trim(exp) // '_Md_bio_Spinup_Time_Serie.nc', &
+                                        'Md', that%Md, Ntime, Nlayer, Nlath, Nlongh)
+                call write_nc_file4D('../output/' // trim(exp) // '_Lp_bio_Spinup_Time_Serie.nc', &
+                                        'Lp', that%Lp, Ntime, Nlayer, Nlath, Nlongh)
+                call write_nc_file4D('../output/' // trim(exp) // '_Ld_bio_Spinup_Time_Serie.nc', &
+                                        'Ld', that%Ld, Ntime, Nlayer, Nlath, Nlongh)
+                call write_nc_file4D('../output/' // trim(exp) // '_dZm_Spinup_Time_Serie.nc', &
+                                        'dZm', that%Zcons_VS_dZm, Ntime, Nlayer, Nlath, Nlongh)
+                call write_nc_file4D('../output/' // trim(exp) // '_dZl_Spinup_Time_Serie.nc', &
+                                        'dZl', that%Zcons_VS_dZl, Ntime, Nlayer, Nlath, Nlongh)
             end if 
 
         else
@@ -135,6 +135,8 @@ module GetNetCDFinf
         
         ! Close the file
         status = nf90_close(ncid)
+
+        print *, filename, " written"
     end subroutine write_nc_file4D
 
     subroutine write_nc_file3D(filename, varname, var, Nlayer, Nlath, Nlongh)
@@ -187,6 +189,8 @@ module GetNetCDFinf
         this%Lz%B = DataZL(ilongh, ilath, ilayer, itime)  * convers_zm
         this%dzl  = Datadzl(ilongh, ilath, ilayer, itime) * convers_dZm
         this%det  = Datadet(ilongh, ilath, ilayer, itime)
+
+        
         
     end subroutine Get_Environental_data
 
@@ -210,6 +214,8 @@ module GetNetCDFinf
             CALL readgrid4D(dir_zl, var_zl, Ntime, Nlayer, Nlath, Nlongh, DataZL)
             CALL readgrid4D(dir_dzl, var_dzl, Ntime, Nlayer, Nlath, Nlongh, Datadzl)
             CALL readgrid4D(dir_det, var_det, Ntime, Nlayer, Nlath, Nlongh, Datadet)
+
+            print *, Datadet(1:Ntime, Nlayer, 1, 1)
     end subroutine load_forcing_data
 
 

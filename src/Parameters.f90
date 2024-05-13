@@ -46,8 +46,7 @@ module Parameters
     ! Environemental data for test: -----------------------------------
     real(dp), parameter :: PI_be_cutoff = 200 ! Benthic-pelagic coupling cutoff (depth, m)
     logical, parameter :: diagnostic = .false.
-    logical, parameter :: prod_constrained = .true. 
-    logical, parameter :: test_COBALT = .false.
+    logical, parameter :: prod_constrained = .true.
     logical, parameter :: Spinup_Time_Serie = .true.
 
     ! Groupe information: ---------------------------------------------

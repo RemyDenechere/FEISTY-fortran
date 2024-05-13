@@ -28,13 +28,14 @@ module Derivative
             !test physioloical calc
             !----------------------------------------------------
             print*, '----------------------------------------------------'
+            print*,                   " input parameters "
             print*, "Temperature           ", this%Temp
             print*, "Detritus flux         ", this%det
-            print*, "Sf Biomass Zoo m      ", this%Mz%B
-            print*, "Sf Biomass Zoo l      ", this%Lz%B
-            print*, "Sf MORT Zoo m         ", this%dzm
-            print*, "Sf MORT Zoo l         ", this%dzl    
-
+            print*, "Biomass Zoo m         ", this%Mz%B
+            print*, "Biomass Zoo l         ", this%Lz%B
+            print*, "MORT Zoo m            ", this%dzm
+            print*, "MORT Zoo l            ", this%dzl    
+            print*, '----------------------------------------------------'
 
             print*, "Sf Tcorr_e            ", this%Sf%Tcorr_e
             print*, "Sf Tcorr_met          ", this%Sf%Tcorr_met
