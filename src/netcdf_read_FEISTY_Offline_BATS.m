@@ -89,7 +89,7 @@ for i = 1:(length(var)-1)
     eval([var{i} '_tmean = squeeze(nanmean(' var{i} ', [1,2,3]));']);
 end 
 
-% only at the bottom layer for detritus flux: 
+% Only at the bottom layer for detritus flux: 
 Pop_btm_lz(:,:,:) = Pop_btm(:,:, end, :);
 Pop_btm_tmean = squeeze(nanmean(Pop_btm_lz, [1, 2]));
 
@@ -98,9 +98,3 @@ save(['../output/Matlab_Average/' exp 'Time_Means_forcing_files' Spinup{2} '.mat
     'nmdz_tmean','jhploss_n_Mdz_tmean',...
     'nlgz_tmean','jhploss_n_Lgz_tmean',...
     'Pop_btm_tmean')
-
-
-
-
-
-

@@ -118,7 +118,7 @@ xlabel(t, 'Time (days)')
 
 save_graph(gcf, "png", [save_dir exp(1:(end-1)) Spinup{2}], 22, 12)
 
-%% plot forcing data: 
+%% Plot forcing data: 
 load([dir exp 'Time_Means_forcing_files' Spinup{2} '.mat'])
 var = {'thetao', 'nmdz', 'jhploss_n_Mdz', 'nlgz', 'jhploss_n_Lgz', 'Pop_btm'};
 
@@ -126,7 +126,8 @@ start_date = datetime("2004-01-01");
 end_date   = datetime("2004-12-31");
 time = start_date:end_date;
 
-fig = figure(3)
+fig = figure(3);
+axes_formating()
 
 hold on 
 for i = 1:length(var)
@@ -140,5 +141,4 @@ ylabel('days')
 title('Forcing files for offline simulation')
 
 save_graph(gcf, "png", [save_dir exp 'Time_Means_forcing_files' Spinup{2}], 11, 12)
-
 
