@@ -4,7 +4,7 @@ module Parameters
 
     ! input files: ----------------------------------------------------
     character(LEN=280), parameter :: root_dir = "/project/rdenechere/COBALT_output/COBALT_offline_forcing_files/"
-    character(LEN=280) , parameter :: exp = "COBALT_offline"
+    character(LEN=280) , parameter :: exp = "COBALT_offline_BATS"
 
     character(LEN=280), parameter :: &
         dir_Temp = trim(root_dir) // "20040101.ocean_feisty_forcing_offline.nc", &
@@ -39,7 +39,7 @@ module Parameters
     real(dp), parameter :: eps = 1d-30      ! Small number for divisions 
     integer, parameter  :: YR = 1            ! Number of year in Time series
     integer, parameter  :: Nmonth = YR*12    ! Number of month in Time series
-    integer, parameter  :: Year_2_Spinup = 200
+    integer, parameter  :: Year_2_Spinup = 100
     integer, dimension(12), parameter ::  MNTH = (/ 31, 28, 31, 30, 31, 30, &
                                                     31, 31, 30, 31, 30, 31 /) ! Length of month (days)
 
@@ -48,6 +48,7 @@ module Parameters
     logical, parameter :: diagnostic = .false.
     logical, parameter :: prod_constrained = .true.
     logical, parameter :: Spinup_Time_Serie = .true.
+    real(dp), parameter :: conv_m2_to_m3 = 100.0
 
     ! Groupe information: ---------------------------------------------
     integer, parameter :: nFishGroup = 8                      ! Number of fish functional group
@@ -58,7 +59,7 @@ module Parameters
     ! Parameters physiology: ------------------------------------------
     real(dp), parameter :: ke = 0.0630             ! [°c-1]                Temperature correction for cmax and encounter
     real(dp), parameter :: kmet = 0.08550          ! [°c-1]                Temperature correction for Metabolic cost cost
-    real(dp), parameter :: gamma = 70.0            ! []                    Coeff for mass-specific Encounter rate             
+    real(dp), parameter :: gamma = 70.0 * conv_m2_to_m3 ! []                    Coeff for mass-specific Encounter rate             
     real(dp), parameter :: b_enc = 0.20            ! [m-2 g^(b_enc−1) d−1] Exponent for mass-specific Encounter rate 
     real(dp), parameter :: h = 20.0                ! [d g^(b_cmax)]        Coeff for Cmax 
     real(dp), parameter :: b_cmax = 0.250          ! []                    Exponent for Cmax 
@@ -113,8 +114,9 @@ module Parameters
     !                        convers_det = 10.0**(-9 +4)*12.01*9.0*24.0*3600.0, &      ! detritus 
     !                        convers_dZm = 10.0**(-2 -3)*12.01*9.0*24.0*3600.0         ! zooplankton loss
     ! No conversion for Colleen's data: 
-    real(dp), parameter :: convers_zm  = 6.625*12.01*9.0, &                                        ! zooplankton biomass 
-                           convers_det = 1, &                                        ! detritus 
-                           convers_dZm = 6.625*12.01*9.0*24.0*3600.0                                            ! zooplankton loss
+    real(dp), parameter :: convers_zm  = 6.625* 12.01 * 9.0 * 1000.0, &            ! zooplankton biomass mol N m-2 s-1 -to- gC ww m-2
+                           convers_det = 1, &                                      ! detritus 
+                           convers_dZm = 6.625*12.01*9.0*24.0*3600.0               ! zooplankton loss
+    
     
 end module Parameters

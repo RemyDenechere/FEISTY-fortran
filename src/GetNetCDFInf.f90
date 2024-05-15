@@ -28,6 +28,11 @@ module GetNetCDFinf
         else 
             Ntime = Ntime -1
         end if
+        ! Save lat long, and time in structure: 
+        Var%Ntime  = Ntime
+        Var%Nlayer = Nlayer
+        Var%Nlath  = Nlath
+        Var%Nlongh = Nlongh 
 
         CALL init_save_data4D(Data, Ntime, Nlayer, Nlath, Nlongh)
         
@@ -214,8 +219,6 @@ module GetNetCDFinf
             CALL readgrid4D(dir_zl, var_zl, Ntime, Nlayer, Nlath, Nlongh, DataZL)
             CALL readgrid4D(dir_dzl, var_dzl, Ntime, Nlayer, Nlath, Nlongh, Datadzl)
             CALL readgrid4D(dir_det, var_det, Ntime, Nlayer, Nlath, Nlongh, Datadet)
-
-            print *, Datadet(1:Ntime, Nlayer, 1, 1)
     end subroutine load_forcing_data
 
 
@@ -282,12 +285,6 @@ module GetNetCDFinf
         print *, "3rd dimension =", trim(zname), "; length = ", Nlath
         print *, "4th dimension =", trim(hname), "; length = ", Nlongh
         print *, "------------------------------------"      
-        
-        ! Save lat long, and time in structure: 
-        this%Ntime  = Ntime
-        this%Nlayer = Nlayer
-        this%Nlath  = Nlath
-        this%Nlongh = Nlongh 
     end subroutine griddims4D
 
     subroutine readgrid4D(dir, varname, Ntime, Nlayer, Nlath, Nlongh, values)
@@ -325,6 +322,7 @@ module GetNetCDFinf
         ierr = nf90_close(ncid)
 
         print*, trim(varname), " loaded"
+        print*, "dir : ", trim(dir)
     end subroutine readgrid4D
 
     subroutine readgrid3D(dir, varname, Nlayer, Nlath, Nlongh, values)

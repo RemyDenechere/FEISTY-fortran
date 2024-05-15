@@ -15,7 +15,7 @@ program Run_physiology
     integer :: Ntime, Nlayer, Nlath, Nlongh
     real(dp), dimension(:, :, :, :), allocatable :: DataTemp, Datadet, &
                                                     DataZM, Datadzm, DataZL, Datadzl
-    integer :: ispace, Count_MNT, itime, iDAY, iYR, imonth, Year, Stop_count, ilayer, ilath, ilongh
+    integer :: itime, iDAY, iYR, Year, ilayer, ilath, ilongh
     real(dp) :: T1, T2, T3, sim_time
     logical :: Spinup = .false. ! .true. ! 
 
@@ -51,23 +51,25 @@ program Run_physiology
         CALL initPhysiology(Spinup, ilayer, ilath, ilongh, Data_F_ini, Var)    ! Give initial conditions for the system 
 
         ! Loops over time ----------------------------------------------------------
-        Do iYr = 1, Year; Do iDAY = 1, 365                                       ! Loop Days  
+        Do iYr = 1, Year; Do iDAY = 1, 365 ! Loop Year and Day
+            itime = (iYr -1) * 365 + iDay            
                 CALL Get_Environental_data(Var, DataTemp, Datadet, &
                             Datadzm, DataZM, Datadzl, DataZL, &
                             iDAY, ilayer, ilath, ilongh)                                                                                  
                 CALL CalcBiomass(Var)                                       ! Calcul biomass at day+1
-                CALL store_daily_data(Data, Var, iDAY, ilayer, ilath, ilongh)        ! Calcul and store the monthly average
+                CALL store_daily_data(Data, Var, itime, ilayer, ilath, ilongh)        ! Calcul and store the monthly average
         end do; end do ! End Loop Year and day
     enddo ; enddo; enddo ! } longh; lat; layer
 
     CALL save_data(Spinup, Data, Ntime, Nlayer, Nlath, Nlongh)  ! Save Netcdf 
-
+    
     CALL cpu_time(T3)
     print *, "-------------------------------------"
     print *, "Simulation done !"
     print *, "Running time",  (T3-T2)/60, "min"
     print *, "Total time  ",  (T3-T1)/60, "min"
     print *, "-------------------------------------"
+    
 
 end program Run_physiology
 
