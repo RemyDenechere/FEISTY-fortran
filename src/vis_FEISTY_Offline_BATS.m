@@ -25,23 +25,25 @@ if (~isfolder(fpath))
 end
 
 %% colors
-cm10=[0.5 0.5 0;... %tan/army
-    0 0.7 0;...     %g
-    1 0 1;...       %m
-    1 0 0;...       %r
-    0.5 0 0;...     %maroon
-    0/255 206/255 209/255;... %turq
-    0 0.5 0.75;...  %med blue
-    0 0 0.75;...    %b
-    0.5 0.5 0.5; ...%med grey
-    0 0 0];...      %black
-
-set(groot,'defaultAxesColorOrder',cm10);
+% cm10=[0.5 0.5 0;... %tan/army
+%     0 0.7 0;...     %g
+%     1 0 1;...       %m
+%     1 0 0;...       %r
+%     0.5 0 0;...     %maroon
+%     0/255 206/255 209/255;... %turq
+%     0 0.5 0.75;...  %med blue
+%     0 0 0.75;...    %b
+%     0.5 0.5 0.5; ...%med grey
+%     0 0 0];...      %black
+% 
+% set(groot,'defaultAxesColorOrder', cm10);
 
 %% plot Spinup 
 % Load Data: -------------------------------------------------------------- 
 %! Spinup time series: 
 figure(1)
+axes_formating()
+
 load([dir exp 'Time_Means' Spinup{1} '.mat']);
 
 % Sum per functional group: 
@@ -119,26 +121,78 @@ xlabel(t, 'Time (days)')
 save_graph(gcf, "png", [save_dir exp(1:(end-1)) Spinup{2}], 22, 12)
 
 %% Plot forcing data: 
-load([dir exp 'Time_Means_forcing_files' Spinup{2} '.mat'])
+
+%! Load data: 
+load([dir exp 'Time_Depth_Means_forcing_files'  '.mat'])
+load([dir exp 'Time_Means_forcing_files'  '.mat'])
+load([dir exp 'Depth_Means_forcing_files'  '.mat'])
+
+%! forcing variable names: 
 var = {'thetao', 'nmdz', 'jhploss_n_Mdz', 'nlgz', 'jhploss_n_Lgz', 'Pop_btm'};
 
+%! Time periode: 
 start_date = datetime("2004-01-01");
 end_date   = datetime("2004-12-31");
 time = start_date:end_date;
 
+%! Plot forcing data: ------------------------------------------------
 fig = figure(3);
 axes_formating()
 
-hold on 
-for i = 1:length(var)
-    plot(time, eval([var{i} '_tmean']), '-')
-end 
-hold off 
-set(gca, 'YScale', 'log')
-legend(var{:}, Interpreter = 'none')
-xlabel('Unit to check!')
-ylabel('days')
-title('Forcing files for offline simulation')
+t = tiledlayout(1, 2, "TileSpacing","compact", "Padding","compact");
 
-save_graph(gcf, "png", [save_dir exp 'Time_Means_forcing_files' Spinup{2}], 11, 12)
+% Panel 1: time average: 
+t1 = nexttile(t); 
+hold(t1, 'all')
+for i = 1:length(var)
+    plot(t1, time, eval([var{i} '_tmean']), '-')
+end 
+hold(t1, 'off')
+set(t1, 'YScale', 'log', 'Ylim',[1.74969307072006e-05 1749.69307072006]);
+title(t1, 'Time average')
+legend(t1, var{:}, Interpreter = 'none', EdgeColor = 'none', Color = 'none', ...
+    Position = [0.179283105674276 0.269803790877946 0.223263506063947 0.271164021164021]);
+
+% Panel 2: depth average
+t2 = nexttile(t); 
+hold(t2, 'all')
+for i = 2:length(var)
+    plot(t2, eval([var{i} '_zmean']), -depth,  '-')
+end 
+hold(t2, 'off')
+t2.XLabel.String = 'gC WW m-3';
+t2.XLim = [-0.00404600305473225, 0.245953996945268];
+t2.YLim = [-75.9854668425813, 4.01453315741872];
+title(t2, 'Depth average')
+
+
+% add axis:
+t3 = copyobj(t2, t);
+plot(t3, eval([var{1} '_zmean']), -depth,  '-', 'Color',  [1.00,0.41,0.16])
+
+% Change axis properties: 
+t3.XAxisLocation = 'bottom';
+t3.XAxis.Color = [1.00,0.41,0.16];
+t3.Color = 'none';
+%t3.XLabel.Position(3) = t2.XLabel.Position(3); 
+%t3.XLabel.Position(2) = t3.XLabel.Position(2)+5;
+t3.XRuler.TickLabelGapOffset = 35;
+t3.XLabel.String = 'Temperature'; 
+t3.XAxis.TickLabelColor = [1.00,0.41,0.16];
+t3.XLim = [-3.23244336814286 21.7675566318571];
+t3.YLim = [-75.9997853215371 4.00021467846288];
+
+legend(t2, var{2:end}, Interpreter = 'none', Color = 'none', EdgeColor = 'none', ...
+    Position = [0.703623414303576,0.455079749385228,0.223263506063947,0.189705882352941]);  
+legend(t3, var{1}, Interpreter = 'none', Color = 'none', EdgeColor = 'none', ...
+    Position = [0.703623414303576,0.342804281561458,0.142778390297685,0.044117647058824]);
+
+
+
+% Labels
+ylabel(t, 'Unit to check!')
+xlabel(t, 'Time (days)')
+title(t, [exp 'forcing_files'], Interpreter = 'none')
+
+save_graph(gcf, "png", [save_dir exp 'forcing_files' Spinup{2}], 16, 12)
 

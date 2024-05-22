@@ -3,7 +3,7 @@ clear all
 close all
 
 %% Root directory: 
-param.Rockfish =  true; % false; % 
+param.Rockfish =  false; % true; % 
 param = param_setup(param);
 
 %! get directory containing output
@@ -74,27 +74,59 @@ dir = {'/rdenechere/COBALT_output/COBALT_offline_forcing_files/20040101.ocean_fe
        '/rdenechere/COBALT_output/COBALT_offline_forcing_files/20040101.ocean_feisty_forcing_offline_detritus.nc'};
 var = {'thetao', 'nmdz', 'jhploss_n_Mdz', 'nlgz', 'jhploss_n_Lgz', 'Pop_btm'};
 
+
 for i = 1:length(var) 
     ncid = netcdf.open([param.rootdir dir{i}],'NC_NOWRITE');
     varid = netcdf.inqVarID(ncid, var{i});
     eval([ var{i} ' = netcdf.getVar(ncid, varid);']);
     eval([ var{i} '(' var{i} ' == 99999) = NaN;']);
     netcdf.close(ncid);
+
+    if ismember(i, [2, 4]) % conversion 
+        eval([ var{i} ' = ' var{i} '*6.625* 12.01 * 9.0 * 1000.0;' ]);     % Conversion from Mol N/kg --> gC WW / m3
+    elseif ismember(i, [3, 5]) 
+        eval([ var{i} ' = ' var{i} '*6.625* 12.01 * 9.0 * 24.0*3600;' ]);  % Conversion from Mol mol N m-3 s-1 --> gC WW m-3 d-1
+    end
 end 
 
-%! Take mean over latitude and longitude for visualization:
+%! Take mean over dimensions: ---------------------------------------------
 dim = size(eval(var{1}));
 time = 1:dim(4);
-for i = 1:(length(var)-1)
-    eval([var{i} '_tmean = squeeze(nanmean(' var{i} ', [1,2,3]));']);
-end 
+depth = 1:dim(3);
 
-% Only at the bottom layer for detritus flux: 
-Pop_btm_lz(:,:,:) = Pop_btm(:,:, end, :);
-Pop_btm_tmean = squeeze(nanmean(Pop_btm_lz, [1, 2]));
+%! Calculate average over lat and long: 
+for i = 1:(length(var))
+    eval([var{i} '_spacemean = transpose(squeeze(nanmean(' var{i} ', [1,2])));']);
+end
 
-save(['../output/Matlab_Average/' exp 'Time_Means_forcing_files' Spinup{2} '.mat'], 'time',...
-    'thetao_tmean', ...
-    'nmdz_tmean','jhploss_n_Mdz_tmean',...
-    'nlgz_tmean','jhploss_n_Lgz_tmean',...
-    'Pop_btm_tmean')
+%! Integrated biomass over depth: 
+for i = 1:(length(var))
+    eval([var{i} '_tmean = squeeze(sum(' var{i} '_spacemean, 2));']);
+end
+
+%! Average over time : 
+for i = 1:(length(var))
+    eval([var{i} '_zmean = squeeze(nanmean(' var{i} '_spacemean, 1));']);
+end
+
+%! Save data: -------------------------------------------------------------
+%!! average over lat and long: 
+save(['../output/Matlab_Average/' exp 'Time_Depth_Means_forcing_files' '.mat'], 'time', 'depth')
+for i = 1:length(var)
+    save(['../output/Matlab_Average/' exp 'Time_Depth_Means_forcing_files' '.mat'], ...
+        [var{i} '_spacemean'] ,'-append')
+end
+
+%!! integrated over depth
+save(['../output/Matlab_Average/' exp 'Time_Means_forcing_files' '.mat'], 'time')
+for i = 1:length(var)
+    save(['../output/Matlab_Average/' exp 'Time_Means_forcing_files' '.mat'], ...
+        [var{i} '_tmean'] ,'-append')
+end
+
+%!! Average over time 
+save(['../output/Matlab_Average/' exp 'Depth_Means_forcing_files' '.mat'], 'depth')
+for i = 1:length(var)
+    save(['../output/Matlab_Average/' exp 'Depth_Means_forcing_files' '.mat'], ...
+        [var{i} '_zmean'] ,'-append')
+end
