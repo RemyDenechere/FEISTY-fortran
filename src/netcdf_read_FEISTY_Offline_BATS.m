@@ -3,7 +3,7 @@ clear all
 close all
 
 %% Root directory: 
-param.Rockfish =  false; % true; % 
+param.Rockfish =  true; % false; % 
 param = param_setup(param);
 
 %! get directory containing output
@@ -12,20 +12,25 @@ exp = 'COBALT_offline_BATS_';
 Spinup = {'_Spinup_Time_Serie', ''}; 
 var = {'Sf', 'Sp', 'Sd', 'Mf', 'Mp', 'Md', 'Lp', 'Ld', 'BE', 'dZm', 'dZl'}; 
 
+if ~exist([dir 'Matlab_Average/'])
+    mkdir([dir 'Matlab_Average/'])
+end
+
 %% Get Spinup Time Series data:  
 for i = 1:(length(var)-2)
     ncid = netcdf.open([dir exp var{i} '_bio' Spinup{1} '.nc'],'NC_NOWRITE');
-    eval([ var{i} ' = netcdf.getVar(ncid, 0 );']);
+    eval([ var{i} ' = netcdf.getVar(ncid, 0);']);
     eval([ var{i} '(' var{i} ' == 99999) = NaN;']);
     netcdf.close(ncid);
 end 
-dim = size(eval(var{1}));
+dim = size(eval([var{1}]));
 
 %! Take mean over latitude and longitude and sum over depth for visualization:
 time = 1:dim(1);
+
 for i = 1:(length(var)-2)
     sum_depth(:,:,:) = squeeze(eval(['sum(' var{i} ', 2)'])); 
-    eval([var{i} '_tmean = transpose(nanmean( sum_depth, [2, 3]));']);
+    eval([var{i} '_tmean = transpose(nanmean(sum_depth, [2, 3]));']);
 end 
 clear sum_depth
 save([dir 'Matlab_Average/' exp 'Time_Means' Spinup{1} '.mat'], 'time',...
@@ -53,17 +58,58 @@ dim = size(eval(var{1}));
 
 %! Take mean over latitude and longitude for visualization:
 time = 1:dim(1);
-for i = 1:length(var)
-    sum_depth(:,:,:) = squeeze(eval(['sum(' var{i} ', 2)'])); 
-    eval([var{i} '_tmean = transpose(nanmean( sum_depth, [2, 3]));']);
-end 
-clear sum_depth
+depth = 1:dim(2);
 
-save([dir 'Matlab_Average/' exp 'Time_Means' Spinup{2} '.mat'], 'time',...
-    'Sf_tmean','Sp_tmean','Sd_tmean',...
-    'Mf_tmean','Mp_tmean','Md_tmean',...
-    'Lp_tmean','Ld_tmean','BE_tmean', ...
-    'dZm_tmean', 'dZl_tmean')
+% for i = 1:length(var)
+%     sum_depth(:,:,:) = squeeze(eval(['sum(' var{i} ', 2)'])); 
+%     eval([var{i} '_tmean = transpose(nanmean(sum_depth, [2, 3]));']);
+% end 
+% clear sum_depth
+% 
+% save([dir 'Matlab_Average/' exp 'Time_Means' Spinup{2} '.mat'], 'time',...
+%     'Sf_tmean','Sp_tmean','Sd_tmean',...
+%     'Mf_tmean','Mp_tmean','Md_tmean',...
+%     'Lp_tmean','Ld_tmean','BE_tmean', ...
+%     'dZm_tmean', 'dZl_tmean')
+
+%% Calcul average over dimensions: -----------------------------------------
+%! Calculate average over lat and long: 
+for i = 1:(length(var))
+    eval([var{i} '_spacemean = transpose(squeeze(nanmean(' var{i} ', [3, 4])));']);
+end
+
+%! Integrated biomass over depth: 
+for i = 1:(length(var))
+    eval([var{i} '_tmean = squeeze(sum(' var{i} '_spacemean, 1));']);
+end
+
+%! Average over time : 
+for i = 1:(length(var))
+    eval([var{i} '_zmean = squeeze(nanmean(' var{i} '_spacemean, 2));']);
+end
+
+%! Save data: -------------------------------------------------------------
+%!! average over lat and long: 
+save(['../output/Matlab_Average/' exp 'Time_Depth_Means' Spinup{2} '.mat'], 'time', 'depth')
+for i = 1:length(var)
+    save(['../output/Matlab_Average/' exp 'Time_Depth_Means' Spinup{2} '.mat'], ...
+        [var{i} '_spacemean'] ,'-append')
+end
+
+%!! integrated over depth
+save(['../output/Matlab_Average/' exp 'Time_Means' Spinup{2} '.mat'], 'time')
+for i = 1:length(var)
+    save(['../output/Matlab_Average/' exp 'Time_Means' Spinup{2} '.mat'], ...
+        [var{i} '_tmean'] ,'-append')
+end
+
+%!! Average over time 
+save(['../output/Matlab_Average/' exp 'Depth_Means' Spinup{2} '.mat'], 'depth')
+for i = 1:length(var)
+    save(['../output/Matlab_Average/' exp 'Depth_Means' Spinup{2} '.mat'], ...
+        [var{i} '_zmean'] ,'-append')
+end
+
 
 %% get input varaibles from COBALT 
 dir = {'/rdenechere/COBALT_output/COBALT_offline_forcing_files/20040101.ocean_feisty_forcing_offline.nc', ...

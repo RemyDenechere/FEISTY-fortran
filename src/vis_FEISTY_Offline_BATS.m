@@ -114,11 +114,47 @@ hold off
 set(gca, "YScale", "log")
 legend('Forage', 'Pelagics', 'Demersals', 'Benthos')
 title("Functional group")
-title(t, [exp(1:(end-1)) Spinup{2}], Interpreter = 'none')
+title(t, [exp 'Time_Means' Spinup{2}], Interpreter = 'none')
 ylabel(t, 'Integrated biomass over water column (g WW m-2)')
 xlabel(t, 'Time (days)')
 
-save_graph(gcf, "png", [save_dir exp(1:(end-1)) Spinup{2}], 22, 12)
+save_graph(gcf, "png", [save_dir exp 'Time_Means' Spinup{2} ], 22, 12)
+
+%% plot Depth average: 
+%! Time series: 
+fig = figure(3);
+axes_formating()
+
+load([dir exp 'Depth_Means' Spinup{2} '.mat']);
+
+% Sum per functional group: 
+F_zmean = Sf_zmean + Mf_zmean;
+P_zmean = Sp_zmean + Mp_zmean + Lp_zmean;
+D_zmean = Sd_zmean + Md_zmean + Ld_zmean;
+
+t = tiledlayout(1, 2, "TileSpacing", "compact", "Padding","compact");
+
+nexttile
+hold on 
+for i = 1:(length(var)-3)
+    plot(eval([var{i} '_zmean']), -depth, '-')
+end 
+hold off 
+legend(var{1:(end-3)})
+title("All size")
+
+nexttile
+hold on 
+plot(F_zmean, -depth, P_zmean, -depth, D_zmean, -depth)
+hold off 
+% set(gca, "XScale", "log")
+legend('Forage', 'Pelagics', 'Demersals', 'Benthos')
+title("Functional group")
+title(t, [exp 'Depth_Means' Spinup{2}], Interpreter = 'none')
+xlabel(t, 'Time averaged biomass over depth (g WW m-2)')
+ylabel(t, 'Layers')
+
+save_graph(gcf, "png", [save_dir exp 'Depth_Means' Spinup{2}], 22, 12)
 
 %% Plot forcing data: 
 

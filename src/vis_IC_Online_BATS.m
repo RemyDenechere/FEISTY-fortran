@@ -6,7 +6,7 @@
 % -------------------------------------------------------------------------
 
 %% Initial condition COBALT 
-ncid = netcdf.open('/project/CEFI-regional-MOM6/exps/OM4.single_column.COBALT/INPUT/COBALT_2023_10_spinup_2003_subset.nc', 'NC_NOWRITE');
+ncid = netcdf.open('Z:/CEFI-regional-MOM6/exps/OM4.single_column.COBALT/INPUT/COBALT_2023_10_spinup_2003_subset.nc', 'NC_NOWRITE');
 Time = netcdf.getVar(ncid, netcdf.inqVarID(ncid, 'Time'));
 lath = netcdf.getVar(ncid, netcdf.inqVarID(ncid, 'lath'));
 lonh = netcdf.getVar(ncid, netcdf.inqVarID(ncid, 'lonh'));
