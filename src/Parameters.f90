@@ -31,6 +31,9 @@ module Parameters
         Dir_IniMd = "../output/" // trim(exp) // "_Md_bio_Spinup.nc",&
         Dir_IniLp = "../output/" // trim(exp) // "_Lp_bio_Spinup.nc",&
         Dir_IniLd = "../output/" // trim(exp) // "_Ld_bio_Spinup.nc"
+
+    character(LEN=280), parameter :: dir_COBALT_IC = "/project/CEFI-regional-MOM6/&
+            &exps/OM4.single_column.COBALT/INPUT/COBALT_2023_10_spinup_2003_subset.nc"
  
     
     ! General parameters: ---------------------------------------------
@@ -48,7 +51,9 @@ module Parameters
     logical, parameter :: diagnostic = .false.
     logical, parameter :: prod_constrained = .true.
     logical, parameter :: Spinup_Time_Serie = .true.
+    logical, parameter :: Initial_Condition_generic_FEISTY = .true.
     real(dp), parameter :: conv_m2_to_m3 = 100.0
+    
 
     ! Groupe information: ---------------------------------------------
     integer, parameter :: nFishGroup = 8                      ! Number of fish functional group

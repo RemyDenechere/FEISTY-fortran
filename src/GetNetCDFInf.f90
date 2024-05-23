@@ -93,6 +93,9 @@ module GetNetCDFinf
                 call write_nc_file4D('../output/' // trim(exp) // '_dZl_Spinup_Time_Serie.nc', &
                                         'dZl', that%Zcons_VS_dZl, Ntime, Nlayer, Nlath, Nlongh)
             end if 
+            if(Initial_Condition_generic_FEISTY) then 
+                call FEISTY_Save_outputs(Spinup, that, Ntime, Nlayer, Nlath, Nlongh) 
+            end if 
 
         else
             ! Write each variable to a separate NetCDF file : ---------------------------
@@ -361,5 +364,218 @@ module GetNetCDFinf
         ! Close the netCDF files : ----------------------------------------------------------------
         ierr = nf90_close(ncid)
     end subroutine readgrid3D
+
+    subroutine readgrid1D(dir, varname, Dim1, values)
+        character(LEN=*), intent(in) :: dir, varname
+        integer, intent(in) :: Dim1
+        real(dp), dimension(Dim1), intent(inout) :: values
+        integer :: ierr, vartype, nAtts, ncid, varid
+        integer, dimension(3) :: ndims
+        print*, varname
+
+        ! Open NetCDF: --------------------------------------------
+        ierr = nf90_open(dir, NF90_NOWRITE, ncid)
+        if (ierr /= NF90_NOERR) then
+            print *, nf90_strerror(ierr)
+            print *, "Error opening file: ", trim(dir)
+            stop
+        end if
+        
+        ! Get variable id: 
+        ierr = nf90_inq_varid(ncid, varname, varid)
+        if (ierr /= NF90_NOERR) then
+            print *, "Error nf90_inquire_variable: ", nf90_strerror(ierr)
+            stop
+        end if
+
+        ! Get values of the variable 
+        ierr = nf90_get_var(ncid, varid, values) ! , start = start, count = count
+        if (ierr /= NF90_NOERR) then
+            print *, "Error nf90_get_var: ", nf90_strerror(ierr)
+            stop
+        end if
+        
+        ! Close the netCDF files : ----------------------------------------------------------------
+        ierr = nf90_close(ncid)
+    end subroutine readgrid1D
+
+    subroutine FEISTY_Save_outputs(Spinup, that, Ntime, Nlayer, Nlath, Nlongh)
+        logical, intent(in) :: Spinup
+        type(Save_structure4D) :: that
+        integer, intent(in) :: Ntime, Nlayer, Nlath, Nlongh
+        character(LEN=280) :: filename = "../output/FEISTY_2023_10_spinup_subset.nc"
+        integer(4) :: ncid, dimids(4)
+        integer :: i,j,k,l
+
+        call init_tracer_INPUT_nc(filename, ncid, Ntime, Nlayer, Nlath, Nlongh, dimids)
+
+        call add_tracer_INPUT_nc(ncid, dimids, "Sf_B", "Small forage fish biomass        ", that%SF, Ntime, Nlayer, Nlath, Nlongh)
+        call add_tracer_INPUT_nc(ncid, dimids, "Mf_B", "Medium forage fish biomass       ", that%MF, Ntime, Nlayer, Nlath, Nlongh)
+        call add_tracer_INPUT_nc(ncid, dimids, "Sp_B", "Small large pelagic fish biomass ", that%SP, Ntime, Nlayer, Nlath, Nlongh)
+        call add_tracer_INPUT_nc(ncid, dimids, "Mp_B", "Medium large pelagic fish biomass", that%MP, Ntime, Nlayer, Nlath, Nlongh)
+        call add_tracer_INPUT_nc(ncid, dimids, "Lp_B", "Large pelagic fish biomass       ", that%LP, Ntime, Nlayer, Nlath, Nlongh)
+        call add_tracer_INPUT_nc(ncid, dimids, "Sd_B", "Small demersal fish biomass      ", that%SD, Ntime, Nlayer, Nlath, Nlongh)
+        call add_tracer_INPUT_nc(ncid, dimids, "Md_B", "Medium demersal fish biomass     ", that%MD, Ntime, Nlayer, Nlath, Nlongh)
+        call add_tracer_INPUT_nc(ncid, dimids, "Ld_B", "Large demersal fish biomass      ", that%LD, Ntime, Nlayer, Nlath, Nlongh)
+        call add_tracer_INPUT_nc(ncid, dimids, "BE_B", "Benthic invertebrate biomass     ", that%BE, Ntime, Nlayer, Nlath, Nlongh)
+
+        call end_tracer_INPUT_nc(ncid)
+
+    end subroutine FEISTY_Save_outputs
+
+
+    subroutine init_tracer_INPUT_nc(filename, ncid, Ntime, Nlayer, Nlath, Nlongh, dimids)
+        character(LEN = 280), intent(in) :: filename 
+        integer, intent(inout) :: ncid, dimids(4)
+        integer, intent(in) :: Ntime, Nlayer, Nlath, Nlongh
+        integer :: status
+        integer :: Interface = 76, latq = 5, lonq = 5
+        integer :: varid_time, varid_layer, varid_lath, varid_longh
+        integer :: i
+        real(dp), dimension(1) :: time_dim_val
+        real(dp), dimension(Nlayer) :: layer_dim_val
+        real(dp), dimension(Nlath)  :: lath_dim_val
+        real(dp), dimension(Nlongh) :: longh_dim_val
+
+        ! Create the NetCDF file
+        status = nf90_create(filename, NF90_CLOBBER, ncid)
+        if (status /= NF90_NOERR) then
+            print *, "Error opening " , trim(filename), " in init_tracer_INPUT_nc"
+            print *, trim(nf90_strerror(status))
+            STOP
+        end if
+
+        ! Define the dimensions
+        status = nf90_def_dim(ncid, 'Time' , NF90_UNLIMITED,  dimids(4))
+        if (status /= NF90_NOERR) then
+            print *, trim(nf90_strerror(status))
+            STOP
+        end if
+        status = nf90_def_dim(ncid, 'Layer', Nlayer, dimids(3))
+        status = nf90_def_dim(ncid, 'lath' , Nlath , dimids(2))
+        status = nf90_def_dim(ncid, 'lonh' , Nlongh, dimids(1))
+        !status = nf90_def_dim(ncid, 'lonq' , lonq  , dimids(3))
+        !status = nf90_def_dim(ncid, 'latq' , latq  , dimids(2))
+        !status = nf90_def_dim(ncid, 'Interface' , Interface, dimids(1))
+
+        ! Put opened netcdf into definition mode: 
+        status = nf90_redef(ncid)
+
+        !! Define variables for each dimension: --------------------------------------------------------------
+        ! Time: 
+            ! Define the variable
+            status = nf90_def_var(ncid, 'Time', NF90_DOUBLE, dimids(4), varid_time)
+            ! Add a attributes: 
+            status = nf90_put_att(ncid, varid_time, 'long_name', 'Time')
+            status = nf90_put_att(ncid, varid_time, 'Standard_name', 'time')
+            status = nf90_put_att(ncid, varid_time, 'units', 'days')
+            status = nf90_put_att(ncid, varid_time, 'calendar', 'proleptic_gregorian')
+            status = nf90_put_att(ncid, varid_time, 'axis', "T")
+            status = nf90_put_att(ncid, varid_time, '_FillValue', -9999.0_dp)
+
+        ! Layer:
+            ! Define the variable
+            status = nf90_def_var(ncid, 'Layer', NF90_DOUBLE, dimids(3), varid_layer)
+            ! Add a attributes: 
+            status = nf90_put_att(ncid, varid_layer, 'long_name', 'Layer')
+            status = nf90_put_att(ncid, varid_layer, 'units', 'gWW m-3')
+            status = nf90_put_att(ncid, varid_layer, 'positive', 'up')
+            status = nf90_put_att(ncid, varid_layer, 'axis', 'Z')
+            status = nf90_put_att(ncid, varid_layer, 'cartesian_axis', 'Z')
+            status = nf90_put_att(ncid, varid_layer, '_FillValue', -9999.0_dp)
+        
+        ! lath :
+            ! Define the variable
+            status = nf90_def_var(ncid, 'lath', NF90_DOUBLE, dimids(2), varid_lath)    
+            ! Add a attributes: 
+            status = nf90_put_att(ncid, varid_lath, 'long_name', 'Latitude')
+            status = nf90_put_att(ncid, varid_lath, 'Standard_name', 'latitude')
+            status = nf90_put_att(ncid, varid_lath, 'units', 'degrees_north')
+            status = nf90_put_att(ncid, varid_lath, 'axis', "Y")
+            status = nf90_put_att(ncid, varid_lath, '_FillValue', -9999.0_dp)     
+        
+        ! lonh :
+            ! Define the variable
+            status = nf90_def_var(ncid, 'lonh', NF90_DOUBLE, dimids(1), varid_longh)
+            ! Add a attributes: 
+            status = nf90_put_att(ncid, varid_longh, 'long_name', 'Longitude')
+            status = nf90_put_att(ncid, varid_longh, 'Standard_name', 'longitude')
+            status = nf90_put_att(ncid, varid_longh, 'units', 'degrees_east')
+            status = nf90_put_att(ncid, varid_longh, 'axis', "X")
+            status = nf90_put_att(ncid, varid_longh, '_FillValue', -9999.0_dp) 
+
+        ! End the definitions mode: enter data mode
+        status = nf90_enddef(ncid)
+
+        ! Write the variable data
+        call readgrid1D(dir_COBALT_IC, 'Time',  1,  Time_dim_val)
+        call readgrid1D(dir_COBALT_IC, 'Layer', Nlayer, layer_dim_val)
+        call readgrid1D(dir_COBALT_IC, 'lath',  Nlath,  lath_dim_val)       
+        call readgrid1D(dir_COBALT_IC, 'lonh', Nlongh, longh_dim_val)
+
+        ! print*, 'Time_dim_val', Time_dim_val
+        ! print*, 'layer_dim_val', layer_dim_val
+        ! print*, 'lath_dim_val', lath_dim_val
+        ! print*, 'longh_dim_val', longh_dim_val
+
+        status = nf90_put_var(ncid, varid_Time, 1.0)
+        status = nf90_put_var(ncid, varid_layer, layer_dim_val)
+        status = nf90_put_var(ncid, varid_lath,  lath_dim_val)
+        status = nf90_put_var(ncid, varid_longh, longh_dim_val)
+    end subroutine init_tracer_INPUT_nc
+
+    subroutine end_tracer_INPUT_nc(ncid)
+        integer, intent(in) :: ncid
+        integer :: status
+
+        ! Close the file
+        status = nf90_close(ncid)
+        if (status /= NF90_NOERR) then
+            print *, "Error clossing ncdf in end_tracer_INPUT_nc"
+            print *, trim(nf90_strerror(status))
+            STOP
+        end if
+    end subroutine end_tracer_INPUT_nc
+
+
+    subroutine add_tracer_INPUT_nc(ncid, dimids, varname, long_name, var, Ntime, Nlayer, Nlath, Nlongh)
+        character(LEN=*), intent(in) :: varname
+        character(LEN=33), intent(in) ::  long_name
+        integer, intent(in) :: dimids(4)
+        integer, intent(in) :: ncid, Ntime, Nlayer, Nlath, Nlongh
+        real(dp), dimension(Nlongh, Nlath, Nlayer, Ntime), intent(in) :: var
+        integer :: varid
+        integer :: status
+
+        ! Put opened netcdf into definition mode: 
+        status = nf90_redef(ncid)
+
+        ! Define the variable
+        status = nf90_def_var(ncid, varname, NF90_DOUBLE, dimids, varid)
+        if (status /= NF90_NOERR) then
+            print *, "Error Def Var: ", trim(varname)
+            print *, trim(nf90_strerror(status))
+            STOP
+        end if
+        
+        ! Add a attributes: 
+        status = nf90_put_att(ncid, varid, "long_name", trim(long_name))
+        status = nf90_put_att(ncid, varid, 'units', 'gWW m-3')
+        status = nf90_put_att(ncid, varid, 'checksum', "               0")
+        status = nf90_put_att(ncid, varid, '_FillValue', -9999.0_dp)
+
+        ! End the definitions mode: enter data mode
+        status = nf90_enddef(ncid)
+
+        ! Write the variable data
+        status = nf90_put_var(ncid, varid, var, &
+                              start = (/1,      1,     1    , Ntime /), &
+                              count = (/Nlongh, Nlath, Nlayer, Ntime/))
+        if (status /= NF90_NOERR) then
+            print *, "Error in nf90_put_var: " , trim(varname), " in add_tracer_INPUT_nc "
+            print *, trim(nf90_strerror(status))
+            STOP
+        end if        
+    end subroutine add_tracer_INPUT_nc
 
 end module GetNetCDFinf
