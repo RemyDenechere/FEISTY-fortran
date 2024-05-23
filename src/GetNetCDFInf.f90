@@ -507,16 +507,11 @@ module GetNetCDFinf
         ! End the definitions mode: enter data mode
         status = nf90_enddef(ncid)
 
-        ! Write the variable data
+        ! Write the variable data: get values from COBALT
         call readgrid1D(dir_COBALT_IC, 'Time',  1,  Time_dim_val)
         call readgrid1D(dir_COBALT_IC, 'Layer', Nlayer, layer_dim_val)
         call readgrid1D(dir_COBALT_IC, 'lath',  Nlath,  lath_dim_val)       
         call readgrid1D(dir_COBALT_IC, 'lonh', Nlongh, longh_dim_val)
-
-        ! print*, 'Time_dim_val', Time_dim_val
-        ! print*, 'layer_dim_val', layer_dim_val
-        ! print*, 'lath_dim_val', lath_dim_val
-        ! print*, 'longh_dim_val', longh_dim_val
 
         status = nf90_put_var(ncid, varid_Time, 1.0)
         status = nf90_put_var(ncid, varid_layer, layer_dim_val)
@@ -568,9 +563,9 @@ module GetNetCDFinf
         status = nf90_enddef(ncid)
 
         ! Write the variable data
-        status = nf90_put_var(ncid, varid, var, &
-                              start = (/1,      1,     1    , Ntime /), &
-                              count = (/Nlongh, Nlath, Nlayer, Ntime/))
+        status = nf90_put_var(ncid, varid, var(1:Nlongh, 1:Nlath, 1:Nlayer, Ntime)) !, &
+                            !   start = (/1,      1,     1    ,  (Ntime-1) /), &
+                            !   count = (/Nlongh, Nlath, Nlayer, 1         /))
         if (status /= NF90_NOERR) then
             print *, "Error in nf90_put_var: " , trim(varname), " in add_tracer_INPUT_nc "
             print *, trim(nf90_strerror(status))
