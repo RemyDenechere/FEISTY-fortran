@@ -78,15 +78,23 @@ module Structure
         real(dp) :: Zcons_VS_dZm = 0         ! Zm consumption from FEISTY over dZm estmated
         real(dp) :: Zcons_VS_dZl = 0         ! Zm consumption from FEISTY over dZl estmated
         real(dp) :: tpel_Ld = 0              ! Time in pelagic of large demersal depending on depth and abundance of resource
+        real(dp) :: Sd_Fout_int = 0
+        real(dp) :: Ld_Repro_end = 0
 
         real(dp) :: Nlath
         real(dp) :: Nlongh
         real(dp) :: Ntime
         real(dp) :: Nlayer
+
+        real(dp) :: ilath
+        real(dp) :: ilongh
+        real(dp) :: itime
+        real(dp) :: ilayer
     end type Structure_group
     
     type :: Save_structure4D
         real(dp), dimension(:, :, :, :), allocatable :: Sf, Sp, Sd, Mf, Mp, Md, Lp, Ld, BE, Zcons_VS_dZm, Zcons_VS_dZl
+        real(dp), dimension(:), allocatable :: Sd_Fout
     end type
 
     type :: Save_structure1D
@@ -129,6 +137,50 @@ module Structure
         end if 
 
     end subroutine initPhysiology
+
+     ! Define initial condition for a grid cell
+    subroutine init_Biomass_Layer(Spinup, itime, ilayer, ilath, ilongh, Data_F_ini, this, Data)
+        logical, intent(in) :: Spinup
+        integer, intent(in) :: itime, ilayer, ilath, ilongh
+        type(Structure_group) , intent(inout) :: this
+        type(ini_fish_data)   , intent(in)    :: Data_F_ini
+        type(Save_structure4D), intent(in)    :: Data
+    
+        if ((Spinup) .and. (itime .eq. int(1))) then
+            this%BE%B = 0.00001
+            this%Sf%B = 0.00001
+            this%Sp%B = 0.00001
+            this%Sd%B = 0.00001
+            this%Mf%B = 0.00001
+            this%Mp%B = 0.00001
+            this%Md%B = 0.00001
+            this%Lp%B = 0.00001
+            this%Ld%B = 0.00001
+
+        elseif ((Spinup .eqv. .false.) .and. (itime .eq. int(1))) then 
+            this%BE%B = Data_F_ini%IniBE(ilayer, ilath, ilongh)
+            this%Sf%B = Data_F_ini%IniSf(ilayer, ilath, ilongh)
+            this%Sp%B = Data_F_ini%IniSp(ilayer, ilath, ilongh)
+            this%Sd%B = Data_F_ini%IniSd(ilayer, ilath, ilongh)
+            this%Mf%B = Data_F_ini%IniMf(ilayer, ilath, ilongh)
+            this%Mp%B = Data_F_ini%IniMp(ilayer, ilath, ilongh)
+            this%Md%B = Data_F_ini%IniMd(ilayer, ilath, ilongh)
+            this%Lp%B = Data_F_ini%IniLp(ilayer, ilath, ilongh)
+            this%Ld%B = Data_F_ini%IniLd(ilayer, ilath, ilongh)
+        
+        elseif (itime .gt. int(1)) then 
+            this%BE%B = Data%BE(itime-1, ilayer, ilath, ilongh)
+            this%Sf%B = Data%Sf(itime-1, ilayer, ilath, ilongh)
+            this%Sp%B = Data%Sp(itime-1, ilayer, ilath, ilongh)
+            this%Sd%B = Data%Sd(itime-1, ilayer, ilath, ilongh)
+            this%Mf%B = Data%Mf(itime-1, ilayer, ilath, ilongh)
+            this%Mp%B = Data%Mp(itime-1, ilayer, ilath, ilongh)
+            this%Md%B = Data%Md(itime-1, ilayer, ilath, ilongh)
+            this%Lp%B = Data%Lp(itime-1, ilayer, ilath, ilongh)
+            this%Ld%B = Data%Ld(itime-1, ilayer, ilath, ilongh)
+        end if 
+
+    end subroutine init_Biomass_Layer
     
 
     subroutine init_save_data4D(this, Ntime, Nlayer, Nlath, Nlongh)
@@ -146,6 +198,9 @@ module Structure
         allocate(this%BE(Ntime, Nlayer, Nlath, Nlongh))
         allocate(this%Zcons_VS_dZm(Ntime, Nlayer, Nlath, Nlongh))
         allocate(this%Zcons_VS_dZl(Ntime, Nlayer, Nlath, Nlongh))
+
+        allocate(this%Sd_Fout(Nlayer))
+
     end subroutine init_save_data4D
 
 
@@ -231,6 +286,19 @@ module Structure
         this%Ld(itime, ilayer, ilath, ilongh) = that%Ld%B
         this%Zcons_VS_dZm(itime, ilayer, ilath, ilongh) = that%Zcons_VS_dZm
         this%Zcons_VS_dZl(itime, ilayer, ilath, ilongh) = that%Zcons_VS_dZl
+            
+        this%Sd_Fout(ilayer) = that%Sd%Fout
     end subroutine store_daily_data
+
+    subroutine Calc_trans_layer(this, that, itime, ilayer, ilath, ilongh)
+        type(Save_structure4D) :: this         ! Storage (time layer, space)
+        type(Structure_group) :: that          ! Daily data for the month 
+        integer, intent(in) :: itime, ilayer, ilath, ilongh
+
+        that%Sd_Fout_int = sum(this%Sd_Fout)
+        that%Ld_Repro_end = that%Ld%Repro
+
+    end subroutine Calc_trans_layer
+
 
 end module Structure

@@ -215,21 +215,33 @@ module Derivative
         ! Calcul new Benthic biomass 
         call Benthic_chemostat(this)
 
+
         ! Calcul derivative for each group : --------------------
         ! Small size (no loss from reproduction)
         dSf = eps_R * this%Mf%Repro * this%Mf%B + (this%Sf%E_A - this%Sf%Fout - this%Sf%mu) * this%Sf%B
         dSp = eps_R * this%Lp%Repro * this%Lp%B + (this%Sp%E_A - this%Sp%Fout - this%Sp%mu) * this%Sp%B
-        dSd = eps_R * this%Ld%Repro * this%Ld%B + (this%Sd%E_A - this%Sd%Fout - this%Sd%mu) * this%Sd%B  
-        
+        ! Reproduction from demersal is equaly divided between the first 30 layers (about 100m depth): 
+        ! for mass conservation: Fout is integrated Fout/Nlayer and repro = Ld_Repro_end/this%Nlayer
+        dSd = eps_R * this%Ld_Repro_end/this%Nlayer * &
+             & this%Ld%B + (this%Sd%E_A - this%Sd_Fout_int/this%Nlayer - this%Sd%mu) * this%Sd%B  
+
+
         ! Medium size (reproduction loss for Mf)
         dMf = this%Sf%Fout * this%Sf%B + (this%Mf%E_A - this%Mf%Repro - this%Mf%mu) * this%Mf%B 
         dMp = this%Sp%Fout * this%Sp%B + (this%Mp%E_A - this%Mp%Fout  - this%Mp%mu) * this%Mp%B 
-        dMd = this%Sd%Fout * this%Sd%B + (this%Md%E_A - this%Md%Fout  - this%Md%mu) * this%Md%B 
+        if (this%ilayer .eq. this%Nlayer) then ! use Sd_Fout_int for last layer 
+            dMd = this%Sd_Fout_int * this%Sd%B + (this%Md%E_A - this%Md%Fout  - this%Md%mu) * this%Md%B 
+        else ! If not in last layer then demersal don't grow in water column (don't put Fout = 0.0 as we save the value later)
+            dMd = 0.0
+        endif 
         
         ! Large fish (reproduction Fout = 0) 
         dLp = this%Mp%Fout * this%Mp%B + (this%Lp%E_A - this%Lp%Repro - this%Lp%mu) * this%Lp%B
-        dLd = this%Md%Fout * this%Md%B + (this%Ld%E_A - this%Ld%Repro - this%Ld%mu) * this%Ld%B 
-
+        if (this%ilayer .eq. this%Nlayer) then
+            dLd = this%Md%Fout * this%Md%B + (this%Ld%E_A - this%Ld_Repro_end - this%Ld%mu) * this%Ld%B 
+        else 
+            dLd = 0.0
+        endif
         ! print *, "---------------------------------------------------------"
         ! print *, "                 Derivative Md                       "
         ! print*, 'Md Fout                ',this%Sd%Fout 

@@ -198,7 +198,7 @@ module GetNetCDFinf
         this%dzl  = Datadzl(ilongh, ilath, ilayer, itime) * convers_dZm
         this%det  = Datadet(ilongh, ilath, ilayer, itime)
 
-        
+        this%ilayer = ilayer
         
     end subroutine Get_Environental_data
 

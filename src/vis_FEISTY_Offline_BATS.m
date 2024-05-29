@@ -60,8 +60,8 @@ for i = 1:(length(var)-3)
     plot(time(1:xtime), eval([var{i} '_tmean(1:xtime)']), '-')
 end 
 hold off 
-legend(var{1:(end-2)})
-set(gca, "YScale", "log", "XLim", [0, xtime*1.2])
+legend(var{1:(end-2)}, 'Location', 'best')
+set(gca, "YScale", "log", "XLim", [0, xtime*1.2], "Ylim", [10^(-5) 10^(1)])
 title("All size")
 
 nexttile
@@ -71,7 +71,8 @@ plot(time(1:xtime), F_tmean(1:xtime), ...
      time(1:xtime), D_tmean(1:xtime), ...
      time(1:xtime), BE_tmean(1:xtime))
 hold off 
-legend('Forage', 'Pelagics', 'Demersals', 'Benthos')
+legend('Forage', 'Pelagics', 'Demersals', 'Benthos', 'Location', 'east')
+set(gca, "YScale", "log", "XLim", [0, xtime*1.2], "Ylim", [10^(-5) 10^(2)])
 title("Functional group")
 set(gca, "YScale", "log")
 
@@ -104,14 +105,14 @@ for i = 1:(length(var)-3)
 end 
 hold off 
 legend(var{1:(end-3)})
-set(gca, "YScale", "log")
+set(gca, "YScale", "log", 'Ylim', [10^(-5) 5])
 title("All size")
 
 nexttile
 hold on 
 plot(time, F_tmean, time, P_tmean, time, D_tmean)
 hold off 
-set(gca, "YScale", "log")
+set(gca, "YScale", "log", 'Ylim', [10^(-5) 10^(2)])
 legend('Forage', 'Pelagics', 'Demersals', 'Benthos')
 title("Functional group")
 title(t, [exp 'Time_Means' Spinup{2}], Interpreter = 'none')
@@ -122,7 +123,7 @@ save_graph(gcf, "png", [save_dir exp 'Time_Means' Spinup{2} ], 22, 12)
 
 %% plot Depth average: 
 %! Time series: 
-fig = figure(3);
+figure(3);
 axes_formating()
 
 load([dir exp 'Depth_Means' Spinup{2} '.mat']);
@@ -140,6 +141,7 @@ for i = 1:(length(var)-3)
     plot(eval([var{i} '_zmean']), -depth, '-')
 end 
 hold off 
+set(gca, "XScale", 'log', 'XLim', [10^(-5) 10])
 legend(var{1:(end-3)})
 title("All size")
 
@@ -147,7 +149,7 @@ nexttile
 hold on 
 plot(F_zmean, -depth, P_zmean, -depth, D_zmean, -depth)
 hold off 
-% set(gca, "XScale", "log")
+set(gca, "XScale", "log", 'XLim', [10^(-5) 10])
 legend('Forage', 'Pelagics', 'Demersals', 'Benthos')
 title("Functional group")
 title(t, [exp 'Depth_Means' Spinup{2}], Interpreter = 'none')
@@ -172,7 +174,7 @@ end_date   = datetime("2004-12-31");
 time = start_date:end_date;
 
 %! Plot forcing data: ------------------------------------------------
-fig = figure(3);
+fig = figure(4);
 axes_formating()
 
 t = tiledlayout(1, 2, "TileSpacing","compact", "Padding","compact");

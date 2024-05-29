@@ -61,7 +61,7 @@ for i = 1:(length(var)-3)
 end 
 hold off 
 legend(var{1:(end-2)})
-set(gca, "YScale", "log", "XLim", [0, xtime*1.2])
+set(gca, "YScale", "log", "XLim", [0, xtime*1.2], "Ylim", [10^(-8) 1])
 title("All size")
 
 nexttile
@@ -122,7 +122,7 @@ save_graph(gcf, "png", [save_dir exp 'Time_Means' Spinup{2} ], 22, 12)
 
 %% plot Depth average: 
 %! Time series: 
-fig = figure(3);
+figure(3);
 axes_formating()
 
 load([dir exp 'Depth_Means' Spinup{2} '.mat']);
@@ -140,8 +140,8 @@ for i = 1:(length(var)-3)
     plot(eval([var{i} '_zmean']), -depth, '-')
 end 
 hold off 
+set("Xsc")
 legend(var{1:(end-3)})
-set(gca, "YScale", "log")
 title("All size")
 
 nexttile
@@ -173,7 +173,7 @@ end_date   = datetime("2004-12-31");
 time = start_date:end_date;
 
 %! Plot forcing data: ------------------------------------------------
-fig = figure(3);
+fig = figure(4);
 axes_formating()
 
 t = tiledlayout(1, 2, "TileSpacing","compact", "Padding","compact");

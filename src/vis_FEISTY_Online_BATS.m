@@ -2,6 +2,7 @@
 clear all
 close all 
 addpath('../../COBALT_output/COBALT_FEISTY/')
+addpath('../../Programing-Tutorials/Matlab/Matlab_functions/')
 
 %! get directory containing output
 dir_outpur = '../output/Matlab_Average/';

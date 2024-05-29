@@ -141,11 +141,11 @@ module Physiology
 
         ! Large Demersal: 
         ! If large demersal don't spend time in pelagic zone then predation on forage and pelagics = 0; 
-        if (this%tpel_Ld == 0.0) then 
-            pred_pel = 0.0
-        else 
+        ! if (this%tpel_Ld == 0.0) then 
+        !     pred_pel = 0.0
+        ! else 
             pred_pel = 1.0
-        end if  
+        ! end if  
 
         this%Ld%f_Mf = this%Ld%V * pred_pel * pref_Ld_Mf * this%Mf%B /(this%Ld%V * &
             (pred_pel * pref_Ld_Mf * this%Mf%B + pred_pel * pref_Ld_Mp * this%Mp%B + &

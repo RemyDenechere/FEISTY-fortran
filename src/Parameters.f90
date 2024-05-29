@@ -112,7 +112,8 @@ module Parameters
     real(dp), parameter :: pref_Ld_Mf = D * A           ! Preference for Medium forage
     real(dp), parameter :: pref_Ld_Mp = D               ! Preference for Medium pelagics
     real(dp), parameter :: pref_Ld_Md =  1.0            ! Preference for Medium Demersal
-    real(dp), parameter :: pref_Ld_BE = 1.0             ! Preference for Benthos
+    real(dp), parameter :: pref_Ld_BE = 1.0/conv_m2_to_m3 ! Preference for Benthos; divide conv_m2_to_m3 to unballance increase gamma 
+                                                          ! as predation on demersal does not change unit.
 
     ! Unit conversion for input data: ---------------------------------------------- 
     ! real(dp), parameter :: convers_zm  = 10.0**(-3 -2)*12.01*9.0, &                  ! zooplankton biomass 

@@ -47,19 +47,21 @@ program Run_physiology
     print *, "-------------------------------------"
 
     ! Loops over layers, latitude and longitude ----------------------------------------------------------
-    Do ilayer = 1, Nlayer; Do ilath = 1, Nlath; Do ilongh = 1, Nlongh
-        CALL initPhysiology(Spinup, ilayer, ilath, ilongh, Data_F_ini, Var)    ! Give initial conditions for the system 
-
+    Do ilath = 1, Nlath; Do ilongh = 1, Nlongh
         ! Loops over time ----------------------------------------------------------
         Do iYr = 1, Year; Do iDAY = 1, 365 ! Loop Year and Day
-            itime = (iYr -1) * 365 + iDay            
+            itime = (iYr -1) * 365 + iDay 
+            Do ilayer = 1, Nlayer; 
+                CALL init_Biomass_Layer(Spinup, itime, ilayer, ilath, ilongh, Data_F_ini, var, Data)
                 CALL Get_Environental_data(Var, DataTemp, Datadet, &
-                            Datadzm, DataZM, Datadzl, DataZL, &
-                            iDAY, ilayer, ilath, ilongh)                                                                                  
-                CALL CalcBiomass(Var)                                       ! Calcul biomass at day+1
-                CALL store_daily_data(Data, Var, itime, ilayer, ilath, ilongh)        ! Calcul and store the monthly average
-        end do; end do ! End Loop Year and day
-    enddo ; enddo; enddo ! } longh; lat; layer
+                                           Datadzm, DataZM, Datadzl, DataZL, &
+                                           iDAY, ilayer, ilath, ilongh)                                                                                  
+                CALL CalcBiomass(Var)                                           ! Calcul biomass at day+1
+                CALL store_daily_data(Data, Var, itime, ilayer, ilath, ilongh)  ! Calcul and store the monthly average
+            enddo
+            call Calc_trans_layer(Data, Var, itime, ilayer, ilath, ilongh)
+        enddo; enddo ! End Loop Year and day
+    enddo ; enddo; ! } longh; lat; layer
 
     CALL save_data(Spinup, Data, Ntime, Nlayer, Nlath, Nlongh)  ! Save Netcdf 
     
