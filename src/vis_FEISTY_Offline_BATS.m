@@ -226,11 +226,19 @@ legend(t3, var{1}, Interpreter = 'none', Color = 'none', EdgeColor = 'none', ...
     Position = [0.703623414303576,0.342804281561458,0.142778390297685,0.044117647058824]);
 
 
-
 % Labels
 ylabel(t, 'Unit to check!')
 xlabel(t, 'Time (days)')
 title(t, [exp 'forcing_files'], Interpreter = 'none')
 
 save_graph(gcf, "png", [save_dir exp 'forcing_files' Spinup{2}], 16, 12)
+
+%% Comparison Detritus flux to sea bed between COBALT output and FEISTY 2019
+
+
+
+
+
+
+
 

@@ -146,9 +146,14 @@ for i = 1:(length(var))
 end
 
 %! Integrated biomass over depth: 
-for i = 1:(length(var))
+for i = 1:(length(var)-1)
     eval([var{i} '_tmean = squeeze(sum(' var{i} '_spacemean, 2));']);
 end
+%! Detritus flux:
+
+
+
+
 
 %! Average over time : 
 for i = 1:(length(var))
