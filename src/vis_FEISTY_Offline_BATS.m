@@ -5,7 +5,7 @@ close all
 clear all
 addpath('../../Programing-Tutorials/Matlab/Matlab_functions/')
 %% Root directory: 
-param.Rockfish =  false; % true; % 
+param.Rockfish =  true; % false; % 
 param = param_setup(param);
 
 %! get directory containing output
@@ -234,11 +234,62 @@ title(t, [exp 'forcing_files'], Interpreter = 'none')
 save_graph(gcf, "png", [save_dir exp 'forcing_files' Spinup{2}], 16, 12)
 
 %% Comparison Detritus flux to sea bed between COBALT output and FEISTY 2019
+param.Rockfish =  true; % false; % 
+param = param_setup(param);
+
+% data from COBALT reanalysis: --------------------------------------------
+load([param.rootdir '/Feisty/Fish-MIP/Phase3/QuarterDeg/gfdl-mom6-cobalt2_ctrlclim_expc-bot_15arcmin_global_monthly_1961_2010.mat']); 
+
+%%
+load_unit = "mol m-2 s-1";      % before conversion
+unit = 'gC WW m-2 d-1';         % after conversion 
+conversion = 6.625*12.01*9.0*24.0*60.0*60.0;
+%! BATS coordinate in file: 
+idx_lon = find(lon > -64.17);
+idx_lat = find(lat <  31.83);
+lon_BATS = lon(idx_lon(1):idx_lon(2));
+lat_BATS = lat(idx_lat(1)-1:idx_lat(1));
+disp(['BATS longitude : -64.17' ])
+disp(['BATS latitude  :  31.83' ])
+%! dimensions:
+dim = size(det_btm); 
+
+det_btm_BATS = det_btm(idx_lon(1):idx_lon(2), idx_lat(1)-1:idx_lat(1), :);
+det_btm_BATS = mean(det_btm_BATS, [1, 2]);
+det_btm_BATS = squeeze(det_btm_BATS * conversion);
 
 
+% Time line COBALT output: 
+start_date = datetime("2004-01-01");
+end_date   = datetime("2004-12-31");
+time_1 = start_date:end_date;
 
+% Timeline CABOLAT reanalysis
+year = 1961:2010;
+years = [];
+for i = 1:length(year)
+    years = [years, repmat(year(i), 1, 12)];
+end 
+months = repmat(1:12, 1, length(year));
+days = ones(1, length(months));
+time_2 = datenum([years', months', days']); 
+time_2_datetime = datetime([years', months', days']);
+time_2_str = datestr(time_2);
 
-
+%% plot the two metrics
+figure(5)
+axes_formating()
+hold on 
+plot(time_1, Pop_btm_tmean)
+plot(time_2_datetime, det_btm_BATS)
+hold off
+legend('COBALT-1D forcing files', 'COBALT reanalysis')
+xlabel('Time (days)')
+ylabel('Detritus flux to seafloor (gC WW m-2 d-1)')
+title([exp 'Comparison detritus flux'], 'Interpreter', "none")
+set(gca, 'Xlim', [start_date, end_date])
+save_graph(gcf, 'png', [save_dir exp ...
+            'Comparison detritus fluxflux forcing vs reanalysis'] , 14, 11)
 
 
 

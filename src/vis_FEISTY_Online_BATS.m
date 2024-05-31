@@ -12,7 +12,7 @@ Spinup = {''};
 var = {'Sf', 'Sp', 'Sd', 'Mf', 'Mp', 'Md', 'Lp', 'Ld', 'BE'}; 
 functional_group = {'Forage', 'Pelagic', 'Demersal'};
 
-%% get tracers: 
+% get tracers: 
 load(['../output/Matlab_Average/' exp 'Time_Depth_Means_Tracers' '.mat'])
 load(['../output/Matlab_Average/' exp 'Time_Means_Tracers' '.mat'])
 load(['../output/Matlab_Average/' exp 'Depth_Means_Tracers' '.mat'])
@@ -27,17 +27,20 @@ figure(1)
 axes_formating()
 t = tiledlayout(1, 2, "TileSpacing", "compact", "Padding", "compact");
 
-nexttile
-hold on
+%! plot all size: 
+ax = nexttile;
+hold on 
 for i = 1:length(var)
-    plot(eval([var{i} '_B_zmean']), -depth)
+    plot(ax, eval([var{i} '_B_zmean']), -depth)
 end
-hold off 
-legend(var, 'Location', 'north')
+hold off
+ax.XScale = "log";
+legend(var, 'Location', 'best')
 title("All sizes")
 
+%! plot functional group:
 nexttile 
-plot(F_B_zmean, -depth, P_B_zmean, -depth, D_B_zmean, -depth)
+semilogx(F_B_zmean, -depth, P_B_zmean, -depth, D_B_zmean, -depth)
 legend('Forage', 'Pelagic', 'Demersal', 'Location', 'southeast')
 title("Functional groups")
 
@@ -57,19 +60,21 @@ figure(2)
 axes_formating()
 t = tiledlayout(1, 2, "TileSpacing", "compact", "Padding", "compact");
 
-nexttile
+% plot all size: 
+ax = nexttile;
 hold on
 for i = 1:length(var)
-    plot(time, eval([var{i} '_B_tmean']))
+    plot(ax, time, eval([var{i} '_B_tmean']))
 end
 hold off 
+ax.YScale = "log";
+ax.XLim   = [0, length(time)*1.30];
 legend(var, 'Location', 'best')
 title("All sizes")
 
+% plot functional groups: 
 nexttile 
-hold on 
-plot(time, F_B_tmean, time, P_B_tmean, time, D_B_tmean, time, BE_B_tmean)
-hold off 
+semilogy(time, F_B_tmean, time, P_B_tmean, time, D_B_tmean, time, BE_B_tmean)
 legend('Forage', 'Pelagic', 'Demersal', 'Benthos', 'Location', 'best')
 title("Functional groups")
 

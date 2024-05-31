@@ -17,7 +17,7 @@ program Run_physiology
                                                     DataZM, Datadzm, DataZL, Datadzl
     integer :: itime, iDAY, iYR, Year, ilayer, ilath, ilongh
     real(dp) :: T1, T2, T3, sim_time
-    logical :: Spinup = .true. ! .false. ! 
+    logical :: Spinup = .false. ! .true. !  
 
     ! Initialisation: ----------------------------------------------------------
     CALL cpu_time(T1)

@@ -222,8 +222,8 @@ module Derivative
         dSp = eps_R * this%Lp%Repro * this%Lp%B + (this%Sp%E_A - this%Sp%Fout - this%Sp%mu) * this%Sp%B
         ! Reproduction from demersal is equaly divided between the first 30 layers (about 100m depth): 
         ! for mass conservation: Fout is integrated Fout/Nlayer and repro = Ld_Repro_end/this%Nlayer
-        dSd = eps_R * this%Ld_Repro_end/this%Nlayer * &
-             & this%Ld%B + (this%Sd%E_A - this%Sd_Fout_int/this%Nlayer - this%Sd%mu) * this%Sd%B  
+        dSd = eps_R * (this%Ld_Repro_end/this%Nlayer) * &
+             & this%Ld%B + (this%Sd%E_A - this%Sd%Fout - this%Sd%mu) * this%Sd%B  
 
 
         ! Medium size (reproduction loss for Mf)
