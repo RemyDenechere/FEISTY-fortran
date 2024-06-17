@@ -5,7 +5,7 @@ close all
 clear all
 addpath('../../Programing-Tutorials/Matlab/Matlab_functions/')
 %% Root directory: 
-param.Rockfish =  true; % false; % 
+param.Rockfish =  false; % true; %  
 param = param_setup(param);
 
 %! get directory containing output
@@ -54,9 +54,10 @@ D_tmean = Sd_tmean + Md_tmean + Ld_tmean;
 t = tiledlayout(1, 2, "TileSpacing", "compact", "Padding","compact");
 xtime = length(time);
 
+% plot all sizes: 
 nexttile
 hold on 
-for i = 1:(length(var)-3)
+for i = 1:(length(var)-2)
     plot(time(1:xtime), eval([var{i} '_tmean(1:xtime)']), '-')
 end 
 hold off 
@@ -64,6 +65,7 @@ legend(var{1:(end-2)}, 'Location', 'best')
 set(gca, "YScale", "log", "XLim", [0, xtime*1.2], "Ylim", [10^(-5) 10^(1)])
 title("All size")
 
+% Plot all functional groups:
 nexttile
 hold on 
 plot(time(1:xtime), F_tmean(1:xtime), ...
@@ -158,6 +160,51 @@ ylabel(t, 'Layers')
 
 save_graph(gcf, "png", [save_dir exp 'Depth_Means' Spinup{2}], 22, 12)
 
+
+%% Check Initial condition for Online simulations: 
+load(['../output/Matlab_Average/' 'COBALT_IC' '.mat'])
+% Per functional group: 
+F_spacemean = Sf_spacemean + Mf_spacemean;
+P_spacemean = Sp_spacemean + Mp_spacemean + Lp_spacemean;
+D_spacemean = Sd_spacemean + Md_spacemean + Ld_spacemean;
+
+figure(6)
+axes_formating()
+t = tiledlayout(1,2,"TileSpacing","compact","Padding","compact");
+
+% plot all sizes: 
+nexttile
+hold on 
+for i = 1:(length(var)-2)
+    plot(eval([var{i} '_spacemean']), -depth)
+end
+hold off
+set(gca, "XScale", "log", ...
+         "Xlim", [10^(-5) 80])
+legend(var{1:(end-2)})
+title("All Sizes")
+
+% plot Functional group:
+nexttile
+hold on 
+plot(F_spacemean, -depth, ...
+     P_spacemean, -depth, ...
+     D_spacemean, -depth, ...
+     BE_spacemean, -depth)
+hold off
+set(gca, "XScale", "log", ...
+         "Xlim", [10^(-5) 80])
+legend('Forage', 'Pelagic', 'Demersal', 'Benthos')
+title("Functional group")
+
+xlabel(t, "Biomass (g WW m-3)")
+ylabel(t, "Layer depth")
+title(t, "Initial Conditions for COBALT Online")
+
+save_graph(gcf, "png", [save_dir 'Initial_Conditions_for_COBALT_Online'], 16, 12)
+
+
+
 %% Plot forcing data: 
 
 %! Load data: 
@@ -183,7 +230,7 @@ t = tiledlayout(1, 2, "TileSpacing","compact", "Padding","compact");
 t1 = nexttile(t); 
 hold(t1, 'all')
 for i = 1:length(var)
-    plot(t1, time, eval([var{i} '_tmean']), '-')
+    plot(t1, time, eval([var{i} '_spacemean']), '-')
 end 
 hold(t1, 'off')
 set(t1, 'YScale', 'log', 'Ylim',[1.74969307072006e-05 1749.69307072006]);
@@ -290,6 +337,8 @@ title([exp 'Comparison detritus flux'], 'Interpreter', "none")
 set(gca, 'Xlim', [start_date, end_date])
 save_graph(gcf, 'png', [save_dir exp ...
             'Comparison detritus fluxflux forcing vs reanalysis'] , 14, 11)
+
+
 
 
 

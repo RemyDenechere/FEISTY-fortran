@@ -14,7 +14,7 @@ ncid = netcdf.open('20040101.ocean_feisty_tracers.nc', 'NC_NOWRITE');
 for i = 1:length(var)
     varid = netcdf.inqVarID(ncid, [var{i} '_B']);
     eval([ var{i} '_B = netcdf.getVar(ncid, varid);']);
-    eval([ var{i} '_B(' var{i} '_B == 99999) = NaN;']);
+    % eval([ var{i} '_B(' var{i} '_B == 99999) = NaN;']); keep NaN Values
 end
 netcdf.close(ncid);
 dim = size(eval([var{1} '_B']));
@@ -24,7 +24,8 @@ depth = 1:dim(3);
 % Calcul average over dimensions: -----------------------------------------
 %! Calculate average over lat and long: 
 for i = 1:(length(var))
-    eval([var{i} '_B_spacemean = transpose(squeeze(nanmean(' var{i} '_B, [1,2])));']);
+    eval([var{i} '_B_spacemean =' ...
+        'transpose(squeeze(nanmean(' var{i} '_B, [1,2])));']);
 end
 
 %! Integrated biomass over depth: 
@@ -39,7 +40,8 @@ end
 
 %! Save data: -------------------------------------------------------------
 %!! average over lat and long: 
-save(['../output/Matlab_Average/' exp 'Time_Depth_Means_Tracers' '.mat'], 'time', 'depth')
+save(['../output/Matlab_Average/' exp 'Time_Depth_Means_Tracers' '.mat'], ...
+    'time', 'depth')
 for i = 1:length(var)
     save(['../output/Matlab_Average/' exp 'Time_Depth_Means_Tracers' '.mat'], ...
         [var{i} '_B_spacemean'] ,'-append')
@@ -123,6 +125,71 @@ for i = 1:length(diag_list)
         [diag_list{i} '_zmean'] ,'-append')
 end
 
+
+%% get COBALT Zooplankton outputs: 
+dir = {'../../COBALT_output/COBALT_FEISTY/20040101.ocean_feisty_forcing_offline.nc', ...
+       '../../COBALT_output/COBALT_FEISTY/20040101.ocean_feisty_forcing_offline.nc', ...
+       '../../COBALT_output/COBALT_FEISTY/20040101.ocean_feisty_forcing_offline.nc', ...
+       '../../COBALT_output/COBALT_FEISTY/20040101.ocean_feisty_forcing_offline.nc', ...
+       '../../COBALT_output/COBALT_FEISTY/20040101.ocean_feisty_forcing_offline_detritus.nc'};
+var = {'nmdz', 'jhploss_n_Mdz', 'nlgz', 'jhploss_n_Lgz', 'Pop_btm'};
+
+% Getting data from netcdf
+for i = 1:length(var) 
+    ncid = netcdf.open(dir{i},'NC_NOWRITE');
+    varid = netcdf.inqVarID(ncid, var{i});
+    eval([ var{i} ' = netcdf.getVar(ncid, varid);']);
+    eval([ var{i} '(' var{i} ' == 99999) = NaN;']);
+    netcdf.close(ncid);
+
+    if ismember(i, [1, 3]) % conversions biomass 
+        eval([ var{i} ' = ' var{i} '*6.625* 12.01 * 9.0 * 1000.0;' ]);     % Conversion from Mol N/kg --> gC WW / m3
+    elseif ismember(i, [2, 4]) % conversion mortality
+        eval([ var{i} ' = ' var{i} '*6.625* 12.01 * 9.0 * 24.0*3600;' ]);  % Conversion from Mol mol N m-3 s-1 --> gC WW m-3 d-1
+    end
+end 
+
+%! Take mean over dimensions: ---------------------------------------------
+dim = size(eval(var{1}));
+time = 1:dim(4);
+depth = 1:dim(3);
+
+%! Calculate average over lat and long: 
+for i = 1:(length(var))
+    eval([var{i} exp '_spacemean = transpose(squeeze(nanmean(' var{i} ', [1,2])));']);
+end
+
+%! Integrated biomass over depth: 
+for i = 1:(length(var))
+    eval([var{i} exp '_tmean = squeeze(sum(' var{i} exp '_spacemean, 2));']);
+end
+
+%! Average over time : 
+for i = 1:(length(var))
+    eval([var{i} exp '_zmean = squeeze(nanmean(' var{i} exp '_spacemean, 1));']);
+end
+
+%! Save data: -------------------------------------------------------------
+%!! average over lat and long: 
+save(['../output/Matlab_Average/' exp 'Time_Depth_Means_Outputs' '.mat'], 'time', 'depth')
+for i = 1:length(var)
+    save(['../output/Matlab_Average/' exp 'Time_Depth_Means_Outputs' '.mat'], ...
+        [var{i} exp '_spacemean'] ,'-append')
+end
+
+%!! integrated over depth
+save(['../output/Matlab_Average/' exp 'Time_Means_Outputs' '.mat'], 'time')
+for i = 1:length(var)
+    save(['../output/Matlab_Average/' exp 'Time_Means_Outputs' '.mat'], ...
+        [var{i} exp '_tmean'] ,'-append')
+end
+
+%!! Average over time 
+save(['../output/Matlab_Average/' exp 'Depth_Means_Outputs' '.mat'], 'depth')
+for i = 1:length(var)
+    save(['../output/Matlab_Average/' exp 'Depth_Means_Outputs' '.mat'], ...
+        [var{i} exp '_zmean'] ,'-append')
+end
 
 %% does not work for some reason: 
 % %! Get variable from varnam (lots of error):-------------------------------

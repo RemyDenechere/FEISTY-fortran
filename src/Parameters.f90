@@ -34,7 +34,10 @@ module Parameters
 
     character(LEN=280), parameter :: dir_COBALT_IC = "/project/CEFI-regional-MOM6/&
             &exps/OM4.single_column.COBALT/INPUT/COBALT_2023_10_spinup_2003_subset.nc"
- 
+    ! character(LEN=280), parameter :: dir_Diag_nc = "/project/CEFI-regional-MOM6/&
+    !         &exps/OM4.single_column.COBALT/INPUT/" // trim(exp) // "_Diag.nc"
+
+    
     
     ! General parameters: ---------------------------------------------
     integer, parameter  :: dp = kind(0.d0)   ! double precision
@@ -49,6 +52,7 @@ module Parameters
     ! Environemental data for test: -----------------------------------
     real(dp), parameter :: PI_be_cutoff = 200 ! Benthic-pelagic coupling cutoff (depth, m)
     logical, parameter :: diagnostic = .false.
+    logical, parameter :: save_diagnostics = .false.
     logical, parameter :: prod_constrained = .true.
     logical, parameter :: Spinup_Time_Serie = .true.
     logical, parameter :: Initial_Condition_generic_FEISTY = .true.
@@ -60,6 +64,8 @@ module Parameters
     integer, parameter :: nResource = 1                       ! Benthic resource  
     integer, parameter :: nDeriv = nFishGroup +  nResource    ! Number of group for witch the derivative is calculated
     real(dp), parameter :: Delta_t = 1.0                      ! Time step [d]
+    real(dp), parameter :: IC = 10**(-5)                      ! Fish Initial Condition
+    character(len=2), dimension(nFishGroup) :: fish_name = ["Sf", "Sp", "Sd", "Mf", "Mp", "Md", "Lp", "Ld"]
 
     ! Parameters physiology: ------------------------------------------
     real(dp), parameter :: ke = 0.0630             ! [°c-1]                Temperature correction for cmax and encounter

@@ -5,18 +5,22 @@ addpath('../../COBALT_output/COBALT_FEISTY/')
 addpath('../../Programing-Tutorials/Matlab/Matlab_functions/')
 
 %! get directory containing output
-dir_outpur = '../output/Matlab_Average/';
+dir_output = '../output/Matlab_Average/';
 save_dir = '../Fig/';
 exp = 'COBALT_online_BATS_';
 Spinup = {''}; 
-var = {'Sf', 'Sp', 'Sd', 'Mf', 'Mp', 'Md', 'Lp', 'Ld', 'BE'}; 
+var = {'Sf', 'Sp', 'Sd', 'Mf', 'Mp', 'Md', 'Lp', 'Ld', 'BE'};
+var_COBALT = {'nmdz', 'jhploss_n_Mdz', 'nlgz', 'jhploss_n_Lgz', 'Pop_btm'};
 functional_group = {'Forage', 'Pelagic', 'Demersal'};
 
 % get tracers: 
-load(['../output/Matlab_Average/' exp 'Time_Depth_Means_Tracers' '.mat'])
-load(['../output/Matlab_Average/' exp 'Time_Means_Tracers' '.mat'])
-load(['../output/Matlab_Average/' exp 'Depth_Means_Tracers' '.mat'])
+load([dir_output exp 'Time_Depth_Means_Tracers' '.mat'])
+load([dir_output exp 'Time_Means_Tracers' '.mat'])
+load([dir_output exp 'Depth_Means_Tracers' '.mat'])
 
+%% ------------------------------------------------------------------------
+%                               Tracers 
+% -------------------------------------------------------------------------
 %% plot average tracer over depth: -----------------------------------------------
 %!! functional group: 
 F_B_zmean = Sf_B_zmean + Mf_B_zmean;
@@ -30,18 +34,18 @@ t = tiledlayout(1, 2, "TileSpacing", "compact", "Padding", "compact");
 %! plot all size: 
 ax = nexttile;
 hold on 
-for i = 1:length(var)
+for i = 1:(length(var)-1)
     plot(ax, eval([var{i} '_B_zmean']), -depth)
 end
 hold off
 ax.XScale = "log";
-legend(var, 'Location', 'best')
+legend(var{1:(end-1)}, 'Location', 'best')
 title("All sizes")
 
 %! plot functional group:
 nexttile 
-semilogx(F_B_zmean, -depth, P_B_zmean, -depth, D_B_zmean, -depth)
-legend('Forage', 'Pelagic', 'Demersal', 'Location', 'southeast')
+semilogx(F_B_zmean, -depth, P_B_zmean, -depth, D_B_zmean, -depth, BE_B_zmean, -depth)
+legend('Forage', 'Pelagic', 'Demersal', 'Benthic', 'Location', 'southeast')
 title("Functional groups")
 
 % tiled labels: 
@@ -102,7 +106,7 @@ for i = 1:length(var)
     caxis([-8*10^(-10), 10^(-9)])
     title(var{i})
 end
-colormap ocean
+colormap autumn
 cbr = colorbar(ti(end), 'orientation','vertical');
 cbr.Layout.Tile = 'east'; 
 title(cbr, {'Biomass', 'gWW m-3'}); 
@@ -124,7 +128,7 @@ for i = 1:3
     % set(gca,'CameraPosition', [-1965.326178421259,-536.7230011599994,8.072870736606727e-9])
     title(functional_group{i});
 end
-colormap ocean
+colormap autumn
 cbr = colorbar(ti(end), 'orientation','vertical');
 cbr.Layout.Tile = 'east'; 
 title(cbr, {'Biomass', 'gWW m-3'}); 
@@ -135,10 +139,69 @@ title(t, [exp 'Time_depth_Time_series'], Interpreter = 'none'  )
 
 save_graph(gcf, "png", [save_dir exp 'Time_depth_Time_series_funct_grp'], 16, 12)
 
+%% ------------------------------------------------------------------------
+%                         Zooplankton Biomass
+% -------------------------------------------------------------------------
+%! Load data offline : 
+exp = 'COBALT_offline_BATS_';
+load([dir_output exp 'Time_Depth_Means_forcing_files'  '.mat'])
+load([dir_output exp 'Time_Means_forcing_files'  '.mat'])
+load([dir_output exp 'Depth_Means_forcing_files'  '.mat'])
+
+%! Load data online : 
+exp = 'COBALT_online_BATS_';
+load([dir_output exp 'Time_Depth_Means_Outputs' '.mat'])
+load([dir_output exp 'Time_Means_Outputs'       '.mat'])
+load([dir_output exp 'Depth_Means_Outputs'      '.mat'])
+
+start_date = datetime("2004-01-01");
+end_date   = datetime("2004-12-31");
+time = start_date:end_date;
+
+% Plots average over time: 
+figure
+axes_formating();
+t = tiledlayout(3, 1, "TileSpacing","compact","Padding","compact");
+
+% Offline zooplankton Biomass
+nexttile
+hold on 
+for i = 1:length(var_COBALT)
+    plot(time, eval([var_COBALT{i} '_tmean']))
+end 
+hold off
+title("Offline")
+legend(var_COBALT{:}, Interpreter = 'none', Location = "best")
+
+% Online zooplankton Biomass
+nexttile
+hold on 
+for i = 1:length(var_COBALT)
+    plot(time, eval([var_COBALT{i} exp '_tmean']))
+end 
+hold off
+title("Online")
+
+% difference: 
+nexttile
+hold on 
+for i = 1:length(var_COBALT)
+    plot(time, eval([var_COBALT{i} exp '_tmean - ' var_COBALT{i} '_tmean']))
+end 
+hold off
+title("Difference")
+xlabel('days')
+ylabel('')
+
+
+%% ------------------------------------------------------------------------
+%                         Diagnostics FISH 
+% -------------------------------------------------------------------------
+
 %% plot average over time:-------------------------------------------------
-load(['../output/Matlab_Average/' exp 'Time_Depth_Means_Diagnostics' '.mat'])
-load(['../output/Matlab_Average/' exp 'Time_Means_Diagnostics' '.mat'])
-load(['../output/Matlab_Average/' exp 'Depth_Means_Diagnostics' '.mat'])
+load([dir_output exp 'Time_Depth_Means_Diagnostics' '.mat'])
+load([dir_output exp 'Time_Means_Diagnostics' '.mat'])
+load([dir_output exp 'Depth_Means_Diagnostics' '.mat'])
 
 dimension_average = {'_tmean', '_zmean', '_spacemean'};
 dimensions = {'time', 'depth'};
@@ -163,11 +226,13 @@ grp(1).name = 'Encounter rates'     ; grp(1).idx = 2:7;        grp(1).panel_grid
 grp(2).name = 'Consumption rates'   ; grp(2).idx = 8:14;       grp(2).panel_grid = [2, 4];
 grp(3).name = 'Physiological rates' ; grp(3).idx = [1, 15:21]; grp(3).panel_grid = [2, 4];
 grp(1).leg_loc = 'eastoutside'; grp(2).leg_loc = 'best'; grp(3).leg_loc = 'eastoutside'; 
+n=5;
 
 % All sizes: --------------------------------------------------------------
 for d = 1:length(dimension_average)-1
     for i = 1:3
-        figure()
+        n = n+1;
+        figure(n)
         axes_formating()
     
         t = tiledlayout(grp(i).panel_grid(1), grp(i).panel_grid(2), ...
@@ -202,7 +267,8 @@ var = {'F', 'P', 'D'};
 
 for d = 1:length(dimension_average)-1
     for i = 1:3
-        figure()
+        n = n+1;
+        figure(n)
         axes_formating()
     
         t = tiledlayout(grp(i).panel_grid(1), grp(i).panel_grid(2), ...

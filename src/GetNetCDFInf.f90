@@ -8,12 +8,13 @@ module GetNetCDFinf
     contains 
 
     subroutine Initialisation(Spinup, Var, Ntime, Nlayer, Nlath, Nlongh, Data_F_ini, Data, &
-                              DataTemp, Datadet, Datadzm, DataZM, Datadzl, DataZL)
+                              DataTemp, Datadet, Datadzm, DataZM, Datadzl, DataZL, fish_diag)
         logical, intent(in) :: Spinup
         integer, intent(inout) :: Ntime, Nlayer, Nlath, Nlongh
         type(Structure_group) :: Var
         type(ini_fish_data), intent(inout) :: Data_F_ini
         type(Save_structure4D), intent(inout) :: Data
+        type(Structure_diag), dimension(nFishGroup) :: fish_diag
         real(dp), dimension(:, :, :, :), allocatable, intent(inout) ::  DataTemp, &
                                                                         Datadzm, DataZM, &
                                                                         Datadzl, DataZL, &
@@ -35,7 +36,7 @@ module GetNetCDFinf
         Var%Nlongh = Nlongh 
 
         CALL init_save_data4D(Data, Ntime, Nlayer, Nlath, Nlongh)
-        
+        CALL allocate_fish_diag(fish_diag, Ntime, Nlayer, Nlath, Nlongh)
         
         ! Individual Mass (g) geometric mean for each group 
         Var%Sf%w = 10.0**((log10(0.001)+log10(0.5))/2)
@@ -50,9 +51,10 @@ module GetNetCDFinf
     
 
 
-    subroutine save_data(Spinup, that, Ntime, Nlayer, Nlath, Nlongh)
+    subroutine save_data(Spinup, that, fish_diag, Ntime, Nlayer, Nlath, Nlongh)
         logical, intent(in) :: Spinup
         type(Save_structure4D) :: that
+        type(Structure_diag), dimension(nFishGroup) :: fish_diag
         integer, intent(in) :: Ntime, Nlayer, Nlath, Nlongh
         integer :: i
     
@@ -94,7 +96,7 @@ module GetNetCDFinf
                                         'dZl', that%Zcons_VS_dZl, Ntime, Nlayer, Nlath, Nlongh)
             end if 
             if(Initial_Condition_generic_FEISTY) then 
-                call FEISTY_Save_outputs(Spinup, that, Ntime, Nlayer, Nlath, Nlongh) 
+                call FEISTY_Save_tracers(Spinup, that, Ntime, Nlayer, Nlath, Nlongh) 
             end if 
 
         else
@@ -111,6 +113,12 @@ module GetNetCDFinf
             call write_nc_file4D('../output/' // trim(exp) // '_dZm.nc', 'dZm', that%Zcons_VS_dZm, Ntime, Nlayer, Nlath, Nlongh)
             call write_nc_file4D('../output/' // trim(exp) // '_dZl.nc', 'dZl', that%Zcons_VS_dZl, Ntime, Nlayer, Nlath, Nlongh)
         end if 
+
+        if(save_diagnostics) then 
+
+
+        end if 
+
     end subroutine save_data 
 
     subroutine write_nc_file4D(filename, varname, var, Ntime, Nlayer, Nlath, Nlongh)
@@ -222,7 +230,7 @@ module GetNetCDFinf
             CALL readgrid4D(dir_zl, var_zl, Ntime, Nlayer, Nlath, Nlongh, DataZL)
             CALL readgrid4D(dir_dzl, var_dzl, Ntime, Nlayer, Nlath, Nlongh, Datadzl)
             CALL readgrid4D(dir_det, var_det, Ntime, Nlayer, Nlath, Nlongh, Datadet)
-    end subroutine load_forcing_data
+        end subroutine load_forcing_data
 
 
     !:====================================================================== 
@@ -399,7 +407,7 @@ module GetNetCDFinf
         ierr = nf90_close(ncid)
     end subroutine readgrid1D
 
-    subroutine FEISTY_Save_outputs(Spinup, that, Ntime, Nlayer, Nlath, Nlongh)
+    subroutine FEISTY_Save_tracers(Spinup, that, Ntime, Nlayer, Nlath, Nlongh)
         logical, intent(in) :: Spinup
         type(Save_structure4D) :: that
         integer, intent(in) :: Ntime, Nlayer, Nlath, Nlongh
@@ -421,8 +429,7 @@ module GetNetCDFinf
 
         call end_tracer_INPUT_nc(ncid)
 
-    end subroutine FEISTY_Save_outputs
-
+    end subroutine FEISTY_Save_tracers
 
     subroutine init_tracer_INPUT_nc(filename, ncid, Ntime, Nlayer, Nlath, Nlongh, dimids)
         character(LEN = 280), intent(in) :: filename 
@@ -538,9 +545,13 @@ module GetNetCDFinf
         character(LEN=33), intent(in) ::  long_name
         integer, intent(in) :: dimids(4)
         integer, intent(in) :: ncid, Ntime, Nlayer, Nlath, Nlongh
-        real(dp), dimension(Nlongh, Nlath, Nlayer, Ntime), intent(in) :: var
+        real(dp), dimension(Ntime, Nlayer, Nlath, Nlongh), intent(in) :: var
+        real(dp), dimension(Nlongh, Nlath, Nlayer, Ntime) ::  var_reshaped
         integer :: varid
         integer :: status
+
+        ! Reshaping variable before saving for COBALT ouput:
+        var_reshaped = RESHAPE(var, SHAPE(var_reshaped), ORDER = (/4, 3, 2, 1/))
 
         ! Put opened netcdf into definition mode: 
         status = nf90_redef(ncid)
@@ -563,7 +574,7 @@ module GetNetCDFinf
         status = nf90_enddef(ncid)
 
         ! Write the variable data
-        status = nf90_put_var(ncid, varid, var(1:Nlongh, 1:Nlath, 1:Nlayer, Ntime)) !, &
+        status = nf90_put_var(ncid, varid, var_reshaped(1:Nlongh, 1:Nlath, 1:Nlayer, Ntime)) !, &
                             !   start = (/1,      1,     1    ,  (Ntime-1) /), &
                             !   count = (/Nlongh, Nlath, Nlayer, 1         /))
         if (status /= NF90_NOERR) then
@@ -572,5 +583,227 @@ module GetNetCDFinf
             STOP
         end if        
     end subroutine add_tracer_INPUT_nc
+
+    subroutine FEISTY_Save_diag(Spinup, fish_diag, Ntime, Nlayer, Nlath, Nlongh)
+        logical, intent(in) :: Spinup
+        type(Structure_diag), dimension(nFishGroup) :: fish_diag
+        integer, intent(in) :: Ntime, Nlayer, Nlath, Nlongh
+        character(LEN=280) :: filename, String_Spinup 
+        integer(4) :: ncid, dimids(4), i, j
+
+        if(Spinup) then 
+            String_Spinup = "Spinup"
+        else 
+            String_Spinup = ""
+        end if 
+
+        Do i = 1, nFishGroup
+            filename = '../output/' // trim(exp) // '_' // trim(fish_name(i)) // '_diag_Spinup_Time_Serie.nc'
+
+            call init_Diag_nc(filename, ncid, Ntime, Nlayer, Nlath, Nlongh, dimids)
+            
+            call add_Diag_nc(ncid, dimids, "f",    trim(fish_name(i)) // " Feeding level"            , &
+                                fish_diag(i)%f    , Ntime, Nlayer, Nlath, Nlongh)
+            call add_Diag_nc(ncid, dimids, "cmax", trim(fish_name(i)) // " Maximum consumption rate ", &
+                                fish_diag(i)%cmax , Ntime, Nlayer, Nlath, Nlongh)
+            call add_Diag_nc(ncid, dimids, "cons", trim(fish_name(i)) // " Consumption"              , &
+                                fish_diag(i)%cons , Ntime, Nlayer, Nlath, Nlongh)
+            call add_Diag_nc(ncid, dimids, "met",  trim(fish_name(i)) // " Metabolic loss"           , &
+                                fish_diag(i)%met  , Ntime, Nlayer, Nlath, Nlongh)
+            call add_Diag_nc(ncid, dimids, "mu_p", trim(fish_name(i)) // " Predation Mortality"      , &
+                                fish_diag(i)%mu_p , Ntime, Nlayer, Nlath, Nlongh)
+            call add_Diag_nc(ncid, dimids, "mu_f", trim(fish_name(i)) // " Fishing Mortality"        , &
+                                fish_diag(i)%mu_f , Ntime, Nlayer, Nlath, Nlongh)
+            call add_Diag_nc(ncid, dimids, "mu_a", trim(fish_name(i)) // " Background Mortality"     , &
+                                fish_diag(i)%mu_a , Ntime, Nlayer, Nlath, Nlongh)
+            call add_Diag_nc(ncid, dimids, "mu",   trim(fish_name(i)) // " Mortality "               , &
+                                fish_diag(i)%mu   , Ntime, Nlayer, Nlath, Nlongh)
+            call add_Diag_nc(ncid, dimids, "E_A",  trim(fish_name(i)) // " Energy Available"         , &
+                                fish_diag(i)%E_A  , Ntime, Nlayer, Nlath, Nlongh)
+            call add_Diag_nc(ncid, dimids, "Fout", trim(fish_name(i)) // " Flux out size class"      , &
+                                fish_diag(i)%Fout , Ntime, Nlayer, Nlath, Nlongh)
+            call add_Diag_nc(ncid, dimids, "Repro",trim(fish_name(i)) // " Reproductive output"      , &
+                                fish_diag(i)%Repro, Ntime, Nlayer, Nlath, Nlongh)
+
+            call add_Diag_nc(ncid, dimids, "f_Zm", trim(fish_name(i)) // " Feeding level Medium Zoo     ", &
+                                fish_diag(i)%f_Zm, Ntime, Nlayer, Nlath, Nlongh)
+            call add_Diag_nc(ncid, dimids, "f_Zl", trim(fish_name(i)) // " Feeding level Large Zoo      ", &
+                                fish_diag(i)%f_Zl, Ntime, Nlayer, Nlath, Nlongh)
+            call add_Diag_nc(ncid, dimids, "f_Sf", trim(fish_name(i)) // " Feeding level Small Forage   ", &
+                                fish_diag(i)%f_Sf, Ntime, Nlayer, Nlath, Nlongh)
+            call add_Diag_nc(ncid, dimids, "f_Sp", trim(fish_name(i)) // " Feeding level Small Pelagic  ", &
+                                fish_diag(i)%f_Sp, Ntime, Nlayer, Nlath, Nlongh)
+            call add_Diag_nc(ncid, dimids, "f_Sd", trim(fish_name(i)) // " Feeding level Small Demersal ", &
+                                fish_diag(i)%f_Sd, Ntime, Nlayer, Nlath, Nlongh)
+            call add_Diag_nc(ncid, dimids, "f_Mf", trim(fish_name(i)) // " Feeding level Medium Forage  ", &
+                                fish_diag(i)%f_Mf, Ntime, Nlayer, Nlath, Nlongh)
+            call add_Diag_nc(ncid, dimids, "f_Mp", trim(fish_name(i)) // " Feeding level Medium Pelagic ", &
+                                fish_diag(i)%f_Mp, Ntime, Nlayer, Nlath, Nlongh)
+            call add_Diag_nc(ncid, dimids, "f_Md", trim(fish_name(i)) // " Feeding level Medium Demersal", &
+                                fish_diag(i)%f_Md, Ntime, Nlayer, Nlath, Nlongh)
+            call add_Diag_nc(ncid, dimids, "f_Lp", trim(fish_name(i)) // " Feeding level Large Pelagic  ", &
+                                fish_diag(i)%f_Lp, Ntime, Nlayer, Nlath, Nlongh)
+            call add_Diag_nc(ncid, dimids, "f_Ld", trim(fish_name(i)) // " Feeding level Large Demersal ", &
+                                fish_diag(i)%f_Ld, Ntime, Nlayer, Nlath, Nlongh)
+            call add_Diag_nc(ncid, dimids, "f_BE", trim(fish_name(i)) // " Feeding level Benthos        ", &
+                                fish_diag(i)%f_BE, Ntime, Nlayer, Nlath, Nlongh)
+
+            call end_Diag_nc(ncid)
+        end Do 
+
+    end subroutine FEISTY_Save_diag
+
+    subroutine init_Diag_nc(filename, ncid, Ntime, Nlayer, Nlath, Nlongh, dimids)
+        character(LEN = 280), intent(in) :: filename 
+        integer, intent(inout) :: ncid, dimids(4)
+        integer, intent(in) :: Ntime, Nlayer, Nlath, Nlongh
+        integer :: status
+        integer :: Interface = 76, latq = 5, lonq = 5
+        integer :: varid_time, varid_layer, varid_lath, varid_longh
+        integer :: i
+        real(dp), dimension(1) :: time_dim_val
+        real(dp), dimension(Nlayer) :: layer_dim_val
+        real(dp), dimension(Nlath)  :: lath_dim_val
+        real(dp), dimension(Nlongh) :: longh_dim_val
+
+        ! Create the NetCDF file
+        status = nf90_create(filename, NF90_CLOBBER, ncid)
+        if (status /= NF90_NOERR) then
+            print *, "Error opening " , trim(filename), " in init_tracer_INPUT_nc"
+            print *, trim(nf90_strerror(status))
+            STOP
+        end if
+
+        ! Define the dimensions
+        status = nf90_def_dim(ncid, 'Time' , NF90_UNLIMITED,  dimids(4))
+        if (status /= NF90_NOERR) then
+            print *, trim(nf90_strerror(status))
+            STOP
+        end if
+        status = nf90_def_dim(ncid, 'Layer', Nlayer, dimids(3))
+        status = nf90_def_dim(ncid, 'lath' , Nlath , dimids(2))
+        status = nf90_def_dim(ncid, 'lonh' , Nlongh, dimids(1))
+        !status = nf90_def_dim(ncid, 'lonq' , lonq  , dimids(3))
+        !status = nf90_def_dim(ncid, 'latq' , latq  , dimids(2))
+        !status = nf90_def_dim(ncid, 'Interface' , Interface, dimids(1))
+
+        ! Put opened netcdf into definition mode: 
+        status = nf90_redef(ncid)
+
+        !! Define variables for each dimension: --------------------------------------------------------------
+        ! Time: 
+            ! Define the variable
+            status = nf90_def_var(ncid, 'Time', NF90_DOUBLE, dimids(4), varid_time)
+            ! Add a attributes: 
+            status = nf90_put_att(ncid, varid_time, 'long_name', 'Time')
+            status = nf90_put_att(ncid, varid_time, 'Standard_name', 'time')
+            status = nf90_put_att(ncid, varid_time, 'units', 'days')
+            status = nf90_put_att(ncid, varid_time, 'calendar', 'proleptic_gregorian')
+            status = nf90_put_att(ncid, varid_time, 'axis', "T")
+            status = nf90_put_att(ncid, varid_time, '_FillValue', -9999.0_dp)
+
+        ! Layer:
+            ! Define the variable
+            status = nf90_def_var(ncid, 'Layer', NF90_DOUBLE, dimids(3), varid_layer)
+            ! Add a attributes: 
+            status = nf90_put_att(ncid, varid_layer, 'long_name', 'Layer')
+            status = nf90_put_att(ncid, varid_layer, 'units', 'gWW m-3')
+            status = nf90_put_att(ncid, varid_layer, 'positive', 'up')
+            status = nf90_put_att(ncid, varid_layer, 'axis', 'Z')
+            status = nf90_put_att(ncid, varid_layer, 'cartesian_axis', 'Z')
+            status = nf90_put_att(ncid, varid_layer, '_FillValue', -9999.0_dp)
+        
+        ! lath :
+            ! Define the variable
+            status = nf90_def_var(ncid, 'lath', NF90_DOUBLE, dimids(2), varid_lath)    
+            ! Add a attributes: 
+            status = nf90_put_att(ncid, varid_lath, 'long_name', 'Latitude')
+            status = nf90_put_att(ncid, varid_lath, 'Standard_name', 'latitude')
+            status = nf90_put_att(ncid, varid_lath, 'units', 'degrees_north')
+            status = nf90_put_att(ncid, varid_lath, 'axis', "Y")
+            status = nf90_put_att(ncid, varid_lath, '_FillValue', -9999.0_dp)     
+        
+        ! lonh :
+            ! Define the variable
+            status = nf90_def_var(ncid, 'lonh', NF90_DOUBLE, dimids(1), varid_longh)
+            ! Add a attributes: 
+            status = nf90_put_att(ncid, varid_longh, 'long_name', 'Longitude')
+            status = nf90_put_att(ncid, varid_longh, 'Standard_name', 'longitude')
+            status = nf90_put_att(ncid, varid_longh, 'units', 'degrees_east')
+            status = nf90_put_att(ncid, varid_longh, 'axis', "X")
+            status = nf90_put_att(ncid, varid_longh, '_FillValue', -9999.0_dp) 
+
+        ! End the definitions mode: enter data mode
+        status = nf90_enddef(ncid)
+
+        ! Write the variable data: get values from COBALT
+        call readgrid1D(dir_COBALT_IC, 'Time',  1,  Time_dim_val)
+        call readgrid1D(dir_COBALT_IC, 'Layer', Nlayer, layer_dim_val)
+        call readgrid1D(dir_COBALT_IC, 'lath',  Nlath,  lath_dim_val)       
+        call readgrid1D(dir_COBALT_IC, 'lonh', Nlongh, longh_dim_val)
+
+        status = nf90_put_var(ncid, varid_Time, 1.0)
+        status = nf90_put_var(ncid, varid_layer, layer_dim_val)
+        status = nf90_put_var(ncid, varid_lath,  lath_dim_val)
+        status = nf90_put_var(ncid, varid_longh, longh_dim_val)
+    end subroutine init_Diag_nc
+
+    subroutine end_Diag_nc(ncid)
+        integer, intent(in) :: ncid
+        integer :: status
+
+        ! Close the file
+        status = nf90_close(ncid)
+        if (status /= NF90_NOERR) then
+            print *, "Error clossing ncdf in end_tracer_INPUT_nc"
+            print *, trim(nf90_strerror(status))
+            STOP
+        end if
+    end subroutine end_Diag_nc
+
+
+    subroutine add_Diag_nc(ncid, dimids, varname, long_name, var, Ntime, Nlayer, Nlath, Nlongh)
+        character(LEN=*), intent(in) :: varname
+        character(LEN=33), intent(in) ::  long_name
+        integer, intent(in) :: dimids(4)
+        integer, intent(in) :: ncid, Ntime, Nlayer, Nlath, Nlongh
+        real(dp), dimension(Ntime, Nlayer, Nlath, Nlongh), intent(in) :: var
+        real(dp), dimension(Nlongh, Nlath, Nlayer, Ntime) ::  var_reshaped
+        integer :: varid
+        integer :: status
+
+        ! Reshaping variable before saving for COBALT ouput:
+        var_reshaped = RESHAPE(var, SHAPE(var_reshaped), ORDER = (/4, 3, 2, 1/))
+
+        ! Put opened netcdf into definition mode: 
+        status = nf90_redef(ncid)
+
+        ! Define the variable
+        status = nf90_def_var(ncid, varname, NF90_DOUBLE, dimids, varid)
+        if (status /= NF90_NOERR) then
+            print *, "Error Def Var: ", trim(varname)
+            print *, trim(nf90_strerror(status))
+            STOP
+        end if
+        
+        ! Add a attributes: 
+        status = nf90_put_att(ncid, varid, "long_name", trim(long_name))
+        status = nf90_put_att(ncid, varid, 'units', 'gWW m-3')
+        status = nf90_put_att(ncid, varid, 'checksum', "               0")
+        status = nf90_put_att(ncid, varid, '_FillValue', -9999.0_dp)
+
+        ! End the definitions mode: enter data mode
+        status = nf90_enddef(ncid)
+
+        ! Write the variable data
+        status = nf90_put_var(ncid, varid, var_reshaped(1:Nlongh, 1:Nlath, 1:Nlayer, Ntime)) !, &
+                            !   start = (/1,      1,     1    ,  (Ntime-1) /), &
+                            !   count = (/Nlongh, Nlath, Nlayer, 1         /))
+        if (status /= NF90_NOERR) then
+            print *, "Error in nf90_put_var: " , trim(varname), " in add_tracer_INPUT_nc "
+            print *, trim(nf90_strerror(status))
+            STOP
+        end if        
+    end subroutine add_Diag_nc
 
 end module GetNetCDFinf

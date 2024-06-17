@@ -91,11 +91,41 @@ module Structure
         real(dp) :: itime
         real(dp) :: ilayer
     end type Structure_group
+
+    type :: Structure_diag 
+        real(dp), dimension(:, :, :, :), allocatable :: & 
+        ! Physiology: -----------------------------------------------------------------
+        f,&               ! Total feeding level
+        cmax,&            ! Maximum consumption rate 
+        cons,&            ! Total consumption rate
+        met,&             ! metabolic cost 
+        mu_p,&            ! Predation mortality 
+        mu_f,&            ! Fishing mortality 
+        mu_a,&            ! Natural mortality 
+        mu,&              ! Total mortality
+        E_A,&             ! Available energy 
+        Fout,&            ! flux out of a size class 
+        Repro,&           ! Reproduction flux 
+
+        ! Feeding level for each prey : ------------------------------------------------
+        f_Zm,&            
+        f_Zl,&            ! --         
+        f_Sf,&            ! --
+        f_Sp,&            ! --
+        f_Sd,&            ! --
+        f_Mf,&            ! --
+        f_Mp,&            ! --
+        f_Md,&            ! --
+        f_Lp,&            ! --
+        f_Ld,&            ! --
+        f_BE
+    end type Structure_diag
     
     type :: Save_structure4D
         real(dp), dimension(:, :, :, :), allocatable :: Sf, Sp, Sd, Mf, Mp, Md, Lp, Ld, BE, Zcons_VS_dZm, Zcons_VS_dZl
         real(dp), dimension(:), allocatable :: Sd_Fout
     end type
+
 
     type :: Save_structure1D
         real(dp), dimension(:), allocatable :: Sf, Sp, Sd, Mf, Mp, Md, Lp, Ld, BE, Zcons_VS_dZm, Zcons_VS_dZl
@@ -115,15 +145,15 @@ module Structure
         type(ini_fish_data)  , intent(inout) :: Data_F_ini
     
         if (Spinup) then
-            this%BE%B = 0.00001
-            this%Sf%B = 0.00001
-            this%Sp%B = 0.00001
-            this%Sd%B = 0.00001
-            this%Mf%B = 0.00001
-            this%Mp%B = 0.00001
-            this%Md%B = 0.00001
-            this%Lp%B = 0.00001
-            this%Ld%B = 0.00001
+            this%BE%B = IC
+            this%Sf%B = IC
+            this%Sp%B = IC
+            this%Sd%B = IC
+            this%Mf%B = IC
+            this%Mp%B = IC
+            this%Md%B = IC
+            this%Lp%B = IC
+            this%Ld%B = IC
         else 
             this%BE%B = Data_F_ini%IniBE(ilayer, ilath, ilongh)
             this%Sf%B = Data_F_ini%IniSf(ilayer, ilath, ilongh)
@@ -146,17 +176,19 @@ module Structure
         type(ini_fish_data)   , intent(in)    :: Data_F_ini
         type(Save_structure4D), intent(in)    :: Data
     
+        ! Gives initial condition for 1st time step if Spinup 
         if ((Spinup) .and. (itime .eq. int(1))) then
-            this%BE%B = 0.00001
-            this%Sf%B = 0.00001
-            this%Sp%B = 0.00001
-            this%Sd%B = 0.00001
-            this%Mf%B = 0.00001
-            this%Mp%B = 0.00001
-            this%Md%B = 0.00001
-            this%Lp%B = 0.00001
-            this%Ld%B = 0.00001
-
+            this%BE%B = IC
+            this%Sf%B = IC
+            this%Sp%B = IC
+            this%Sd%B = IC
+            this%Mf%B = IC
+            this%Mp%B = IC
+            this%Md%B = IC
+            this%Lp%B = IC
+            this%Ld%B = IC
+        
+        ! Gives initial condition for 1st time step from spinup 
         elseif ((Spinup .eqv. .false.) .and. (itime .eq. int(1))) then 
             this%BE%B = Data_F_ini%IniBE(ilayer, ilath, ilongh)
             this%Sf%B = Data_F_ini%IniSf(ilayer, ilath, ilongh)
@@ -168,6 +200,7 @@ module Structure
             this%Lp%B = Data_F_ini%IniLp(ilayer, ilath, ilongh)
             this%Ld%B = Data_F_ini%IniLd(ilayer, ilath, ilongh)
         
+        ! Gives uses biomass from previous time step for any time 
         elseif (itime .gt. int(1)) then 
             this%BE%B = Data%BE(itime-1, ilayer, ilath, ilongh)
             this%Sf%B = Data%Sf(itime-1, ilayer, ilath, ilongh)
@@ -178,6 +211,10 @@ module Structure
             this%Md%B = Data%Md(itime-1, ilayer, ilath, ilongh)
             this%Lp%B = Data%Lp(itime-1, ilayer, ilath, ilongh)
             this%Ld%B = Data%Ld(itime-1, ilayer, ilath, ilongh)
+        
+        ! ! Set up benthic biomass to 0.0 if not in the bottom layer: 
+        ! elseif (ilayer .lt. this%Nlayer) then 
+        !     this%BE%B = 0.0
         end if 
 
     end subroutine init_Biomass_Layer
@@ -203,6 +240,38 @@ module Structure
 
     end subroutine init_save_data4D
 
+    subroutine allocate_fish_diag(fish_diag, Ntime, Nlayer, Nlath, Nlongh)
+        type(Structure_diag), dimension(nFishGroup) :: fish_diag
+        integer, intent(in) :: Ntime, Nlayer, Nlath, Nlongh
+        integer :: i
+
+        Do i = 1, nFishGroup
+            allocate(fish_diag(i)%f(Ntime, Nlayer, Nlath, Nlongh))       ; fish_diag(i)%f = 0.0          ! Total feeding level
+            allocate(fish_diag(i)%cmax(Ntime, Nlayer, Nlath, Nlongh))    ; fish_diag(i)%cmax = 0.0           ! Maximum consumption rate 
+            allocate(fish_diag(i)%cons(Ntime, Nlayer, Nlath, Nlongh))    ; fish_diag(i)%cons = 0.0          ! Total consumption rate
+            allocate(fish_diag(i)%met(Ntime, Nlayer, Nlath, Nlongh))     ; fish_diag(i)%met = 0.0           ! metabolic cost 
+            allocate(fish_diag(i)%mu_p(Ntime, Nlayer, Nlath, Nlongh))    ; fish_diag(i)%mu_p = 0.0          ! Predation mortality 
+            allocate(fish_diag(i)%mu_f(Ntime, Nlayer, Nlath, Nlongh))    ; fish_diag(i)%mu_f = 0.0          ! Fishing mortality 
+            allocate(fish_diag(i)%mu_a(Ntime, Nlayer, Nlath, Nlongh))    ; fish_diag(i)%mu_a = 0.0          ! Natural mortality 
+            allocate(fish_diag(i)%mu(Ntime, Nlayer, Nlath, Nlongh))      ; fish_diag(i)%mu = 0.0          ! Total mortality
+            allocate(fish_diag(i)%E_A(Ntime, Nlayer, Nlath, Nlongh))     ; fish_diag(i)%E_A = 0.0          ! Available energy 
+            allocate(fish_diag(i)%Fout(Ntime, Nlayer, Nlath, Nlongh))    ; fish_diag(i)%Fout = 0.0          ! flux out of a size class 
+            allocate(fish_diag(i)%Repro(Ntime, Nlayer, Nlath, Nlongh))   ; fish_diag(i)%Repro = 0.0         ! Reproduction flux 
+    
+            ! Feeding level for each prey : ------------------------------------------------
+            allocate(fish_diag(i)%f_Zm(Ntime, Nlayer, Nlath, Nlongh))    ; fish_diag(i)%f_Zm = 0.0         
+            allocate(fish_diag(i)%f_Zl(Ntime, Nlayer, Nlath, Nlongh))    ; fish_diag(i)%f_Zl = 0.0         ! --         
+            allocate(fish_diag(i)%f_Sf(Ntime, Nlayer, Nlath, Nlongh))    ; fish_diag(i)%f_Sf = 0.0         ! --
+            allocate(fish_diag(i)%f_Sp(Ntime, Nlayer, Nlath, Nlongh))    ; fish_diag(i)%f_Sp = 0.0         ! --
+            allocate(fish_diag(i)%f_Sd(Ntime, Nlayer, Nlath, Nlongh))    ; fish_diag(i)%f_Sd = 0.0         ! --
+            allocate(fish_diag(i)%f_Mf(Ntime, Nlayer, Nlath, Nlongh))    ; fish_diag(i)%f_Mf = 0.0         ! --
+            allocate(fish_diag(i)%f_Mp(Ntime, Nlayer, Nlath, Nlongh))    ; fish_diag(i)%f_Mp = 0.0         ! --
+            allocate(fish_diag(i)%f_Md(Ntime, Nlayer, Nlath, Nlongh))    ; fish_diag(i)%f_Md = 0.0        ! --
+            allocate(fish_diag(i)%f_Lp(Ntime, Nlayer, Nlath, Nlongh))    ; fish_diag(i)%f_Lp = 0.0        ! --
+            allocate(fish_diag(i)%f_Ld(Ntime, Nlayer, Nlath, Nlongh))    ; fish_diag(i)%f_Ld = 0.0         ! --
+            allocate(fish_diag(i)%f_BE(Ntime, Nlayer, Nlath, Nlongh))    ; fish_diag(i)%f_BE = 0.0 
+        end Do 
+    end subroutine allocate_fish_diag
 
     subroutine init_store_MNTH(this, Ndays)
         type(Save_structure1D) :: this
@@ -269,7 +338,7 @@ module Structure
         deallocate(that%Zcons_VS_dZl)
     end subroutine store_data_MNT
 
-    subroutine store_daily_data(this, that, itime, ilayer, ilath, ilongh)
+    subroutine store_daily_biomass(this, that, itime, ilayer, ilath, ilongh)
         type(Save_structure4D) :: this         ! Storage (Space, month)
         type(Structure_group) :: that         ! Daily data for the month 
         integer, intent(in) :: itime, ilayer, ilath, ilongh
@@ -288,7 +357,42 @@ module Structure
         this%Zcons_VS_dZl(itime, ilayer, ilath, ilongh) = that%Zcons_VS_dZl
             
         this%Sd_Fout(ilayer) = that%Sd%Fout
-    end subroutine store_daily_data
+    end subroutine store_daily_biomass
+
+    subroutine store_daily_diag(fish_diag, Var, itime, ilayer, ilath, ilongh)
+        type(Structure_diag), dimension(nFishGroup) :: fish_diag
+        type(Structure_group) :: Var         ! Daily data
+        integer, intent(in) :: itime, ilayer, ilath, ilongh
+        integer :: i
+
+        Do i = 1, nFishGroup
+            fish_diag(i)%f(itime, ilayer, ilath, ilongh)   = 0.0
+            fish_diag(i)%cmax(itime, ilayer, ilath, ilongh)   = 0.0
+            fish_diag(i)%cons(itime, ilayer, ilath, ilongh)   = 0.0
+            fish_diag(i)%met(itime, ilayer, ilath, ilongh)   = 0.0
+            fish_diag(i)%mu_p(itime, ilayer, ilath, ilongh)   = 0.0
+            fish_diag(i)%mu_f(itime, ilayer, ilath, ilongh)   = 0.0
+            fish_diag(i)%mu_a(itime, ilayer, ilath, ilongh)   = 0.0
+            fish_diag(i)%mu(itime, ilayer, ilath, ilongh)   = 0.0
+            fish_diag(i)%E_A(itime, ilayer, ilath, ilongh)   = 0.0
+            fish_diag(i)%Fout(itime, ilayer, ilath, ilongh)   = 0.0
+            fish_diag(i)%Repro(itime, ilayer, ilath, ilongh)   = 0.0
+    
+            ! Feeding level for each prey : ------------------------------------------------
+            fish_diag(i)%f_Zm(itime, ilayer, ilath, ilongh)   = 0.0
+            fish_diag(i)%f_Zl(itime, ilayer, ilath, ilongh)      = 0.0
+            fish_diag(i)%f_Sf(itime, ilayer, ilath, ilongh)   = 0.0
+            fish_diag(i)%f_Sp(itime, ilayer, ilath, ilongh)   = 0.0
+            fish_diag(i)%f_Sd(itime, ilayer, ilath, ilongh)   = 0.0
+            fish_diag(i)%f_Mf(itime, ilayer, ilath, ilongh)   = 0.0
+            fish_diag(i)%f_Mp(itime, ilayer, ilath, ilongh)   = 0.0
+            fish_diag(i)%f_Md(itime, ilayer, ilath, ilongh)   = 0.0
+            fish_diag(i)%f_Lp(itime, ilayer, ilath, ilongh)   = 0.0
+            fish_diag(i)%f_Ld(itime, ilayer, ilath, ilongh)   = 0.0
+            fish_diag(i)%f_BE(itime, ilayer, ilath, ilongh)   = 0.0
+        end Do 
+
+    end subroutine store_daily_diag
 
     subroutine Calc_trans_layer(this, that, itime, ilayer, ilath, ilongh)
         type(Save_structure4D) :: this         ! Storage (time layer, space)

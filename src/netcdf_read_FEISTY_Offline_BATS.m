@@ -3,7 +3,7 @@ clear all
 close all
 
 %% Root directory: 
-param.Rockfish =  true; % false; % 
+param.Rockfish =true; %    false; % 
 param = param_setup(param);
 
 %! get directory containing output
@@ -60,19 +60,7 @@ dim = size(eval(var{1}));
 time = 1:dim(1);
 depth = 1:dim(2);
 
-% for i = 1:length(var)
-%     sum_depth(:,:,:) = squeeze(eval(['sum(' var{i} ', 2)'])); 
-%     eval([var{i} '_tmean = transpose(nanmean(sum_depth, [2, 3]));']);
-% end 
-% clear sum_depth
-% 
-% save([dir 'Matlab_Average/' exp 'Time_Means' Spinup{2} '.mat'], 'time',...
-%     'Sf_tmean','Sp_tmean','Sd_tmean',...
-%     'Mf_tmean','Mp_tmean','Md_tmean',...
-%     'Lp_tmean','Ld_tmean','BE_tmean', ...
-%     'dZm_tmean', 'dZl_tmean')
-
-%% Calcul average over dimensions: -----------------------------------------
+% Calcul average over dimensions: -----------------------------------------
 %! Calculate average over lat and long: 
 for i = 1:(length(var))
     eval([var{i} '_spacemean = transpose(squeeze(nanmean(' var{i} ', [3, 4])));']);
@@ -111,7 +99,30 @@ for i = 1:length(var)
 end
 
 
-%% get input varaibles from COBALT 
+%% Initial condition for Online Coupling: 
+
+ncid = netcdf.open([dir, 'FEISTY_2023_10_spinup_subset.nc'],'NC_NOWRITE');
+for i = 1:(length(var)-2)
+    varid = netcdf.inqVarID(ncid, [var{i} '_B']);
+    eval([ var{i} '_B = netcdf.getVar(ncid, varid);']);
+end 
+dim = size(Sf_B);
+depth = 1:dim(3);
+
+%! Calculate average over lat and long: 
+for i = 1:(length(var)-2)
+    eval([var{i} '_spacemean = squeeze(nanmean(' var{i} '_B, [1, 2]));']);
+end
+
+%! Save average over lat and long: 
+save(['../output/Matlab_Average/' 'COBALT_IC' '.mat'], 'depth')
+for i = 1:(length(var)-2)
+    save(['../output/Matlab_Average/' 'COBALT_IC' '.mat'], ...
+        [var{i} '_spacemean'] ,'-append')
+end
+
+
+%% get FEISTY input varaibles from COBALT 
 dir = {'/rdenechere/COBALT_output/COBALT_offline_forcing_files/20040101.ocean_feisty_forcing_offline.nc', ...
        '/rdenechere/COBALT_output/COBALT_offline_forcing_files/20040101.ocean_feisty_forcing_offline.nc', ...
        '/rdenechere/COBALT_output/COBALT_offline_forcing_files/20040101.ocean_feisty_forcing_offline.nc', ...
@@ -176,3 +187,5 @@ for i = 1:length(var)
     save(['../output/Matlab_Average/' exp 'Depth_Means_forcing_files' '.mat'], ...
         [var{i} '_zmean'] ,'-append')
 end
+
+
