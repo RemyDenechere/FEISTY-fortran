@@ -281,7 +281,7 @@ title(t, [exp 'forcing_files'], Interpreter = 'none')
 save_graph(gcf, "png", [save_dir exp 'forcing_files' Spinup{2}], 16, 12)
 
 %% Comparison Detritus flux to sea bed between COBALT output and FEISTY 2019
-param.Rockfish =  true; % false; % 
+param.Rockfish =  false; %true; %  
 param = param_setup(param);
 
 % data from COBALT reanalysis: --------------------------------------------
