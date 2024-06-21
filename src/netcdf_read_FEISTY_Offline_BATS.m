@@ -158,7 +158,7 @@ end
 
 %! Integrated biomass over depth: 
 for i = 1:(length(var))
-    eval([var{i} '_tmean = squeeze(sum(' var{i} '_spacemean, 2));']);
+    eval([var{i} '_tmean = transpose(squeeze(sum(' var{i} '_spacemean, 2)));']);
 end
 
 %! Average over time : 

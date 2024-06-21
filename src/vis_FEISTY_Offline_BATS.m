@@ -62,7 +62,7 @@ for i = 1:(length(var)-2)
 end 
 hold off 
 legend(var{1:(end-2)}, 'Location', 'best')
-set(gca, "YScale", "log", "XLim", [0, xtime*1.2], "Ylim", [10^(-5) 10^(1)])
+set(gca, "YScale", "log", "XLim", [0, xtime*1.2], "Ylim", [10^(-7) 10^(2)])
 title("All size")
 
 % Plot all functional groups:
@@ -74,7 +74,7 @@ plot(time(1:xtime), F_tmean(1:xtime), ...
      time(1:xtime), BE_tmean(1:xtime))
 hold off 
 legend('Forage', 'Pelagics', 'Demersals', 'Benthos', 'Location', 'east')
-set(gca, "YScale", "log", "XLim", [0, xtime*1.2], "Ylim", [10^(-5) 10^(2)])
+set(gca, "YScale", "log", "XLim", [0, xtime*1.2], "Ylim", [10^(-3) 10^(2)])
 title("Functional group")
 set(gca, "YScale", "log")
 
@@ -168,7 +168,7 @@ F_spacemean = Sf_spacemean + Mf_spacemean;
 P_spacemean = Sp_spacemean + Mp_spacemean + Lp_spacemean;
 D_spacemean = Sd_spacemean + Md_spacemean + Ld_spacemean;
 
-figure(6)
+figure(4)
 axes_formating()
 t = tiledlayout(1,2,"TileSpacing","compact","Padding","compact");
 
@@ -176,7 +176,7 @@ t = tiledlayout(1,2,"TileSpacing","compact","Padding","compact");
 nexttile
 hold on 
 for i = 1:(length(var)-2)
-    plot(eval([var{i} '_spacemean']), -depth)
+    plot(eval([var{i} '_zmean']), -depth)
 end
 hold off
 set(gca, "XScale", "log", ...
@@ -204,7 +204,6 @@ title(t, "Initial Conditions for COBALT Online")
 save_graph(gcf, "png", [save_dir 'Initial_Conditions_for_COBALT_Online'], 16, 12)
 
 
-
 %% Plot forcing data: 
 
 %! Load data: 
@@ -221,7 +220,7 @@ end_date   = datetime("2004-12-31");
 time = start_date:end_date;
 
 %! Plot forcing data: ------------------------------------------------
-fig = figure(4);
+fig = figure(5);
 axes_formating()
 
 t = tiledlayout(1, 2, "TileSpacing","compact", "Padding","compact");
@@ -230,7 +229,7 @@ t = tiledlayout(1, 2, "TileSpacing","compact", "Padding","compact");
 t1 = nexttile(t); 
 hold(t1, 'all')
 for i = 1:length(var)
-    plot(t1, time, eval([var{i} '_spacemean']), '-')
+    plot(t1, time, eval([var{i} '_tmean']), '-')
 end 
 hold(t1, 'off')
 set(t1, 'YScale', 'log', 'Ylim',[1.74969307072006e-05 1749.69307072006]);
@@ -287,7 +286,7 @@ param = param_setup(param);
 % data from COBALT reanalysis: --------------------------------------------
 load([param.rootdir '/Feisty/Fish-MIP/Phase3/QuarterDeg/gfdl-mom6-cobalt2_ctrlclim_expc-bot_15arcmin_global_monthly_1961_2010.mat']); 
 
-%%
+%% 
 load_unit = "mol m-2 s-1";      % before conversion
 unit = 'gC WW m-2 d-1';         % after conversion 
 conversion = 6.625*12.01*9.0*24.0*60.0*60.0;
@@ -324,7 +323,7 @@ time_2_datetime = datetime([years', months', days']);
 time_2_str = datestr(time_2);
 
 %% plot the two metrics
-figure(5)
+figure(6)
 axes_formating()
 hold on 
 plot(time_1, Pop_btm_tmean)

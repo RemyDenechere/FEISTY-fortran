@@ -66,6 +66,14 @@ module Parameters
     real(dp), parameter :: Delta_t = 1.0                      ! Time step [d]
     real(dp), parameter :: IC = 10**(-5)                      ! Fish Initial Condition
     character(len=2), dimension(nFishGroup) :: fish_name = ["Sf", "Sp", "Sd", "Mf", "Mp", "Md", "Lp", "Ld"]
+    integer, parameter ::   Sf = 1, &  ! -- Fish ID code --
+                            Sp = 2, &
+                            Sd = 3, &
+                            Mf = 4, &
+                            Mp = 5, &
+                            Md = 6, & 
+                            Lp = 7, &
+                            Ld = 8
 
     ! Parameters physiology: ------------------------------------------
     real(dp), parameter :: ke = 0.0630             ! [°c-1]                Temperature correction for cmax and encounter

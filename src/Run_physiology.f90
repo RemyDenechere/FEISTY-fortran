@@ -18,7 +18,7 @@ program Run_physiology
                                                     DataZM, Datadzm, DataZL, Datadzl
     integer :: itime, iDAY, iYR, Year, ilayer, ilath, ilongh
     real(dp) :: T1, T2, T3, sim_time
-    logical :: Spinup = .false. ! .true. !  
+    logical :: Spinup = .true. ! .false. !   
 
     ! Initialisation: ----------------------------------------------------------
     CALL cpu_time(T1)
@@ -28,10 +28,10 @@ program Run_physiology
  
     ! Increasing the spinup time! 
     if (Spinup) then 
-        Year = Ntime / 365
+        Year = Ntime/365
         sim_time = 1.6546143499999999
     else 
-        Year = Ntime /365
+        Year = Ntime/365
         sim_time = 1.6546143499999999/200.0 
     end if 
 
