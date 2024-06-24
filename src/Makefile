@@ -3,7 +3,7 @@
 #
 # Compiler
 FC = gfortran # mpif90 # 
-
+CC = gcc
 # Compiler flags
 FFLAGS = -O3
 
@@ -14,7 +14,7 @@ NETCDF_FLAGS = `nf-config --fflags --flibs`
 OPENMP_FLAGS = -fopenmp
 
 # Fortran source file
-SOURCE_FEISTY = Parameters.f90  Structure.f90 Physiology.f90 Derivative.f90 GetNetCDFInf.f90 Run_physiology.f90
+SOURCE_FEISTY = Parameters.f90  Structure.f90 Physiology.f90 GetNetCDFInf.f90 Run_physiology.f90
 # SOURCE_NETCDF = Parameters.f90 Structure.f90 GetNetCDFInf.f90 OpenNetCDFFiles.f90
  
 OUTPUT_FEISTY = FEISTY

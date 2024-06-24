@@ -2,28 +2,28 @@ program Run_physiology
     use Parameters
     use Physiology
     use Structure 
-    use Derivative
     use GetNetCDFInf
     use OMP_LIB
  
     implicit none
     
-    type(Structure_group) :: Var
-    type(Save_structure4D) :: Data
-    type(Save_structure1D) :: Data_MNTH
-    type(Structure_diag), dimension(nFishGroup) :: fish_diag
-    type(ini_fish_data) :: Data_F_ini
-    integer :: Ntime, Nlayer, Nlath, Nlongh
+    ! type(Save_structure1D)  :: Data_MNTH
+    type(FEISTY_type)    :: FEISTY
+    type(FEISTY_diag)    :: diags
+    type(FEISTY_tracers)    , dimension(nDeriv) :: tracers
+    type(Initial_conditions), dimension(nDeriv) :: IC_fish_Bio
     real(dp), dimension(:, :, :, :), allocatable :: DataTemp, Datadet, &
                                                     DataZM, Datadzm, DataZL, Datadzl
+    integer :: Ntime, Nlayer, Nlath, Nlongh
     integer :: itime, iDAY, iYR, Year, ilayer, ilath, ilongh
     real(dp) :: T1, T2, T3, sim_time
-    logical :: Spinup = .true. ! .false. !   
+    logical :: Spinup = .true. ! .false. !    
 
     ! Initialisation: ----------------------------------------------------------
     CALL cpu_time(T1)
-    CALL Initialisation(Spinup, Var, Ntime, Nlayer, Nlath, Nlongh, Data_F_ini, Data, &
-                        DataTemp, Datadet, Datadzm, DataZM, Datadzl, DataZL, fish_diag)
+    CALL Init_FEISTY(Spinup, FEISTY, diags, IC_fish_Bio, tracers, &
+                     Ntime, Nlayer, Nlath, Nlongh, &
+                     DataTemp, Datadet, Datadzm, DataZM, Datadzl, DataZL)
     CALL cpu_time(T2)
  
     ! Increasing the spinup time! 
@@ -51,28 +51,22 @@ program Run_physiology
     Do ilath = 1, Nlath; Do ilongh = 1, Nlongh
         ! Loops over time ----------------------------------------------------------
         Do iYr = 1, Year; Do iDAY = 1, 365 ! Loop Year and Day
-            itime = (iYr -1) * 365 + iDay 
+            itime = (iYr -1) * 365 + iDAY 
             Do ilayer = 1, Nlayer; 
-                CALL init_Biomass_Layer(Spinup, itime, ilayer, ilath, ilongh, Data_F_ini, var, Data)
-                CALL Get_Environental_data(Var, DataTemp, Datadet, &
+                CALL init_Biomass_Layer(Spinup, itime, ilayer, ilath, ilongh, IC_fish_Bio, FEISTY, tracers)
+                CALL Get_Environental_data(FEISTY, DataTemp, Datadet, &
                                            Datadzm, DataZM, Datadzl, DataZL, &
                                            iDAY, ilayer, ilath, ilongh)                                                                                  
-                CALL CalcBiomass(Var)                                           ! Calcul biomass at day+1
-                CALL store_daily_biomass(Data, Var, itime, ilayer, ilath, ilongh)  ! Calcul and store the monthly average
-                CALL store_daily_diag(fish_diag, Var, itime, ilayer, ilath, ilongh)
+                CALL Calc_FEISTY_Deriv(FEISTY)                                        ! Calcul biomass at day+1
+                CALL store_daily_biomass(FEISTY, tracers, itime, ilayer, ilath, ilongh)  ! Calcul and store the monthly average
+                CALL store_daily_diag(diags, FEISTY, itime, ilayer, ilath, ilongh)
             enddo
-            call Calc_trans_layer(Data, Var, itime, ilayer, ilath, ilongh)
+            call Calc_trans_layer(diags, FEISTY)
         enddo; enddo ! End Loop Year and day
     enddo ; enddo; ! } longh; lat; layer
 
-    CALL save_data(Spinup, Data, fish_diag, Ntime, Nlayer, Nlath, Nlongh)  ! Save Netcdf 
+    CALL write_output_netcdf(Spinup, tracers, diags, Ntime, Nlayer, Nlath, Nlongh)  ! Save Netcdf 
 
-
-    print*, "    Check Benthic biomass after simulation     "
-    print*, " Dim data to save: ", SIZE(Data%BE, 1), SIZE(Data%BE, 2), SIZE(Data%BE, 3), SIZE(Data%BE, 4)
-    print*, " 1st  layer: ", Data%BE((Ntime-5):Ntime, 1 , 1, 1)
-    print*, " 68th layer: ", Data%BE((Ntime-5):Ntime, 68, 1, 1)
-    print*, " lst  layer: ", Data%BE((Ntime-5):Ntime, 75, 1, 1)
 
     CALL cpu_time(T3)
     print *, "-------------------------------------"

@@ -61,11 +61,23 @@ module Parameters
 
     ! Groupe information: ---------------------------------------------
     integer, parameter :: nFishGroup = 8                      ! Number of fish functional group
-    integer, parameter :: nResource = 1                       ! Benthic resource  
-    integer, parameter :: nDeriv = nFishGroup +  nResource    ! Number of group for witch the derivative is calculated
+    integer, parameter :: nMesoZoo = 2
+    integer, parameter :: nBenthos = 1                       ! Benthic resource  
+    integer, parameter :: nDeriv = nFishGroup +  nBenthos    ! Number of group for witch the derivative is calculated
     real(dp), parameter :: Delta_t = 1.0                      ! Time step [d]
     real(dp), parameter :: IC = 10**(-5)                      ! Fish Initial Condition
-    character(len=2), dimension(nFishGroup) :: fish_name = ["Sf", "Sp", "Sd", "Mf", "Mp", "Md", "Lp", "Ld"]
+
+    character(len=2), dimension(nDeriv) :: tracers_name = ["Sf", "Sp", "Sd", "Mf", "Mp", "Md", "Lp", "Ld", "BE"]
+    character(len=33), dimension(nDeriv) :: tracers_long_name =["Small forage fish biomass        ", &
+                                                                "Small large pelagic fish biomass ", &
+                                                                "Small demersal fish biomass      ", &
+                                                                "Medium forage fish biomass       ", &
+                                                                "Medium large pelagic fish biomass", &
+                                                                "Medium demersal fish biomass     ", &
+                                                                "Large pelagic fish biomass       ", &
+                                                                "Large demersal fish biomass      ", &
+                                                                "Benthic invertebrate biomass     "]
+
     integer, parameter ::   Sf = 1, &  ! -- Fish ID code --
                             Sp = 2, &
                             Sd = 3, &
@@ -73,7 +85,8 @@ module Parameters
                             Mp = 5, &
                             Md = 6, & 
                             Lp = 7, &
-                            Ld = 8
+                            Ld = 8, &
+                            BE = 9
 
     ! Parameters physiology: ------------------------------------------
     real(dp), parameter :: ke = 0.0630             ! [°c-1]                Temperature correction for cmax and encounter
@@ -95,9 +108,11 @@ module Parameters
     real(dp), parameter :: Z_s = 0.0010/0.50;      ! Small fish Ratio of upper and lower body size boundary 
     real(dp), parameter :: Z_m = 0.50/250.0;       ! Medium fish Ratio of upper and lower body size boundary 
     real(dp), parameter :: Z_l = 250.0/125000.0;   ! Large fish Ratio of upper and lower body size boundary 
+    real(dp), dimension(nFishGroup) :: Z = (/Z_s, Z_s, Z_s, Z_m, Z_m, Z_m, Z_l, Z_l /)
     real(dp), parameter :: kappa_l = 1.0           ! Larval Fraction of energy available (E_a) invested in growth 
     real(dp), parameter :: kappa_j = 1.0           ! Juvenile Fraction of energy available (E_a) invested in growth 
     real(dp), parameter :: kappa_a = 0.50          ! Adult Fraction of energy available (E_a) invested in growth 
+    real(dp), dimension(nFishGroup) :: kappa = (/kappa_l, kappa_l, kappa_l,  kappa_a, kappa_j, kappa_j, kappa_a, kappa_a/)
     real(dp), parameter :: eps_R = 0.010           ! Reproduction efficiency: account for energy spend in reprodutive organe, aditional foraging activities, cost of migration, and death from egg release to hatchement. 
     ! Benthic chemostat
     real(dp), parameter :: Bent_eff =  0.0750      ! Benthic Efficiency from detritus to benthic biomass

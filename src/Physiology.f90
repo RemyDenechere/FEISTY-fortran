@@ -8,171 +8,159 @@ module Physiology
 
 
     contains
-    subroutine Calc_Q10(this)
-        !:====================================================================== 
-        ! Calcul temperature experience and then Q10
-        ! Tb      : Temperature in Benthic         [°C]
-        ! Tp      : Temperature in pelagic         [°C]
-        ! tpel(i) : time spent in pelagic zone     [Ø]
-        ! texp(i) : temperature experienced        [Ø]
-        ! ke      : coeff on encouter T-dep fn     [°c-1]
-        ! kmet    : coeff on metabolic T-dep fn    [°c-1]
-        ! Calculation are made for pelagic (i=1) and demersal (i=2)
-        !:====================================================================== 
+    subroutine Calc_FEISTY_Deriv(FEISTY)
+    !:====================================================================== 
+    ! Calcul temperature experience and then Q10
+    ! Tb      : Temperature in Benthic         [°C]
+    ! Tp      : Temperature in pelagic         [°C]
+    ! tpel(i) : time spent in pelagic zone     [Ø]
+    ! texp(i) : temperature experienced        [Ø]
+    ! ke      : coeff on encouter T-dep fn     [°c-1]
+    ! kmet    : coeff on metabolic T-dep fn    [°c-1]
+    ! Calculation are made for pelagic (i=1) and demersal (i=2)
+    !:====================================================================== 
 
-        type(Structure_group), intent(inout) :: this
-        real(dp), dimension(3) :: Texp = 0.0, T_e = 0.0, T_met = 0.0, tpel = 0.0
+        type(FEISTY_type), intent(inout) :: FEISTY
+        real(dp), dimension(3) :: T_e = 0.0, T_met = 0.0
+        real(dp) :: Cons_Zm, Cons_Zl, frac_Sf, frac_Sp, frac_Sd, frac_Mf, frac_Mp, pred_pel
+        real(dp) :: r       ! benthic growth rate ((g/m2/d) / (g/m2))
+        real(dp) :: pred    ! predation from demersals (g/m2/d)
         integer :: i
 
-        T_e(1) = dexp(ke * (this%Temp-10.0))      ! for encounter rate and Cmax
-        T_met(1) = dexp(kmet * (this%Temp-10.0))  ! for metabolism
+        T_e = dexp(ke * (FEISTY%Temp-10.0))      ! for encounter rate and Cmax
+        T_met = dexp(kmet * (FEISTY%Temp-10.0))  ! for metabolism
+        
+        do i = 1, nFishGroup
+            FEISTY%fish(i)%Tcorr_e = T_e(1)         ! Save temperature correction for encounter and cmax 
+            FEISTY%fish(i)%Tcorr_met = T_met(1)     ! Save temperature correction for metabolism
+        end do
 
-        ! Save temperature correction for encounter and cmax 
-        this%Sf%Tcorr_e = T_e(1)
-        this%Sp%Tcorr_e = T_e(1)
-        this%Sd%Tcorr_e = T_e(1)
-        this%Mf%Tcorr_e = T_e(1)
-        this%Mp%Tcorr_e = T_e(1)
-        this%Md%Tcorr_e = T_e(1)
-        this%Lp%Tcorr_e = T_e(1)
-        this%Ld%Tcorr_e = T_e(1)
-
-        ! Save temperature correction for metabolism
-        this%Sf%Tcorr_met = T_met(1)
-        this%Sp%Tcorr_met = T_met(1)
-        this%Sd%Tcorr_met = T_met(1)
-        this%Mf%Tcorr_met = T_met(1)
-        this%Mp%Tcorr_met = T_met(1)
-        this%Md%Tcorr_met = T_met(1)
-        this%Lp%Tcorr_met = T_met(1)
-        this%Ld%Tcorr_met = T_met(1)
-    end subroutine Calc_Q10
-    
-    subroutine Consumption(This)
-        !:======================================================================
-        ! Calculate the consumption for each group on zooplankton and fish 
-        ! Test if consumption on zooplankton does not exceed the loss 
-        ! to higher trophic level dZ
-        ! V        : mass-specific Encounter rate               [m2 g−1 d−1]
-        ! Tcorre_e : temperature correction                     [Ø]
-        ! gamma    : coefficient for Encounter rate             [m2 g^(b_enc−1) d−1]
-        ! w        : wet weight                                 [g]
-        ! b_enc    : exponent for clearance rate                [Ø]
-        ! cmax     : mass-specific maximum consumption          [d-1]
-        ! h        : coefficient for maximum consumption        [d g^(b_cmax)]
-        ! b_cmax   : exponent for maximum consumption           [Ø]
-        ! f_       : feeding level on a specific group          [Ø]
-        ! f        : total feeding level                        [Ø]
-        ! pref_    : feeding preference for a specific group    [Ø]
-        ! cons_    : consumption for a specific group           [d-1]
-        ! cons     : total consumption                          [d-1]
-        !:======================================================================
-        ! dZ test should be remove for online simulation 
-        !:======================================================================
-        class(Structure_group), intent(inout) :: this
-        real(dp) :: Cons_Zm, Cons_Zl, frac_Sf, frac_Sp, frac_Sd, frac_Mf, frac_Mp, pred_pel
+    !:======================================================================
+    ! Calculate the consumption for each group on zooplankton and fish 
+    ! Test if consumption on zooplankton does not exceed the loss 
+    ! to higher trophic level dZ
+    ! V        : mass-specific Encounter rate               [m2 g−1 d−1]
+    ! Tcorre_e : temperature correction                     [Ø]
+    ! gamma    : coefficient for Encounter rate             [m2 g^(b_enc−1) d−1]
+    ! w        : wet weight                                 [g]
+    ! b_enc    : exponent for clearance rate                [Ø]
+    ! cmax     : mass-specific maximum consumption          [d-1]
+    ! h        : coefficient for maximum consumption        [d g^(b_cmax)]
+    ! b_cmax   : exponent for maximum consumption           [Ø]
+    ! f_       : feeding level on a specific group          [Ø]
+    ! f        : total feeding level                        [Ø]
+    ! pref_    : feeding preference for a specific group    [Ø]
+    ! cons_    : consumption for a specific group           [d-1]
+    ! cons     : total consumption                          [d-1]
+    !:======================================================================
+    ! dZ test should be remove for online simulation 
+    !:======================================================================
 
         ! Calcul clearance rate: -------------------------------------------------------
-        this%Sf%V = this%Sf%Tcorr_e * gamma * this%Sf%w **(-b_enc)/365.0
-        this%Sp%V = this%Sp%Tcorr_e * gamma * this%Sp%w **(-b_enc)/365.0
-        this%Sd%V = this%Sd%Tcorr_e * gamma * this%Sd%w **(-b_enc)/365.0
-        this%Mf%V = this%Mf%Tcorr_e * gamma * this%Mf%w **(-b_enc)/365.0
-        this%Mp%V = this%Mp%Tcorr_e * gamma * this%Mp%w **(-b_enc)/365.0
-        this%Md%V = this%Md%Tcorr_e * gamma * this%Md%w **(-b_enc)/365.0
-        this%Lp%V = this%Lp%Tcorr_e * gamma * this%Lp%w **(-b_enc)/365.0
-        this%Ld%V = this%Ld%Tcorr_e * gamma * this%Ld%w **(-b_enc)/365.0
-                
-        ! Calcul cmax: ------------------------------------------------------------------
-        this%Sf%cmax = this%Sf%Tcorr_e * h * this%Sf%w **(-b_cmax)/365.0
-        this%Sp%cmax = this%Sp%Tcorr_e * h * this%Sp%w **(-b_cmax)/365.0
-        this%Sd%cmax = this%Sd%Tcorr_e * h * this%Sd%w **(-b_cmax)/365.0
-        this%Mf%cmax = this%Mf%Tcorr_e * h * this%Mf%w **(-b_cmax)/365.0
-        this%Mp%cmax = this%Mp%Tcorr_e * h * this%Mp%w **(-b_cmax)/365.0
-        this%Md%cmax = this%Md%Tcorr_e * h * this%Md%w **(-b_cmax)/365.0
-        this%Lp%cmax = this%Lp%Tcorr_e * h * this%Lp%w **(-b_cmax)/365.0
-        this%Ld%cmax = this%Ld%Tcorr_e * h * this%Ld%w **(-b_cmax)/365.0
+        do i = 1, nFishGroup
+            FEISTY%fish(i)%V = FEISTY%fish(i)%Tcorr_e * gamma * FEISTY%fish(i)%w **(-b_enc)/365.0    ! Calcul Clearance rate
+            FEISTY%fish(i)%cmax = FEISTY%fish(i)%Tcorr_e * h * FEISTY%fish(i)%w **(-b_cmax)/365.0    ! Calcul Maximum consumption rate
+            FEISTY%fish(i)%mu_a = Nat_mrt                                                            ! Calcul Natural Mortality
+        end do 
+        
        
         ! Calcul feeding level of MesoZoo prey: -------------------------------------------------
         ! Small fish only consume Medium zooplankton: (pref_Mz = 0.9 for 4P2Z and 1 for 4P4Z models)
         ! Small fish don't feed on Large zooplankton
-        this%Sf%f_Zm = this%Sf%V * pref_Mz * this%Mz%B/((this%Sf%V* pref_Mz * this%Mz%B) + this%Sf%cmax)
-        this%Sp%f_Zm = this%Sp%V * pref_Mz * this%Mz%B/((this%Sp%V* pref_Mz * this%Mz%B) + this%Sp%cmax)
-        this%Sd%f_Zm = this%Sd%V * pref_Mz * this%Mz%B/((this%Sd%V* pref_Mz * this%Mz%B) + this%Sd%cmax)
+        FEISTY%fish(1)%f_Zm = FEISTY%fish(1)%V * pref_Mz * FEISTY%mesozoo(1)%B/  & 
+                            ((FEISTY%fish(1)%V* pref_Mz * FEISTY%mesozoo(1)%B) + FEISTY%fish(1)%cmax)
+        FEISTY%fish(2)%f_Zm = FEISTY%fish(2)%V * pref_Mz * FEISTY%mesozoo(1)%B/  & 
+                            ((FEISTY%fish(2)%V* pref_Mz * FEISTY%mesozoo(1)%B) + FEISTY%fish(2)%cmax)
+        FEISTY%fish(3)%f_Zm = FEISTY%fish(3)%V * pref_Mz * FEISTY%mesozoo(1)%B/  & 
+                            ((FEISTY%fish(3)%V* pref_Mz * FEISTY%mesozoo(1)%B) + FEISTY%fish(3)%cmax)
         
         ! Medium forage:
-        this%Mf%f_Zm = this%Mf%V * pref_Mf_Mz * this%Mz%B/((this%Mf%V* & 
-            (pref_Mf_Mz * this%Mz%B + pref_Mf_Lz * this%Lz%B + pref_Mf_S*(this%Sf%B + this%Sp%B + this%Sd%B))) + this%Mf%cmax)
+        FEISTY%fish(4)%f_Zm = FEISTY%fish(4)%V * pref_Mf_Mz * FEISTY%mesozoo(1)%B/((FEISTY%fish(4)%V* & 
+            (pref_Mf_Mz * FEISTY%mesozoo(1)%B + pref_Mf_Lz * FEISTY%mesozoo(2)%B + pref_Mf_S* & 
+            (FEISTY%fish(1)%B + FEISTY%fish(2)%B + FEISTY%fish(3)%B))) + FEISTY%fish(4)%cmax)
 
-        this%Mf%f_Zl = this%Mf%V * pref_Mf_Lz * this%Lz%B/((this%Mf%V* & 
-            (pref_Mf_Mz * this%Mz%B + pref_Mf_Lz * this%Lz%B + pref_Mf_S*(this%Sf%B + this%Sp%B + this%Sd%B))) + this%Mf%cmax)
+        FEISTY%fish(4)%f_Zl = FEISTY%fish(4)%V * pref_Mf_Lz * FEISTY%mesozoo(2)%B/((FEISTY%fish(4)%V* & 
+            (pref_Mf_Mz * FEISTY%mesozoo(1)%B + pref_Mf_Lz * FEISTY%mesozoo(2)%B + pref_Mf_S* & 
+            (FEISTY%fish(1)%B + FEISTY%fish(2)%B + FEISTY%fish(3)%B))) + FEISTY%fish(4)%cmax)
             
-        this%Mf%f_Sf = this%Mf%V *pref_Mf_S* this%Sf%B/((this%Mf%V* &
-            (pref_Mf_Mz * this%Mz%B + pref_Mf_Lz * this%Lz%B + pref_Mf_S*(this%Sf%B + this%Sp%B + this%Sd%B))) + this%Mf%cmax)
+        FEISTY%fish(4)%f_Sf = FEISTY%fish(4)%V *pref_Mf_S* FEISTY%fish(1)%B/((FEISTY%fish(4)%V* &
+            (pref_Mf_Mz * FEISTY%mesozoo(1)%B + pref_Mf_Lz * FEISTY%mesozoo(2)%B + pref_Mf_S* & 
+            (FEISTY%fish(1)%B + FEISTY%fish(2)%B + FEISTY%fish(3)%B))) + FEISTY%fish(4)%cmax)
 
-        this%Mf%f_Sp = this%Mf%V *pref_Mf_S* this%Sp%B/((this%Mf%V* &
-            (pref_Mf_Mz * this%Mz%B + pref_Mf_Lz * this%Lz%B + pref_Mf_S*(this%Sf%B + this%Sp%B + this%Sd%B))) + this%Mf%cmax)
+        FEISTY%fish(4)%f_Sp = FEISTY%fish(4)%V *pref_Mf_S* FEISTY%fish(2)%B/((FEISTY%fish(4)%V* &
+            (pref_Mf_Mz * FEISTY%mesozoo(1)%B + pref_Mf_Lz * FEISTY%mesozoo(2)%B + pref_Mf_S* & 
+            (FEISTY%fish(1)%B + FEISTY%fish(2)%B + FEISTY%fish(3)%B))) + FEISTY%fish(4)%cmax)
 
-        this%Mf%f_Sd = this%Mf%V *pref_Mf_S* this%Sd%B/((this%Mf%V* &
-            (pref_Mf_Mz * this%Mz%B + pref_Mf_Lz * this%Lz%B + pref_Mf_S*(this%Sf%B + this%Sp%B + this%Sd%B))) + this%Mf%cmax) 
+        FEISTY%fish(4)%f_Sd = FEISTY%fish(4)%V *pref_Mf_S* FEISTY%fish(3)%B/((FEISTY%fish(4)%V* &
+            (pref_Mf_Mz * FEISTY%mesozoo(1)%B + pref_Mf_Lz * FEISTY%mesozoo(2)%B + pref_Mf_S* & 
+            (FEISTY%fish(1)%B + FEISTY%fish(2)%B + FEISTY%fish(3)%B))) + FEISTY%fish(4)%cmax) 
                  
-        this%Mf%f = this%Mf%f_Zm + this%Mf%f_Zl + this%Mf%f_Sf + this%Mf%f_Sp + this%Mf%f_Sd
+        FEISTY%fish(4)%f = FEISTY%fish(4)%f_Zm + FEISTY%fish(4)%f_Zl + FEISTY%fish(4)%f_Sf + & 
+                           FEISTY%fish(4)%f_Sp + FEISTY%fish(4)%f_Sd
         
         ! Medium pelagic:
-        this%Mp%f_Zm = this%Mp%V * pref_Mp_Mz * this%Mz%B/((this%Mp%V* (pref_Mp_Mz * this%Mz%B &
-            + pref_Mp_Lz * this%Lz%B + pref_Mp_S*(this%Sf%B + this%Sp%B + this%Sd%B))) + this%Mp%cmax)
+        FEISTY%fish(5)%f_Zm = FEISTY%fish(5)%V * pref_Mp_Mz * FEISTY%mesozoo(1)%B/ & 
+            ((FEISTY%fish(5)%V* (pref_Mp_Mz * FEISTY%mesozoo(1)%B + pref_Mp_Lz * FEISTY%mesozoo(2)%B + &
+            pref_Mp_S * (FEISTY%fish(1)%B + FEISTY%fish(2)%B + FEISTY%fish(3)%B))) + FEISTY%fish(5)%cmax)
 
-        this%Mp%f_Zl = this%Mp%V * pref_Mp_Lz * this%Lz%B/((this%Mp%V* (pref_Mp_Mz * this%Mz%B &
-            + pref_Mp_Lz * this%Lz%B + pref_Mp_S*(this%Sf%B + this%Sp%B + this%Sd%B))) + this%Mp%cmax)
+        FEISTY%fish(5)%f_Zl = FEISTY%fish(5)%V * pref_Mp_Lz * FEISTY%mesozoo(2)%B/ &
+            ((FEISTY%fish(5)%V* (pref_Mp_Mz * FEISTY%mesozoo(1)%B+ pref_Mp_Lz * FEISTY%mesozoo(2)%B + & 
+            pref_Mp_S*(FEISTY%fish(1)%B + FEISTY%fish(2)%B + FEISTY%fish(3)%B))) + FEISTY%fish(5)%cmax)
 
-        this%Mp%f_Sf = this%Mp%V *pref_Mp_S* this%Sf%B/((this%Mp%V* (pref_Mp_Mz * this%Mz%B &
-            + pref_Mp_Lz * this%Lz%B + pref_Mp_S*(this%Sf%B + this%Sp%B + this%Sd%B))) + this%Mp%cmax)
+        FEISTY%fish(5)%f_Sf = FEISTY%fish(5)%V *pref_Mp_S* FEISTY%fish(1)%B/ &
+            ((FEISTY%fish(5)%V* (pref_Mp_Mz * FEISTY%mesozoo(1)%B + pref_Mp_Lz * FEISTY%mesozoo(2)%B + &
+            pref_Mp_S*(FEISTY%fish(1)%B + FEISTY%fish(2)%B + FEISTY%fish(3)%B))) + FEISTY%fish(5)%cmax)
 
-        this%Mp%f_Sp = this%Mp%V *pref_Mp_S* this%Sp%B/((this%Mp%V* (pref_Mp_Mz * this%Mz%B &
-            + pref_Mp_Lz * this%Lz%B + pref_Mp_S*(this%Sf%B + this%Sp%B + this%Sd%B))) + this%Mp%cmax)
+        FEISTY%fish(5)%f_Sp = FEISTY%fish(5)%V *pref_Mp_S* FEISTY%fish(2)%B/ &
+            ((FEISTY%fish(5)%V* (pref_Mp_Mz * FEISTY%mesozoo(1)%B+ pref_Mp_Lz * FEISTY%mesozoo(2)%B + & 
+            pref_Mp_S*(FEISTY%fish(1)%B + FEISTY%fish(2)%B + FEISTY%fish(3)%B))) + FEISTY%fish(5)%cmax)
 
-        this%Mp%f_Sd = this%Mp%V *pref_Mp_S* this%Sd%B/((this%Mp%V* (pref_Mp_Mz * this%Mz%B &
-            + pref_Mp_Lz * this%Lz%B + pref_Mp_S*(this%Sf%B + this%Sp%B + this%Sd%B))) + this%Mp%cmax)
+        FEISTY%fish(5)%f_Sd = FEISTY%fish(5)%V *pref_Mp_S* FEISTY%fish(3)%B/ &
+            ((FEISTY%fish(5)%V* (pref_Mp_Mz * FEISTY%mesozoo(1)%B+ pref_Mp_Lz * FEISTY%mesozoo(2)%B + & 
+            pref_Mp_S*(FEISTY%fish(1)%B + FEISTY%fish(2)%B + FEISTY%fish(3)%B))) + FEISTY%fish(5)%cmax)
         
-        this%Mp%f = this%Mp%f_Zm + this%Mp%f_Zl + this%Mp%f_Sf + this%Mp%f_Sp + this%Mp%f_Sd
+        FEISTY%fish(5)%f = FEISTY%fish(5)%f_Zm + FEISTY%fish(5)%f_Zl + FEISTY%fish(5)%f_Sf + & 
+                           FEISTY%fish(5)%f_Sp + FEISTY%fish(5)%f_Sd
 
         ! Medium Demersals only eat benthos resource: 
-        this%Md%f_BE = this%Md%V *pref_Md_BE * this%BE%B/((this%Md%V * pref_Md_BE * this%BE%B) + this%Md%cmax)
-        this%Md%f = this%Md%f_BE
+        FEISTY%fish(6)%f_BE = FEISTY%fish(6)%V *pref_Md_BE * FEISTY%benthos(1)%B/ &
+                             ((FEISTY%fish(6)%V * pref_Md_BE * FEISTY%benthos(1)%B) + FEISTY%fish(6)%cmax)
+        FEISTY%fish(6)%f = FEISTY%fish(6)%f_BE
+
+        ! Large pelagics: 
+        FEISTY%fish(7)%f_Mf = FEISTY%fish(7)%V * pref_Lp_Mf * FEISTY%fish(4)%B / &
+            (FEISTY%fish(7)%V* (pref_Lp_Mf * FEISTY%fish(4)%B + pref_Lp_Mp * FEISTY%fish(5)%B) + FEISTY%fish(7)%cmax)
+
+        FEISTY%fish(7)%f_Mp = FEISTY%fish(7)%V * pref_Lp_Mp * FEISTY%fish(5)%B / &
+            (FEISTY%fish(7)%V* (pref_Lp_Mf * FEISTY%fish(4)%B + pref_Lp_Mp * FEISTY%fish(5)%B) + FEISTY%fish(7)%cmax)
+
+        FEISTY%fish(7)%f = FEISTY%fish(7)%f_Mf + FEISTY%fish(7)%f_Mp
 
         ! Large Demersal: 
         ! If large demersal don't spend time in pelagic zone then predation on forage and pelagics = 0; 
-        ! if (this%tpel_Ld == 0.0) then 
+        ! if (FEISTY%tpel_Ld == 0.0) then 
         !     pred_pel = 0.0
         ! else 
             pred_pel = 1.0
         ! end if  
 
-        this%Ld%f_Mf = this%Ld%V * pred_pel * pref_Ld_Mf * this%Mf%B /(this%Ld%V * &
-            (pred_pel * pref_Ld_Mf * this%Mf%B + pred_pel * pref_Ld_Mp * this%Mp%B + &
-             pref_Ld_Md * this%Md%B + pref_Ld_BE * this%BE%B) + this%Ld%cmax)
+        FEISTY%fish(8)%f_Mf = FEISTY%fish(8)%V * pred_pel * pref_Ld_Mf * FEISTY%fish(4)%B /(FEISTY%fish(8)%V * &
+            (pred_pel * pref_Ld_Mf * FEISTY%fish(4)%B + pred_pel * pref_Ld_Mp * FEISTY%fish(5)%B + &
+             pref_Ld_Md * FEISTY%fish(6)%B + pref_Ld_BE * FEISTY%benthos(1)%B) + FEISTY%fish(8)%cmax)
 
-        this%Ld%f_Mp = pred_pel * this%Ld%V * pred_pel * pref_Ld_Mp * this%Mp%B /(this%Ld%V* &
-            (pred_pel * pref_Ld_Mf * this%Mf%B + pred_pel * pref_Ld_Mp * this%Mp%B + &
-             pref_Ld_Md * this%Md%B + pref_Ld_BE * this%BE%B) + this%Ld%cmax)
+        FEISTY%fish(8)%f_Mp = pred_pel * FEISTY%fish(8)%V * pred_pel * pref_Ld_Mp * FEISTY%fish(5)%B /(FEISTY%fish(8)%V* &
+            (pred_pel * pref_Ld_Mf * FEISTY%fish(4)%B + pred_pel * pref_Ld_Mp * FEISTY%fish(5)%B + &
+             pref_Ld_Md * FEISTY%fish(6)%B + pref_Ld_BE * FEISTY%benthos(1)%B) + FEISTY%fish(8)%cmax)
 
-        this%Ld%f_Md = this%Ld%V * pref_Ld_Md * this%Md%B /(this%Ld%V* &
-            (pred_pel * pref_Ld_Mf * this%Mf%B + pred_pel * pref_Ld_Mp * this%Mp%B + & 
-            pref_Ld_Md * this%Md%B + pref_Ld_BE * this%BE%B) + this%Ld%cmax)
+        FEISTY%fish(8)%f_Md = FEISTY%fish(8)%V * pref_Ld_Md * FEISTY%fish(6)%B /(FEISTY%fish(8)%V* &
+            (pred_pel * pref_Ld_Mf * FEISTY%fish(4)%B + pred_pel * pref_Ld_Mp * FEISTY%fish(5)%B + & 
+            pref_Ld_Md * FEISTY%fish(6)%B + pref_Ld_BE * FEISTY%benthos(1)%B) + FEISTY%fish(8)%cmax)
 
-        this%Ld%f_BE = this%Ld%V * pref_Ld_BE * this%BE%B /(this%Ld%V* &
-            (pred_pel * pref_Ld_Mf * this%Mf%B + pred_pel * pref_Ld_Mp * this%Mp%B + & 
-            pref_Ld_Md * this%Md%B + pref_Ld_BE * this%BE%B) + this%Ld%cmax)
+        FEISTY%fish(8)%f_BE = FEISTY%fish(8)%V * pref_Ld_BE * FEISTY%benthos(1)%B /(FEISTY%fish(8)%V* &
+            (pred_pel * pref_Ld_Mf * FEISTY%fish(4)%B + pred_pel * pref_Ld_Mp * FEISTY%fish(5)%B + & 
+            pref_Ld_Md * FEISTY%fish(6)%B + pref_Ld_BE * FEISTY%benthos(1)%B) + FEISTY%fish(8)%cmax)
 
-        this%Ld%f = this%Ld%f_Mf + this%Ld%f_Mp + this%Ld%f_Md + this%Ld%f_BE
-
-        ! Large pelagics: 
-        this%Lp%f_Mf = this%Lp%V * pref_Lp_Mf * this%Mf%B / &
-            (this%Lp%V* (pref_Lp_Mf * this%Mf%B + pref_Lp_Mp * this%Mp%B) + this%Lp%cmax)
-
-        this%Lp%f_Mp = this%Lp%V * pref_Lp_Mp * this%Mp%B / &
-            (this%Lp%V* (pref_Lp_Mf * this%Mf%B + pref_Lp_Mp * this%Mp%B) + this%Lp%cmax)
-
-        this%Lp%f = this%Lp%f_Mf + this%Lp%f_Mp
+        FEISTY%fish(8)%f = FEISTY%fish(8)%f_Mf + FEISTY%fish(8)%f_Mp + FEISTY%fish(8)%f_Md + FEISTY%fish(8)%f_BE
 
         !:====================================================================================:!
         !                                Consumption per group                                 !
@@ -180,133 +168,143 @@ module Physiology
         
         ! Calcul consumption rate of MesoZoo: -------------------------------------------------
         ! Used for estimation of the fraction of zooplankton biomass consumed: (m-2 d-1)
-        this%Sf%cons_Mz = this%Sf%f_Zm * this%Sf%cmax 
-        this%Sp%cons_Mz = this%Sp%f_Zm * this%Sp%cmax
-        this%Sd%cons_Mz = this%Sd%f_Zm * this%Sd%cmax
+        FEISTY%fish(1)%cons_Mz = FEISTY%fish(1)%f_Zm * FEISTY%fish(1)%cmax 
+        FEISTY%fish(2)%cons_Mz = FEISTY%fish(2)%f_Zm * FEISTY%fish(2)%cmax
+        FEISTY%fish(3)%cons_Mz = FEISTY%fish(3)%f_Zm * FEISTY%fish(3)%cmax
         ! Medium on Mz
-        this%Mf%cons_Mz = this%Mf%f_Zm * this%Mf%cmax
-        this%Mp%cons_Mz = this%Mp%f_Zm * this%Mp%cmax
+        FEISTY%fish(4)%cons_Mz = FEISTY%fish(4)%f_Zm * FEISTY%fish(4)%cmax
+        FEISTY%fish(5)%cons_Mz = FEISTY%fish(5)%f_Zm * FEISTY%fish(5)%cmax
         ! Medium on Lz
-        this%Mf%cons_Lz = this%Mf%f_Zl * this%Mf%cmax
-        this%Mp%cons_Lz = this%Mp%f_Zl * this%Mp%cmax
+        FEISTY%fish(4)%cons_Lz = FEISTY%fish(4)%f_Zl * FEISTY%fish(4)%cmax
+        FEISTY%fish(5)%cons_Lz = FEISTY%fish(5)%f_Zl * FEISTY%fish(5)%cmax
 
         ! Calcul consumption for each fish group: ----------------------------------------------
         ! Used to calculate the predation mortality on each group: 
         ! Medium forage consumption on fish
-        this%Mf%cons_Sf = this%Mf%f_Sf * this%Mf%cmax
-        this%Mf%cons_Sp = this%Mf%f_Sp * this%Mf%cmax 
-        this%Mf%cons_Sd = this%Mf%f_Sd * this%Mf%cmax
+        FEISTY%fish(4)%cons_Sf = FEISTY%fish(4)%f_Sf * FEISTY%fish(4)%cmax
+        FEISTY%fish(4)%cons_Sp = FEISTY%fish(4)%f_Sp * FEISTY%fish(4)%cmax 
+        FEISTY%fish(4)%cons_Sd = FEISTY%fish(4)%f_Sd * FEISTY%fish(4)%cmax
         ! Medium Pelagic consumption on fish
-        this%Mp%cons_Sf = this%Mp%f_Sf * this%Mp%cmax
-        this%Mp%cons_Sp = this%Mp%f_Sp * this%Mp%cmax 
-        this%Mp%cons_Sd = this%Mp%f_Sd * this%Mp%cmax
+        FEISTY%fish(5)%cons_Sf = FEISTY%fish(5)%f_Sf * FEISTY%fish(5)%cmax
+        FEISTY%fish(5)%cons_Sp = FEISTY%fish(5)%f_Sp * FEISTY%fish(5)%cmax 
+        FEISTY%fish(5)%cons_Sd = FEISTY%fish(5)%f_Sd * FEISTY%fish(5)%cmax
 
         ! Medium Demersal consumption on fish
-        this%Md%cons_BE = this%Md%f_BE * this%Md%cmax
+        FEISTY%fish(6)%cons_BE = FEISTY%fish(6)%f_BE * FEISTY%fish(6)%cmax
         ! Large Pelagic:
-        this%Lp%cons_Mf = this%Lp%f_Mf * this%Lp%cmax
-        this%Lp%cons_Mp = this%Lp%f_Mp * this%Lp%cmax
+        FEISTY%fish(7)%cons_Mf = FEISTY%fish(7)%f_Mf * FEISTY%fish(7)%cmax
+        FEISTY%fish(7)%cons_Mp = FEISTY%fish(7)%f_Mp * FEISTY%fish(7)%cmax
         ! Large Demersal: 
-        this%Ld%cons_Mf = this%Ld%f_Mf * this%Ld%cmax
-        this%Ld%cons_Mp = this%Ld%f_Mp * this%Ld%cmax
-        this%Ld%cons_Md = this%Ld%f_Md * this%Ld%cmax
-        this%Ld%cons_BE = this%Ld%f_BE * this%Ld%cmax
+        FEISTY%fish(8)%cons_Mf = FEISTY%fish(8)%f_Mf * FEISTY%fish(8)%cmax
+        FEISTY%fish(8)%cons_Mp = FEISTY%fish(8)%f_Mp * FEISTY%fish(8)%cmax
+        FEISTY%fish(8)%cons_Md = FEISTY%fish(8)%f_Md * FEISTY%fish(8)%cmax
+        FEISTY%fish(8)%cons_BE = FEISTY%fish(8)%f_BE * FEISTY%fish(8)%cmax
 
         ! Fraction of zooplankton biomass consumed:----------------------------------------
         ! Calcul total consumption for each Zooplankton group:
-        Cons_Zm = (this%Sf%cons_Mz * this%Sf%B + this%Sp%cons_Mz * this%Sp%B + &
-                   this%Sd%cons_Mz * this%Sd%B + this%Mf%cons_Mz * this%Mf%B + &
-                   this%Mp%cons_Mz * this%Mp%B)
-        Cons_Zl = (this%Mf%cons_Lz * this%Mf%B + this%Mp%cons_Lz * this%Mp%B)
+        Cons_Zm = (FEISTY%fish(1)%cons_Mz * FEISTY%fish(1)%B + FEISTY%fish(2)%cons_Mz * FEISTY%fish(2)%B + &
+                   FEISTY%fish(3)%cons_Mz * FEISTY%fish(3)%B + FEISTY%fish(4)%cons_Mz * FEISTY%fish(4)%B + &
+                   FEISTY%fish(5)%cons_Mz * FEISTY%fish(5)%B)
+        Cons_Zl = (FEISTY%fish(4)%cons_Lz * FEISTY%fish(4)%B + FEISTY%fish(5)%cons_Lz * FEISTY%fish(5)%B)
         
         ! Calcul of fraction of Zoo consumption over estimated zoop consumption:
-        this%Zcons_VS_dZm = Cons_Zm/(this%dzm + eps)
-        this%Zcons_VS_dZl = Cons_Zl/(this%dzl + eps)
+        FEISTY%mesozoo(1)%Zcons_VS_dZ = Cons_Zm/(FEISTY%dzm + eps)
+        FEISTY%mesozoo(2)%Zcons_VS_dZ = Cons_Zl/(FEISTY%dzl + eps)
 
         ! If calculated consumtiion is higher than estimated recalcul the fraction of Z consumed 
         ! depending on every group relative fraction of consumtion on Z. 
         ! Mz: 
-        if (Cons_Zm > this%dzm .and. prod_constrained) then
+        if (Cons_Zm > FEISTY%dzm .and. prod_constrained) then
             ! Calcul fraction of consumption over total consumption of zoo
-            frac_Sf = this%Sf%cons_Mz * this%Sf%B / (this%Sf%cons_Mz * this%Sf%B + this%Sp%cons_Mz * this%Sp%B + &
-                   this%Sd%cons_Mz * this%Sd%B + this%Mf%cons_Mz * this%Mf%B + &
-                   this%Mp%cons_Mz * this%Mp%B)
-            frac_Sp = this%Sp%cons_Mz * this%Sp%B / (this%Sf%cons_Mz * this%Sf%B + this%Sp%cons_Mz * this%Sp%B + &
-                   this%Sd%cons_Mz * this%Sd%B + this%Mf%cons_Mz * this%Mf%B + &
-                   this%Mp%cons_Mz * this%Mp%B)
-            frac_Sd = this%Sd%cons_Mz * this%Sd%B / (this%Sf%cons_Mz * this%Sf%B + this%Sp%cons_Mz * this%Sp%B + &
-                   this%Sd%cons_Mz * this%Sd%B + this%Mf%cons_Mz * this%Mf%B + &
-                   this%Mp%cons_Mz * this%Mp%B)
-            frac_Mf = this%Mf%cons_Mz * this%Mf%B / (this%Sf%cons_Mz * this%Sf%B + this%Sp%cons_Mz * this%Sp%B + &
-                   this%Sd%cons_Mz * this%Sd%B + this%Mf%cons_Mz * this%Mf%B + &
-                   this%Mp%cons_Mz * this%Mp%B)
-            frac_Mp = this%Mp%cons_Mz * this%Mp%B / (this%Sf%cons_Mz * this%Sf%B + this%Sp%cons_Mz * this%Sp%B + &
-                   this%Sd%cons_Mz * this%Sd%B + this%Mf%cons_Mz * this%Mf%B + &
-                   this%Mp%cons_Mz * this%Mp%B)
+            frac_Sf = FEISTY%fish(1)%cons_Mz * FEISTY%fish(1)%B / (FEISTY%fish(1)%cons_Mz * FEISTY%fish(1)%B + &
+                     FEISTY%fish(2)%cons_Mz * FEISTY%fish(2)%B + &
+                     FEISTY%fish(3)%cons_Mz * FEISTY%fish(3)%B + FEISTY%fish(4)%cons_Mz * FEISTY%fish(4)%B + &
+                     FEISTY%fish(5)%cons_Mz * FEISTY%fish(5)%B)
+            frac_Sp = FEISTY%fish(2)%cons_Mz * FEISTY%fish(2)%B / (FEISTY%fish(1)%cons_Mz * FEISTY%fish(1)%B + &
+                    FEISTY%fish(2)%cons_Mz * FEISTY%fish(2)%B + &
+                    FEISTY%fish(3)%cons_Mz * FEISTY%fish(3)%B + FEISTY%fish(4)%cons_Mz * FEISTY%fish(4)%B + &
+                    FEISTY%fish(5)%cons_Mz * FEISTY%fish(5)%B)
+            frac_Sd = FEISTY%fish(3)%cons_Mz * FEISTY%fish(3)%B / (FEISTY%fish(1)%cons_Mz * FEISTY%fish(1)%B + & 
+                    FEISTY%fish(2)%cons_Mz * FEISTY%fish(2)%B + &
+                    FEISTY%fish(3)%cons_Mz * FEISTY%fish(3)%B + FEISTY%fish(4)%cons_Mz * FEISTY%fish(4)%B + &
+                    FEISTY%fish(5)%cons_Mz * FEISTY%fish(5)%B)
+            frac_Mf = FEISTY%fish(4)%cons_Mz * FEISTY%fish(4)%B / (FEISTY%fish(1)%cons_Mz * FEISTY%fish(1)%B + & 
+                    FEISTY%fish(2)%cons_Mz * FEISTY%fish(2)%B + &
+                    FEISTY%fish(3)%cons_Mz * FEISTY%fish(3)%B + FEISTY%fish(4)%cons_Mz * FEISTY%fish(4)%B + &
+                    FEISTY%fish(5)%cons_Mz * FEISTY%fish(5)%B)
+            frac_Mp = FEISTY%fish(5)%cons_Mz * FEISTY%fish(5)%B / (FEISTY%fish(1)%cons_Mz * FEISTY%fish(1)%B + & 
+                    FEISTY%fish(2)%cons_Mz * FEISTY%fish(2)%B + &
+                    FEISTY%fish(3)%cons_Mz * FEISTY%fish(3)%B + FEISTY%fish(4)%cons_Mz * FEISTY%fish(4)%B + &
+                    FEISTY%fish(5)%cons_Mz * FEISTY%fish(5)%B)
 
             ! Actual consumption as the faction of consumption * dz: -------------------------
             ! Divide the biomass consumed by the biomass of the predator to get a per g of predator rate. 
-            this%Sf%cons_Mz = frac_Sf * this%dzm / this%Sf%B
-            this%Sp%cons_Mz = frac_Sp * this%dzm / this%Sp%B
-            this%Sd%cons_Mz = frac_Sd * this%dzm / this%Sd%B
-            this%Mf%cons_Mz = frac_Mf * this%dzm / this%Mf%B
-            this%Mp%cons_Mz = frac_Mp * this%dzm / this%Mp%B
+            FEISTY%fish(1)%cons_Mz = frac_Sf * FEISTY%dzm / FEISTY%fish(1)%B
+            FEISTY%fish(2)%cons_Mz = frac_Sp * FEISTY%dzm / FEISTY%fish(2)%B
+            FEISTY%fish(3)%cons_Mz = frac_Sd * FEISTY%dzm / FEISTY%fish(3)%B
+            FEISTY%fish(4)%cons_Mz = frac_Mf * FEISTY%dzm / FEISTY%fish(4)%B
+            FEISTY%fish(5)%cons_Mz = frac_Mp * FEISTY%dzm / FEISTY%fish(5)%B
         end if  
         
         ! Lz:
-        if (Cons_Zl > this%dzl .and. prod_constrained) then
+        if (Cons_Zl > FEISTY%dzl .and. prod_constrained) then
             ! Calcul fraction of consumption over total consumption of zoo
-            frac_Mf = this%Mf%cons_Lz * this%Mf%B / (this%Mf%cons_Lz * this%Mf%B + this%Mp%cons_Lz * this%Mp%B)
-            frac_Mp = this%Mp%cons_Lz * this%Mp%B / (this%Mf%cons_Lz * this%Mf%B + this%Mp%cons_Lz * this%Mp%B)
+            frac_Mf = FEISTY%fish(4)%cons_Lz * FEISTY%fish(4)%B / & 
+                     (FEISTY%fish(4)%cons_Lz * FEISTY%fish(4)%B + FEISTY%fish(5)%cons_Lz * FEISTY%fish(5)%B)
+            frac_Mp = FEISTY%fish(5)%cons_Lz * FEISTY%fish(5)%B / & 
+                     (FEISTY%fish(4)%cons_Lz * FEISTY%fish(4)%B + FEISTY%fish(5)%cons_Lz * FEISTY%fish(5)%B)
 
             ! Actual consumption as the faction of consumption * dz: -------------------------
             ! Divide the biomass consumed by the biomass of the predator to get a per g of predator rate. 
-            this%Mf%cons_Lz = frac_Mf * this%dzl / this%Mf%B
-            this%Mp%cons_Lz = frac_Mp * this%dzl / this%Mp%B
+            FEISTY%fish(4)%cons_Lz = frac_Mf * FEISTY%dzl / FEISTY%fish(4)%B
+            FEISTY%fish(5)%cons_Lz = frac_Mp * FEISTY%dzl / FEISTY%fish(5)%B
         end if 
 
         ! Total consumption rate with adjusted consumption on zooplankton: ------------------
-        this%Sf%cons = this%Sf%cons_Mz
-        this%Sp%cons = this%Sp%cons_Mz
-        this%Sd%cons = this%Sd%cons_Mz
-        this%Mf%cons = this%Mf%cons_Mz + this%Mf%cons_Lz + this%Mf%cons_Sf + this%Mf%cons_Sp + this%Mf%cons_Sd 
-        this%Mp%cons = this%Mp%cons_Mz + this%Mp%cons_Lz + this%Mp%cons_Sf + this%Mp%cons_Sp + this%Mp%cons_Sd
+        FEISTY%fish(1)%cons = FEISTY%fish(1)%cons_Mz
+        FEISTY%fish(2)%cons = FEISTY%fish(2)%cons_Mz
+        FEISTY%fish(3)%cons = FEISTY%fish(3)%cons_Mz
+        FEISTY%fish(4)%cons = FEISTY%fish(4)%cons_Mz + FEISTY%fish(4)%cons_Lz + FEISTY%fish(4)%cons_Sf + & 
+                              FEISTY%fish(4)%cons_Sp + FEISTY%fish(4)%cons_Sd 
+        FEISTY%fish(5)%cons = FEISTY%fish(5)%cons_Mz + FEISTY%fish(5)%cons_Lz + FEISTY%fish(5)%cons_Sf + & 
+                              FEISTY%fish(5)%cons_Sp + FEISTY%fish(5)%cons_Sd
 
         ! Recalculate feeding level based on new consumption:--------------------------------
-        this%Sf%f = this%Sf%cons / this%Sf%cmax
-        this%Sp%f = this%Sp%cons / this%Sp%cmax
-        this%Sd%f = this%Sd%cons / this%Sd%cmax
-        this%Mf%f = this%Mf%cons / this%Mf%cmax
-        this%Mp%f = this%Mp%cons / this%Mp%cmax
+        FEISTY%fish(1)%f = FEISTY%fish(1)%cons / FEISTY%fish(1)%cmax
+        FEISTY%fish(2)%f = FEISTY%fish(2)%cons / FEISTY%fish(2)%cmax
+        FEISTY%fish(3)%f = FEISTY%fish(3)%cons / FEISTY%fish(3)%cmax
+        FEISTY%fish(4)%f = FEISTY%fish(4)%cons / FEISTY%fish(4)%cmax
+        FEISTY%fish(5)%f = FEISTY%fish(5)%cons / FEISTY%fish(5)%cmax
         
         ! The folowing groups don't feed on zooplankton: ------------------------------------
-        this%Md%cons = this%Md%cons_BE
-        this%Lp%cons = this%Lp%f * this%Lp%cmax
-        this%Ld%cons = this%Ld%f * this%Ld%cmax
+        FEISTY%fish(6)%cons = FEISTY%fish(6)%cons_BE
+        FEISTY%fish(7)%cons = FEISTY%fish(7)%f * FEISTY%fish(7)%cmax
+        FEISTY%fish(8)%cons = FEISTY%fish(8)%f * FEISTY%fish(8)%cmax
 
-    end subroutine Consumption
-
-
-    subroutine Mortality(this)
-        !:======================================================================
-        ! Calculate the mortality for fish functional group 
-        ! Fishing mortality is assumed constant and nul
-        ! mu_p : Predation from fish      [m-2 d-1]
-        ! mu_f : Fishing mortality ( = 0) [m-2 d-1]
-        ! mu_a : Natural mortality        [m-2 d-1]
-        !:======================================================================
-        type(Structure_group), intent(inout) :: this
+    !:======================================================================
+    ! Calculate the mortality for fish functional group 
+    ! Fishing mortality is assumed constant and nul
+    ! mu_p : Predation from fish      [m-2 d-1]
+    ! mu_f : Fishing mortality ( = 0) [m-2 d-1]
+    ! mu_a : Natural mortality        [m-2 d-1]
+    !:======================================================================
 
         ! Calcul Predation mortality: -----------------------------------------------
         ! mu_p [m-2 d-1]
-        this%Sf%mu_p = (this%Mp%cons_Sf * this%Mp%B + this%Mf%cons_Sf * this%Mf%B) / this%Sf%B
-        this%Sp%mu_p = (this%Mp%cons_Sp * this%Mp%B + this%Mf%cons_Sp * this%Mf%B) / this%Sp%B
-        this%Sd%mu_p = (this%Mp%cons_Sd * this%Mp%B + this%Mf%cons_Sd * this%Mf%B) / this%Sd%B
-        this%Mf%mu_p = (this%Lp%cons_Mf * this%Lp%B + this%Ld%cons_Mf * this%Ld%B) / this%Mf%B
-        this%Mp%mu_p = (this%Lp%cons_Mp * this%Lp%B + this%Ld%cons_Mp * this%Ld%B) / this%Mp%B
-        this%Md%mu_p = (this%Lp%cons_Md * this%Lp%B + this%Ld%cons_Md * this%Ld%B) / this%Md%B
-        this%Lp%mu_p = 0
-        this%Ld%mu_p = 0
+        FEISTY%fish(1)%mu_p = (FEISTY%fish(5)%cons_Sf * FEISTY%fish(5)%B + FEISTY%fish(4)%cons_Sf * &
+                                 FEISTY%fish(4)%B) / FEISTY%fish(1)%B
+        FEISTY%fish(2)%mu_p = (FEISTY%fish(5)%cons_Sp * FEISTY%fish(5)%B + FEISTY%fish(4)%cons_Sp * &
+                                 FEISTY%fish(4)%B) / FEISTY%fish(2)%B
+        FEISTY%fish(3)%mu_p = (FEISTY%fish(5)%cons_Sd * FEISTY%fish(5)%B + FEISTY%fish(4)%cons_Sd * &
+                                 FEISTY%fish(4)%B) / FEISTY%fish(3)%B
+        FEISTY%fish(4)%mu_p = (FEISTY%fish(7)%cons_Mf * FEISTY%fish(7)%B + FEISTY%fish(8)%cons_Mf * &
+                                 FEISTY%fish(8)%B) / FEISTY%fish(4)%B
+        FEISTY%fish(5)%mu_p = (FEISTY%fish(7)%cons_Mp * FEISTY%fish(7)%B + FEISTY%fish(8)%cons_Mp * &
+                                 FEISTY%fish(8)%B) / FEISTY%fish(5)%B
+        FEISTY%fish(6)%mu_p = (FEISTY%fish(7)%cons_Md * FEISTY%fish(7)%B + FEISTY%fish(8)%cons_Md * &
+                                 FEISTY%fish(8)%B) / FEISTY%fish(6)%B
+        FEISTY%fish(7)%mu_p = 0
+        FEISTY%fish(8)%mu_p = 0
 
         ! Calcul Natural mortality:  -----------------------------------------------
         ! Several ways to consider the natural mortality: 
@@ -317,170 +315,131 @@ module Physiology
         ! the effect of temperature on the physiology and not on the increase/decrease of predation resulting
         ! from physiological changes of other groups. 
         !  ------------------------------------------------------------------------
-        ! Here I used a constant mortality with temperature and size for comparison with the matlab version
-        this%Sf%mu_a = Nat_mrt
-        this%Sp%mu_a = Nat_mrt
-        this%Sd%mu_a = Nat_mrt
-        this%Mf%mu_a = Nat_mrt
-        this%Mp%mu_a = Nat_mrt
-        this%Md%mu_a = Nat_mrt
-        this%Lp%mu_a = Nat_mrt 
-        this%Ld%mu_a = Nat_mrt
-
+    
         ! Calcul Fishing mortality!  ----------------------------------------------
         ! Small fish are not fished
         ! Medium forage are fished at 1 
         ! Large fish are fished at 1 
         !  ------------------------------------------------------------------------
-        this%Mf%mu_f = Frate * Aselct
-        this%Mp%mu_f = Frate * Jselct * Aselct
-        this%Md%mu_f = Frate * Jselct * Aselct
-        this%Lp%mu_f = Frate * Aselct
-        this%Ld%mu_f = Frate * Aselct
-
-
-        ! Total mortality:  ----------------------------------------------
-        ! Sum of predation, natural, and fishing mortality
-        ! ------------------------------------------------------------------------
-        this%Sf%mu = this%Sf%mu_p + this%Sf%mu_a + this%Sf%mu_f
-        this%Sp%mu = this%Sp%mu_p + this%Sp%mu_a + this%Sp%mu_f
-        this%Sd%mu = this%Sd%mu_p + this%Sd%mu_a + this%Sd%mu_f
-        this%Mf%mu = this%Mf%mu_p + this%Mf%mu_a + this%Mf%mu_f
-        this%Mp%mu = this%Mp%mu_p + this%Mp%mu_a + this%Mp%mu_f
-        this%Md%mu = this%Md%mu_p + this%Md%mu_a + this%Md%mu_f
-        this%Lp%mu = this%Lp%mu_p + this%Lp%mu_a + this%Lp%mu_f
-        this%Ld%mu = this%Ld%mu_p + this%Ld%mu_a + this%Ld%mu_f
-
-    end subroutine Mortality
-
-    subroutine Metabolic_loss(this)
-        !:======================================================================
-        ! Calculate the Metabolic loss as a function of: 
-        ! met        : mass-specific Metabolic loss                      [d-1] 
-        ! w          : wet weight                                        [g]  
-        ! tcorr_met  : temperature correction                            []
-        ! a_mmet     : coefficient for mass-specific metabolic loss      [d-1 g^(b_met)]
-        ! b_met      : exponent for mass-specific metabolic loss         []
-        !:======================================================================
-        type(Structure_group), intent(inout) :: this 
-        this%Sf%met = this%Sf%Tcorr_met * a_met * this%Sf%w ** (-b_met) / 365
-        this%Sp%met = this%Sp%Tcorr_met * a_met * this%Sp%w ** (-b_met) / 365
-        this%Sd%met = this%Sd%Tcorr_met * a_met * this%Sd%w ** (-b_met) / 365
-        this%Mf%met = this%Mf%Tcorr_met * a_met * this%Mf%w ** (-b_met) / 365
-        this%Mp%met = this%Mp%Tcorr_met * a_met * this%Mp%w ** (-b_met) / 365
-        this%Md%met = this%Md%Tcorr_met * a_met * this%Md%w ** (-b_met) / 365
-        this%Lp%met = this%Lp%Tcorr_met * a_met * this%Lp%w ** (-b_met) / 365
-        this%Ld%met = this%Ld%Tcorr_met * a_met * this%Ld%w ** (-b_met) / 365
-
-    end subroutine Metabolic_loss
-
-
-    subroutine Available_energy(this)
-        !:======================================================================
-        ! Calcul Available energy of growth and reproduction 
-        ! eps_a  : Assimilation efficiency            []
-        ! met    : mass-specific metabolic cost       [d-1]     
-        ! Cons   : mass-specific total consumption    [d-1]
-        !:======================================================================
-        type(Structure_group), intent(inout) :: this
+        FEISTY%fish(4)%mu_f = Frate * Aselct
+        FEISTY%fish(5)%mu_f = Frate * Jselct * Aselct
+        FEISTY%fish(6)%mu_f = Frate * Jselct * Aselct
+        FEISTY%fish(7)%mu_f = Frate * Aselct
+        FEISTY%fish(8)%mu_f = Frate * Aselct
+    
+    !:======================================================================
+    ! Calculate the Metabolic loss as a function of: ----------------------
+    ! met        : mass-specific Metabolic loss                      [d-1] 
+    ! w          : wet weight                                        [g]  
+    ! tcorr_met  : temperature correction                            []
+    ! a_mmet     : coefficient for mass-specific metabolic loss      [d-1 g^(b_met)]
+    ! b_met      : exponent for mass-specific metabolic loss         []
+    ! Calcul Available energy of growth and reproduction : ----------------
+    ! eps_a      : Assimilation efficiency            []
+    ! met        : mass-specific metabolic cost       [d-1]     
+    ! Cons       : mass-specific total consumption    [d-1]
+    !:======================================================================
         
-        this%Sf%E_A = eps_a * this%Sf%cons - this%Sf%met
-        this%Sp%E_A = eps_a * this%Sp%cons - this%Sp%met
-        this%Sd%E_A = eps_a * this%Sd%cons - this%Sd%met
-        this%Mf%E_A = eps_a * this%Mf%cons - this%Mf%met
-        this%Mp%E_A = eps_a * this%Mp%cons - this%Mp%met
-        this%Md%E_A = eps_a * this%Md%cons - this%Md%met
-        this%Lp%E_A = eps_a * this%Lp%cons - this%Lp%met
-        this%Ld%E_A = eps_a * this%Ld%cons - this%Ld%met
+        do i = 1, nFishGroup
+            FEISTY%fish(i)%mu = FEISTY%fish(i)%mu_p + FEISTY%fish(i)%mu_a + FEISTY%fish(i)%mu_f         ! Total mortality 
+            FEISTY%fish(i)%met = FEISTY%fish(i)%Tcorr_met * a_met * FEISTY%fish(i)%w ** (-b_met) / 365  ! Metabolic losses 
+            FEISTY%fish(i)%E_A = eps_a * FEISTY%fish(i)%cons - FEISTY%fish(i)%met                       ! Available Energy 
+            FEISTY%fish(i)%Fout = ((kappa(i) * FEISTY%fish(i)%E_A) - FEISTY%fish(i)%mu ) / &            ! Flux out of size class
+            & (1 - (Z(i) ** (1 - (FEISTY%fish(i)%mu / (kappa(i) * FEISTY%fish(i)%E_A)))) + eps) 
+            FEISTY%fish(i)%Fout = max(min(FEISTY%fish(i)%Fout, FEISTY%fish(i)%E_A), zero)               ! If Fout is higher than E_a take E_a, and 0 is negative
+        end do 
 
-        ! The model does not account for storage then E_A has to be positive: 
-        ! this%Sf%E_A = max(zero, this%Sf%E_A) 
-        ! this%Sp%E_A = max(zero, this%Sp%E_A)
-        ! this%Sd%E_A = max(zero, this%Sd%E_A)
-        ! this%Mf%E_A = max(zero, this%Mf%E_A)
-        ! this%Mp%E_A = max(zero, this%Mp%E_A)
-        ! this%Md%E_A = max(zero, this%Md%E_A)
-        ! this%Lp%E_A = max(zero, this%Lp%E_A)
-        ! this%Ld%E_A = max(zero, this%Ld%E_A)
-
-    end subroutine Available_energy
-
-    subroutine Fout(this)
-        !:======================================================================
-        ! calcul the flux of biomass out of a size class for each fish group  
-        !:======================================================================
-        type(Structure_group), intent(inout) :: this
-
-        this%Sf%Fout = ((kappa_l * this%Sf%E_A) - this%Sf%mu ) / (1 - (Z_s ** (1 - (this%Sf%mu / (kappa_l * this%Sf%E_A)))) + eps)
-        this%Sp%Fout = ((kappa_l * this%Sp%E_A) - this%Sp%mu ) / (1 - (Z_s ** (1 - (this%Sp%mu / (kappa_l * this%Sp%E_A)))) + eps)
-        this%Sd%Fout = ((kappa_l * this%Sd%E_A) - this%Sd%mu ) / (1 - (Z_s ** (1 - (this%Sd%mu / (kappa_l * this%Sd%E_A)))) + eps)
-        this%Mf%Fout = ((kappa_a * this%Mf%E_A) - this%Mf%mu ) / (1 - (Z_m ** (1 - (this%Mf%mu / (kappa_a * this%Mf%E_A)))) + eps)
-        this%Mp%Fout = ((kappa_j * this%Mp%E_A) - this%Mp%mu ) / (1 - (Z_m ** (1 - (this%Mp%mu / (kappa_j * this%Mp%E_A)))) + eps)
-        this%Md%Fout = ((kappa_j * this%Md%E_A) - this%Md%mu ) / (1 - (Z_m ** (1 - (this%Md%mu / (kappa_j * this%Md%E_A)))) + eps)
-        this%Lp%Fout = ((kappa_a * this%Lp%E_A) - this%Lp%mu ) / (1 - (Z_l ** (1 - (this%Lp%mu / (kappa_a * this%Lp%E_A)))) + eps)
-        this%Ld%Fout = ((kappa_a * this%Ld%E_A) - this%Ld%mu ) / (1 - (Z_l ** (1 - (this%Ld%mu / (kappa_a * this%Ld%E_A)))) + eps)
-
-        ! If Fout is higher than E_a take E_a, and 0 is negative: 
-        this%Sf%Fout = max(min(this%Sf%Fout, this%Sf%E_A), zero)
-        this%Sp%Fout = max(min(this%Sp%Fout, this%Sp%E_A), zero)
-        this%Sd%Fout = max(min(this%Sd%Fout, this%Sd%E_A), zero)
-        this%Mf%Fout = max(min(this%Mf%Fout, this%Mf%E_A), zero)
-        this%Mp%Fout = max(min(this%Mp%Fout, this%Mp%E_A), zero)
-        this%Md%Fout = max(min(this%Md%Fout, this%Md%E_A), zero)
-        this%Lp%Fout = max(min(this%Lp%Fout, this%Lp%E_A), zero)
-        this%Ld%Fout = max(min(this%Ld%Fout, this%Ld%E_A), zero)
-
-    end subroutine Fout
-
-    subroutine Reproduction(this)
-        !:======================================================================
-        ! Calcul the reproductive flux of biomass 
-        ! Repro   : rate (of biomass) invested in reproduction after reproduction loss [m-2 d-1]
-        ! eps_R   : Reproduction efficiency 
-        ! We DO NOT assum that the biomass that is going out of the last size class (Adult)
-        ! is converted to reproduction to account for a fraction of individual dying after 
-        ! reproduction. 
-        !:======================================================================
-
-        type(Structure_group), intent(inout) :: this
+    !:======================================================================
+    ! Calcul the reproductive flux of biomass 
+    ! Repro   : rate (of biomass) invested in reproduction after reproduction loss [m-2 d-1]
+    ! eps_R   : Reproduction efficiency 
+    ! We DO NOT assum that the biomass that is going out of the last size class (Adult)
+    ! is converted to reproduction to account for a fraction of individual dying after 
+    ! reproduction. 
+    !:======================================================================
 
         ! Only Medium forage, large pelagic and demersal reproduce: 
-        this%Mf%Repro = max((1.0 - kappa_a) * this%Mf%E_A + this%Mf%Fout, 0.0)
-        this%Lp%Repro = max((1.0 - kappa_a) * this%Lp%E_A + this%Lp%Fout, 0.0)
-        this%Ld%Repro = max((1.0 - kappa_a) * this%Ld%E_A + this%Ld%Fout, 0.0)
+        FEISTY%fish(4)%Repro = max((1.0 - kappa_a) * FEISTY%fish(4)%E_A + FEISTY%fish(4)%Fout, 0.0)
+        FEISTY%fish(7)%Repro = max((1.0 - kappa_a) * FEISTY%fish(7)%E_A + FEISTY%fish(7)%Fout, 0.0)
+        FEISTY%fish(8)%Repro = max((1.0 - kappa_a) * FEISTY%fish(8)%E_A + FEISTY%fish(8)%Fout, 0.0)
 
         ! Fout for Adult are set up to 0: (sub_rep function in matlab)
-        this%Mf%Fout = 0 
-        this%Lp%Fout = 0
-        this%Ld%Fout = 0
+        FEISTY%fish(4)%Fout = 0 
+        FEISTY%fish(7)%Fout = 0
+        FEISTY%fish(8)%Fout = 0
 
-        ! ! Calculate the recruitment (g/m2/d) for each group
-        ! this%Mf%Rec = this%Mf%Repro * this%Mf%B
-        ! this%Lp%Rec = this%Lp%Repro * this%Lp%B
-        ! this%Ld%Rec = this%Ld%Repro * this%Ld%B
+    !:======================================================================
+    ! Calcul the Benthic biomass from detritus flux to benthic 
+    ! Classic logistic growth rate
+    ! The calculation has to be done after the derivative have been calculated 
+    ! for each fish group ! 
+    !:======================================================================
+    ! This%BE%B          : Benthic biomass 
+    ! Bent_eff =  0.075  :  Benthic Efficiency from detritus to benthic biomass
+    ! CC = 80            : Carring Capacity for benthic chemostat
+    !:======================================================================
 
-    end subroutine Reproduction
+        pred = FEISTY%fish(6)%cons_BE * FEISTY%fish(6)%B + FEISTY%fish(8)%cons_BE * FEISTY%fish(8)%B
+        r = Bent_eff * FEISTY%det / FEISTY%benthos(1)%B 
+        FEISTY%benthos(1)%B = FEISTY%benthos(1)%B + r * FEISTY%benthos(1)%B * (1 - FEISTY%benthos(1)%B/CC) - pred 
 
 
-    subroutine Benthic_chemostat(this)
-        !:======================================================================
-        ! Calcul the Benthic biomass from detritus flux to benthic 
-        ! Classic logistic growth rate
-        ! The calculation has to be done after the derivative have been calculated 
-        ! for each fish group ! 
-        !:======================================================================
-        ! This%BE%B          : Benthic biomass 
-        ! Bent_eff =  0.075  :  Benthic Efficiency from detritus to benthic biomass
-        ! CC = 80            : Carring Capacity for benthic chemostat
-       !:======================================================================
-        type(Structure_group), intent(inout) :: this 
-        real(dp) :: r       ! benthic growth rate ((g/m2/d) / (g/m2))
-        real(dp) :: pred    ! predation from demersals (g/m2/d)
+    !:====================================================================== 
+    ! Calculate the derivative and New biomass for each fish group
+    !:====================================================================== 
+    ! - Repro    : Recruitment rate (from adult repro to hatching)  [m-2 d-1]
+    ! - E_A      : Available energy for growth and  reproduction    [m-2 d-1]
+    ! - mu       : Total mortality (Predation + Fishing + Natural)  [m-2 d-1]
+    ! - Fout     : Flux out of the size class (growth)              [m-2 d-1]
+    ! - B        : Biomass of the group                             [g m-2]
+    ! - Delta_t  : Time step                                        [d]
+    !:====================================================================== 
+        FEISTY%dBdt(1) = eps_R * FEISTY%fish(4)%Repro * FEISTY%fish(4)%B + & 
+                        (FEISTY%fish(1)%E_A - FEISTY%fish(1)%Fout - FEISTY%fish(1)%mu) * FEISTY%fish(1)%B
+        FEISTY%dBdt(2) = eps_R * FEISTY%fish(7)%Repro * FEISTY%fish(7)%B + & 
+                        (FEISTY%fish(2)%E_A - FEISTY%fish(2)%Fout - FEISTY%fish(2)%mu) * FEISTY%fish(2)%B
+        ! Reproduction from demersal is equaly divided between the first 30 layers (about 100m depth): 
+        ! for mass conservation: Fout is integrated Fout/Nlayer and repro = Ld_Repro_end/FEISTY%Nlayer
+        FEISTY%dBdt(3) = eps_R * (FEISTY%Ld_Repro_end/FEISTY%Nlayer) * &
+             & FEISTY%fish(8)%B + (FEISTY%fish(3)%E_A - FEISTY%fish(3)%Fout - FEISTY%fish(3)%mu) * FEISTY%fish(3)%B  
 
-        pred = this%Md%cons_BE * this%Md%B + this%Ld%cons_BE * this%Ld%B
-        r = Bent_eff * this%det / this%BE%B 
-        this%BE%B = this%BE%B + r * this%BE%B * (1 - this%BE%B/CC) - pred 
+
+        ! Medium size (reproduction loss for Mf)
+        FEISTY%dBdt(4) = FEISTY%fish(1)%Fout * FEISTY%fish(1)%B + (FEISTY%fish(4)%E_A - & 
+                         FEISTY%fish(4)%Repro - FEISTY%fish(4)%mu) * FEISTY%fish(4)%B
+        FEISTY%dBdt(5) = FEISTY%fish(2)%Fout * FEISTY%fish(2)%B + (FEISTY%fish(5)%E_A - & 
+                         FEISTY%fish(5)%Fout  - FEISTY%fish(5)%mu) * FEISTY%fish(5)%B
+        if (FEISTY%ilayer .eq. FEISTY%Nlayer) then ! use Sd_Fout_int for last layer 
+            FEISTY%dBdt(6) = FEISTY%Sd_Fout_int * FEISTY%fish(3)%B + & 
+                            (FEISTY%fish(6)%E_A - FEISTY%fish(6)%Fout  - FEISTY%fish(6)%mu) * FEISTY%fish(6)%B 
+        else ! If not in last layer then demersal don't grow in water column (don't put Fout = 0.0 as we save the value later)
+            FEISTY%dBdt(6) = 0.0
+        endif 
         
-    end subroutine Benthic_chemostat
+        ! Large fish (reproduction Fout = 0) 
+        FEISTY%dBdt(7) = FEISTY%fish(5)%Fout * FEISTY%fish(5)%B + & 
+                         (FEISTY%fish(7)%E_A - FEISTY%fish(7)%Repro - FEISTY%fish(7)%mu) * FEISTY%fish(7)%B
+                         
+        if (FEISTY%ilayer .eq. FEISTY%Nlayer) then
+            FEISTY%dBdt(8) = FEISTY%fish(6)%Fout * FEISTY%fish(6)%B + & 
+            (FEISTY%fish(8)%E_A - FEISTY%Ld_Repro_end - FEISTY%fish(8)%mu) * FEISTY%fish(8)%B
+        else 
+            FEISTY%dBdt(8) = 0.0
+        endif
+
+        ! New biomass : ------------------------------------------
+        do i = 1, nFishGroup
+            FEISTY%fish(i)%B = FEISTY%fish(i)%B + Delta_t * FEISTY%dBdt(i)  ! Euler schem
+            ! Check for neg and na values 
+            if (FEISTY%fish(i)%B <= zero .or. isnan(FEISTY%fish(i)%B)) then 
+                FEISTY%fish(i)%B = 1.0d-5
+            end if 
+        end do 
+
+        if (Diagnostic) then 
+            Print_FEISTY_diagnostic(FEISTY)
+        end if 
+
+    end subroutine Calc_FEISTY_Deriv
     
 end module Physiology

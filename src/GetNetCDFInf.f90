@@ -7,111 +7,121 @@ module GetNetCDFinf
 
     contains 
 
-    subroutine Initialisation(Spinup, Var, Ntime, Nlayer, Nlath, Nlongh, Data_F_ini, Data, &
-                              DataTemp, Datadet, Datadzm, DataZM, Datadzl, DataZL, fish_diag)
+    subroutine Init_FEISTY(Spinup, FEISTY, diags, IC_fish_Bio, tracers, &
+                            Ntime, Nlayer, Nlath, Nlongh, &
+                            DataTemp, Datadet, Datadzm, DataZM, Datadzl, DataZL)
         logical, intent(in) :: Spinup
-        integer, intent(inout) :: Ntime, Nlayer, Nlath, Nlongh
-        type(Structure_group) :: Var
-        type(ini_fish_data), intent(inout) :: Data_F_ini
-        type(Save_structure4D), intent(inout) :: Data
-        type(Structure_diag), dimension(nFishGroup) :: fish_diag
+        integer, intent(inout)  :: Ntime, Nlayer, Nlath, Nlongh
+        type(FEISTY_type)       , intent(inout) :: FEISTY
+        type(FEISTY_diag)       , intent(inout) :: diags
+        type(FEISTY_tracers)    , intent(inout), dimension(nDeriv) :: tracers
+        type(Initial_conditions), intent(inout), dimension(nDeriv) :: IC_fish_Bio
         real(dp), dimension(:, :, :, :), allocatable, intent(inout) ::  DataTemp, &
                                                                         Datadzm, DataZM, &
                                                                         Datadzl, DataZL, &
                                                                         Datadet
 
-        CALL griddims4D(dir_Temp, Ntime, Nlayer, Nlath, Nlongh, Var)   
+        CALL Get_dim(dir_Temp, Ntime, Nlayer, Nlath, Nlongh, FEISTY)   
         CALL load_forcing_data(Ntime, Nlayer, Nlath, Nlongh, DataTemp, Datadet, Datadzm, DataZM, Datadzl, DataZL)
-        Call load_IC_fish(Spinup, Nlayer, Nlath, Nlongh, Data_F_ini)
+        Call load_IC_fish(Spinup, Nlayer, Nlath, Nlongh, IC_fish_Bio)
 
         if (Spinup) then 
             Ntime = (Ntime-1) * Year_2_Spinup
         else 
             Ntime = Ntime -1
         end if
-        ! Save lat long, and time in structure: 
-        Var%Ntime  = Ntime
-        Var%Nlayer = Nlayer
-        Var%Nlath  = Nlath
-        Var%Nlongh = Nlongh 
 
-        CALL init_save_data4D(Data, Ntime, Nlayer, Nlath, Nlongh)
-        CALL allocate_fish_diag(fish_diag, Ntime, Nlayer, Nlath, Nlongh)
+        ! Save lat long, and time in structure: 
+        FEISTY%Ntime  = Ntime
+        FEISTY%Nlayer = Nlayer
+        FEISTY%Nlath  = Nlath
+        FEISTY%Nlongh = Nlongh 
+
+        ! Allocate storage variables 
+        CALL allocate_tracers(tracers, Ntime, Nlayer, Nlath, Nlongh)
+        CALL allocate_diags(diags, Ntime, Nlayer, Nlath, Nlongh)
         
-        ! Individual Mass (g) geometric mean for each group 
-        Var%Sf%w = 10.0**((log10(0.001)+log10(0.5))/2)
-        Var%Sp%w = 10.0**((log10(0.001)+log10(0.5))/2)
-        Var%Sd%w = 10.0**((log10(0.001)+log10(0.5))/2)
-        Var%Mf%w = 10.0**((log10(0.5)+log10(250.0))/2) 
-        Var%Mp%w = 10.0**((log10(0.5)+log10(250.0))/2) 
-        Var%Md%w = 10.0**((log10(0.5)+log10(250.0))/2) 
-        Var%Lp%w = 10.0**((log10(250.0)+log10(125000.0))/2)
-        Var%Ld%w = 10.0**((log10(250.0)+log10(125000.0))/2)
-    end subroutine Initialisation
+        ! Individual Mass (g) geometric mean for each group s
+        FEISTY%fish(Sf)%w = 10.0**((log10(0.001)+log10(0.5))/2)
+        FEISTY%fish(Sp)%w = 10.0**((log10(0.001)+log10(0.5))/2)
+        FEISTY%fish(Sd)%w = 10.0**((log10(0.001)+log10(0.5))/2)
+        FEISTY%fish(Mf)%w = 10.0**((log10(0.5)+log10(250.0))/2) 
+        FEISTY%fish(Mp)%w = 10.0**((log10(0.5)+log10(250.0))/2) 
+        FEISTY%fish(Md)%w = 10.0**((log10(0.5)+log10(250.0))/2) 
+        FEISTY%fish(Lp)%w = 10.0**((log10(250.0)+log10(125000.0))/2)
+        FEISTY%fish(Ld)%w = 10.0**((log10(250.0)+log10(125000.0))/2)
+
+    end subroutine Init_FEISTY
     
 
-
-    subroutine save_data(Spinup, that, fish_diag, Ntime, Nlayer, Nlath, Nlongh)
+    subroutine write_output_netcdf(Spinup, tracers, diags, Ntime, Nlayer, Nlath, Nlongh)
+        type(FEISTY_tracers), intent(inout), dimension(nDeriv) :: tracers
+        type(FEISTY_diag)   :: diags
         logical, intent(in) :: Spinup
-        type(Save_structure4D) :: that
-        type(Structure_diag), dimension(nFishGroup) :: fish_diag
         integer, intent(in) :: Ntime, Nlayer, Nlath, Nlongh
         integer :: i
     
         if (Spinup) then 
             ! Write each variable to a separate NetCDF file : ---------------------------
-            call write_nc_file3D(Dir_IniBE, 'BE', that%BE(Ntime, 1:Nlayer, 1:Nlath, 1:Nlongh),  Nlayer, Nlath, Nlongh)
-            call write_nc_file3D(Dir_IniSf, 'Sf', that%Sf(Ntime, 1:Nlayer, 1:Nlath, 1:Nlongh),  Nlayer, Nlath, Nlongh)
-            call write_nc_file3D(Dir_IniSp, 'Sp', that%Sp(Ntime, 1:Nlayer, 1:Nlath, 1:Nlongh),  Nlayer, Nlath, Nlongh)
-            call write_nc_file3D(Dir_IniSd, 'Sd', that%Sd(Ntime, 1:Nlayer, 1:Nlath, 1:Nlongh),  Nlayer, Nlath, Nlongh)
-            call write_nc_file3D(Dir_IniMf, 'Mf', that%Mf(Ntime, 1:Nlayer, 1:Nlath, 1:Nlongh),  Nlayer, Nlath, Nlongh)
-            call write_nc_file3D(Dir_IniMp, 'Mp', that%Mp(Ntime, 1:Nlayer, 1:Nlath, 1:Nlongh),  Nlayer, Nlath, Nlongh)
-            call write_nc_file3D(Dir_IniMd, 'Md', that%Md(Ntime, 1:Nlayer, 1:Nlath, 1:Nlongh),  Nlayer, Nlath, Nlongh)
-            call write_nc_file3D(Dir_IniLp, 'Lp', that%Lp(Ntime, 1:Nlayer, 1:Nlath, 1:Nlongh),  Nlayer, Nlath, Nlongh)
-            call write_nc_file3D(Dir_IniLd, 'Ld', that%Ld(Ntime, 1:Nlayer, 1:Nlath, 1:Nlongh),  Nlayer, Nlath, Nlongh)
+            call write_nc_file3D(Dir_IniBE, 'BE', tracers(BE)%Bio(Ntime, 1:Nlayer, 1:Nlath, 1:Nlongh),  Nlayer, Nlath, Nlongh)
+            call write_nc_file3D(Dir_IniSf, 'Sf', tracers(Sf)%Bio(Ntime, 1:Nlayer, 1:Nlath, 1:Nlongh),  Nlayer, Nlath, Nlongh)
+            call write_nc_file3D(Dir_IniSp, 'Sp', tracers(Sp)%Bio(Ntime, 1:Nlayer, 1:Nlath, 1:Nlongh),  Nlayer, Nlath, Nlongh)
+            call write_nc_file3D(Dir_IniSd, 'Sd', tracers(Sd)%Bio(Ntime, 1:Nlayer, 1:Nlath, 1:Nlongh),  Nlayer, Nlath, Nlongh)
+            call write_nc_file3D(Dir_IniMf, 'Mf', tracers(Mf)%Bio(Ntime, 1:Nlayer, 1:Nlath, 1:Nlongh),  Nlayer, Nlath, Nlongh)
+            call write_nc_file3D(Dir_IniMp, 'Mp', tracers(Mp)%Bio(Ntime, 1:Nlayer, 1:Nlath, 1:Nlongh),  Nlayer, Nlath, Nlongh)
+            call write_nc_file3D(Dir_IniMd, 'Md', tracers(Md)%Bio(Ntime, 1:Nlayer, 1:Nlath, 1:Nlongh),  Nlayer, Nlath, Nlongh)
+            call write_nc_file3D(Dir_IniLp, 'Lp', tracers(Lp)%Bio(Ntime, 1:Nlayer, 1:Nlath, 1:Nlongh),  Nlayer, Nlath, Nlongh)
+            call write_nc_file3D(Dir_IniLd, 'Ld', tracers(Ld)%Bio(Ntime, 1:Nlayer, 1:Nlath, 1:Nlongh),  Nlayer, Nlath, Nlongh)
             
             if (Spinup_Time_Serie) then 
                 ! Write each variable to a separate NetCDF file : ---------------------------
-                call write_nc_file4D('../output/' // trim(exp) // '_BE_bio_Spinup_Time_Serie.nc', &
-                                        'BE', that%BE, Ntime, Nlayer, Nlath, Nlongh)
-                call write_nc_file4D('../output/' // trim(exp) // '_Sf_bio_Spinup_Time_Serie.nc', &
-                                        'Sf', that%Sf, Ntime, Nlayer, Nlath, Nlongh)
-                call write_nc_file4D('../output/' // trim(exp) // '_Sp_bio_Spinup_Time_Serie.nc', &
-                                        'Sp', that%Sp, Ntime, Nlayer, Nlath, Nlongh)
-                call write_nc_file4D('../output/' // trim(exp) // '_Sd_bio_Spinup_Time_Serie.nc', &
-                                        'Sd', that%Sd, Ntime, Nlayer, Nlath, Nlongh)
-                call write_nc_file4D('../output/' // trim(exp) // '_Mf_bio_Spinup_Time_Serie.nc', & 
-                                        'Mf', that%Mf, Ntime, Nlayer, Nlath, Nlongh)
-                call write_nc_file4D('../output/' // trim(exp) // '_Mp_bio_Spinup_Time_Serie.nc', &
-                                        'Mp', that%Mp, Ntime, Nlayer, Nlath, Nlongh)
-                call write_nc_file4D('../output/' // trim(exp) // '_Md_bio_Spinup_Time_Serie.nc', &
-                                        'Md', that%Md, Ntime, Nlayer, Nlath, Nlongh)
-                call write_nc_file4D('../output/' // trim(exp) // '_Lp_bio_Spinup_Time_Serie.nc', &
-                                        'Lp', that%Lp, Ntime, Nlayer, Nlath, Nlongh)
-                call write_nc_file4D('../output/' // trim(exp) // '_Ld_bio_Spinup_Time_Serie.nc', &
-                                        'Ld', that%Ld, Ntime, Nlayer, Nlath, Nlongh)
-                call write_nc_file4D('../output/' // trim(exp) // '_dZm_Spinup_Time_Serie.nc', &
-                                        'dZm', that%Zcons_VS_dZm, Ntime, Nlayer, Nlath, Nlongh)
-                call write_nc_file4D('../output/' // trim(exp) // '_dZl_Spinup_Time_Serie.nc', &
-                                        'dZl', that%Zcons_VS_dZl, Ntime, Nlayer, Nlath, Nlongh)
+                do i = 1, nDeriv
+                call write_nc_file4D('../output/' // trim(exp) // '_' // trim(tracers_name(i)) //'_bio_Spinup_Time_Serie.nc', &
+                                        trim(tracers_name(i)), tracers(i)%Bio, Ntime, Nlayer, Nlath, Nlongh)
+                end do 
+                ! call write_nc_file4D('../output/' // trim(exp) // '_Sf_bio_Spinup_Time_Serie.nc', &
+                !                         'Sf', tracers%Sf, Ntime, Nlayer, Nlath, Nlongh)
+                ! call write_nc_file4D('../output/' // trim(exp) // '_Sp_bio_Spinup_Time_Serie.nc', &
+                !                         'Sp', tracers%Sp, Ntime, Nlayer, Nlath, Nlongh)
+                ! call write_nc_file4D('../output/' // trim(exp) // '_Sd_bio_Spinup_Time_Serie.nc', &
+                !                         'Sd', tracers%Sd, Ntime, Nlayer, Nlath, Nlongh)
+                ! call write_nc_file4D('../output/' // trim(exp) // '_Mf_bio_Spinup_Time_Serie.nc', & 
+                !                         'Mf', tracers%Mf, Ntime, Nlayer, Nlath, Nlongh)
+                ! call write_nc_file4D('../output/' // trim(exp) // '_Mp_bio_Spinup_Time_Serie.nc', &
+                !                         'Mp', tracers%Mp, Ntime, Nlayer, Nlath, Nlongh)
+                ! call write_nc_file4D('../output/' // trim(exp) // '_Md_bio_Spinup_Time_Serie.nc', &
+                !                         'Md', tracers%Md, Ntime, Nlayer, Nlath, Nlongh)
+                ! call write_nc_file4D('../output/' // trim(exp) // '_Lp_bio_Spinup_Time_Serie.nc', &
+                !                         'Lp', tracers%Lp, Ntime, Nlayer, Nlath, Nlongh)
+                ! call write_nc_file4D('../output/' // trim(exp) // '_Ld_bio_Spinup_Time_Serie.nc', &
+                !                         'Ld', tracers%Ld, Ntime, Nlayer, Nlath, Nlongh)
+                ! call write_nc_file4D('../output/' // trim(exp) // '_dZm_Spinup_Time_Serie.nc', &
+                !                         'dZm', tracers%Zcons_VS_dZm, Ntime, Nlayer, Nlath, Nlongh)
+                ! call write_nc_file4D('../output/' // trim(exp) // '_dZl_Spinup_Time_Serie.nc', &
+                !                         'dZl', tracers%Zcons_VS_dZl, Ntime, Nlayer, Nlath, Nlongh)
             end if 
             if(Initial_Condition_generic_FEISTY) then 
-                call FEISTY_Save_tracers(Spinup, that, Ntime, Nlayer, Nlath, Nlongh) 
+                call FEISTY_Save_tracers(Spinup, tracers, Ntime, Nlayer, Nlath, Nlongh) 
             end if 
 
         else
             ! Write each variable to a separate NetCDF file : ---------------------------
-            call write_nc_file4D('../output/' // trim(exp) // '_BE_bio.nc', 'BE', that%BE, Ntime, Nlayer, Nlath, Nlongh)
-            call write_nc_file4D('../output/' // trim(exp) // '_Sf_bio.nc', 'Sf', that%Sf, Ntime, Nlayer, Nlath, Nlongh)
-            call write_nc_file4D('../output/' // trim(exp) // '_Sp_bio.nc', 'Sp', that%Sp, Ntime, Nlayer, Nlath, Nlongh)
-            call write_nc_file4D('../output/' // trim(exp) // '_Sd_bio.nc', 'Sd', that%Sd, Ntime, Nlayer, Nlath, Nlongh)
-            call write_nc_file4D('../output/' // trim(exp) // '_Mf_bio.nc', 'Mf', that%Mf, Ntime, Nlayer, Nlath, Nlongh)
-            call write_nc_file4D('../output/' // trim(exp) // '_Mp_bio.nc', 'Mp', that%Mp, Ntime, Nlayer, Nlath, Nlongh)
-            call write_nc_file4D('../output/' // trim(exp) // '_Md_bio.nc', 'Md', that%Md, Ntime, Nlayer, Nlath, Nlongh)
-            call write_nc_file4D('../output/' // trim(exp) // '_Lp_bio.nc', 'Lp', that%Lp, Ntime, Nlayer, Nlath, Nlongh)
-            call write_nc_file4D('../output/' // trim(exp) // '_Ld_bio.nc', 'Ld', that%Ld, Ntime, Nlayer, Nlath, Nlongh)
-            call write_nc_file4D('../output/' // trim(exp) // '_dZm.nc', 'dZm', that%Zcons_VS_dZm, Ntime, Nlayer, Nlath, Nlongh)
-            call write_nc_file4D('../output/' // trim(exp) // '_dZl.nc', 'dZl', that%Zcons_VS_dZl, Ntime, Nlayer, Nlath, Nlongh)
+            do i = 1, nDeriv
+                call write_nc_file4D('../output/' // trim(exp) // '_' // trim(tracers_name(i)) // '_bio.nc', & 
+                                     trim(tracers_name(i)), tracers(i)%Bio, Ntime, Nlayer, Nlath, Nlongh)
+            end do 
+            ! call write_nc_file4D('../output/' // trim(exp) // '_Sf_bio.nc', 'Sf', that%Sf, Ntime, Nlayer, Nlath, Nlongh)
+            ! call write_nc_file4D('../output/' // trim(exp) // '_Sp_bio.nc', 'Sp', that%Sp, Ntime, Nlayer, Nlath, Nlongh)
+            ! call write_nc_file4D('../output/' // trim(exp) // '_Sd_bio.nc', 'Sd', that%Sd, Ntime, Nlayer, Nlath, Nlongh)
+            ! call write_nc_file4D('../output/' // trim(exp) // '_Mf_bio.nc', 'Mf', that%Mf, Ntime, Nlayer, Nlath, Nlongh)
+            ! call write_nc_file4D('../output/' // trim(exp) // '_Mp_bio.nc', 'Mp', that%Mp, Ntime, Nlayer, Nlath, Nlongh)
+            ! call write_nc_file4D('../output/' // trim(exp) // '_Md_bio.nc', 'Md', that%Md, Ntime, Nlayer, Nlath, Nlongh)
+            ! call write_nc_file4D('../output/' // trim(exp) // '_Lp_bio.nc', 'Lp', that%Lp, Ntime, Nlayer, Nlath, Nlongh)
+            ! call write_nc_file4D('../output/' // trim(exp) // '_Ld_bio.nc', 'Ld', that%Ld, Ntime, Nlayer, Nlath, Nlongh)
+            call write_nc_file4D('../output/' // trim(exp) // '_dZm.nc', 'dZm', diags%mesozoo(1)%Zcon_VS_dZ, & 
+                                    Ntime, Nlayer, Nlath, Nlongh)
+            call write_nc_file4D('../output/' // trim(exp) // '_dZl.nc', 'dZl', diags%mesozoo(2)%Zcon_VS_dZ, & 
+                                    Ntime, Nlayer, Nlath, Nlongh)
         end if 
 
         if(save_diagnostics) then 
@@ -119,7 +129,7 @@ module GetNetCDFinf
 
         end if 
 
-    end subroutine save_data 
+    end subroutine write_output_netcdf 
 
     subroutine write_nc_file4D(filename, varname, var, Ntime, Nlayer, Nlath, Nlongh)
         character(*), intent(in) :: filename, varname
@@ -190,23 +200,24 @@ module GetNetCDFinf
     !:====================================================================== 
     ! Get the input values for the given lat long and time 
     !:======================================================================  
-    subroutine Get_Environental_data(this, DataTemp, Datadet, Datadzm, DataZM, Datadzl, DataZL, &
-                                    itime, ilayer, ilath, ilongh)
-        type(Structure_group), intent(inout) :: this
-        integer :: itime, ilayer, ilath, ilongh
+
+    subroutine Get_Environental_data(FEISTY, DataTemp, Datadet, &
+                                     Datadzm, DataZM, Datadzl, DataZL, &
+                                     iDAY, ilayer, ilath, ilongh)
+        type(FEISTY_type), intent(inout) :: FEISTY
         real(dp), dimension(:, :, :, :), allocatable, intent(inout) ::  DataTemp, &
                                                                         Datadzm, DataZM, &
                                                                         Datadzl, DataZL, &
                                                                         Datadet
+        integer, intent(in) :: iDAY, ilayer, ilath, ilongh
         
-        this%Temp = DataTemp(ilongh, ilath, ilayer, itime)
-        this%Mz%B = DataZM(ilongh, ilath, ilayer, itime)  * convers_zm
-        this%dzm  = Datadzm(ilongh, ilath, ilayer, itime) * convers_dZm
-        this%Lz%B = DataZL(ilongh, ilath, ilayer, itime)  * convers_zm
-        this%dzl  = Datadzl(ilongh, ilath, ilayer, itime) * convers_dZm
-        this%det  = Datadet(ilongh, ilath, ilayer, itime)
-
-        this%ilayer = ilayer
+        FEISTY%Temp = DataTemp(ilongh, ilath, ilayer, iDAY)
+        FEISTY%dzm  = Datadzm (ilongh, ilath, ilayer, iDAY) * convers_dZm
+        FEISTY%mesozoo(1)%B = DataZM  (ilongh, ilath, ilayer, iDAY) * convers_zm
+        FEISTY%mesozoo(2)%B = DataZL  (ilongh, ilath, ilayer, iDAY) * convers_zm
+        FEISTY%dzl  = Datadzl (ilongh, ilath, ilayer, iDAY) * convers_dZm
+        FEISTY%det  = Datadet (ilongh, ilath, ilayer, iDAY)
+        FEISTY%ilayer = ilayer
         
     end subroutine Get_Environental_data
 
@@ -236,22 +247,22 @@ module GetNetCDFinf
     !:====================================================================== 
     ! Load all the Spinup Initial condition to force the FEISTY
     !:======================================================================  
-    subroutine load_IC_fish(Spinup, Nlayer, Nlath, Nlongh, this)
+    subroutine load_IC_fish(Spinup, Nlayer, Nlath, Nlongh, IC_fish_Bio)
         
-        type(ini_fish_data) :: this
+        type(Initial_conditions) , dimension(nDeriv) :: IC_fish_Bio
         logical, intent(in) :: Spinup
         integer, intent(in) :: Nlayer, Nlath, Nlongh
 
         if (Spinup .eqv. .false.) then 
-            CALL readgrid3D(dir_IniSf, 'Sf', Nlayer, Nlath, Nlongh, this%IniSf)
-            CALL readgrid3D(dir_IniSp, 'Sp', Nlayer, Nlath, Nlongh, this%IniSp)
-            CALL readgrid3D(dir_IniSd, 'Sd', Nlayer, Nlath, Nlongh, this%IniSd)
-            CALL readgrid3D(dir_IniMf, 'Mf', Nlayer, Nlath, Nlongh, this%IniMf)
-            CALL readgrid3D(dir_IniMp, 'Mp', Nlayer, Nlath, Nlongh, this%IniMp)
-            CALL readgrid3D(dir_IniMd, 'Md', Nlayer, Nlath, Nlongh, this%IniMd)
-            CALL readgrid3D(dir_IniLp, 'Lp', Nlayer, Nlath, Nlongh, this%IniLp)
-            CALL readgrid3D(dir_IniLd, 'Ld', Nlayer, Nlath, Nlongh, this%IniLd)
-            CALL readgrid3D(dir_IniBE, 'BE', Nlayer, Nlath, Nlongh, this%IniBE)
+            CALL readgrid3D(dir_IniSf, 'Sf', Nlayer, Nlath, Nlongh, IC_fish_Bio(1)%IniBio)
+            CALL readgrid3D(dir_IniSp, 'Sp', Nlayer, Nlath, Nlongh, IC_fish_Bio(2)%IniBio)
+            CALL readgrid3D(dir_IniSd, 'Sd', Nlayer, Nlath, Nlongh, IC_fish_Bio(3)%IniBio)
+            CALL readgrid3D(dir_IniMf, 'Mf', Nlayer, Nlath, Nlongh, IC_fish_Bio(4)%IniBio)
+            CALL readgrid3D(dir_IniMp, 'Mp', Nlayer, Nlath, Nlongh, IC_fish_Bio(5)%IniBio)
+            CALL readgrid3D(dir_IniMd, 'Md', Nlayer, Nlath, Nlongh, IC_fish_Bio(6)%IniBio)
+            CALL readgrid3D(dir_IniLp, 'Lp', Nlayer, Nlath, Nlongh, IC_fish_Bio(7)%IniBio)
+            CALL readgrid3D(dir_IniLd, 'Ld', Nlayer, Nlath, Nlongh, IC_fish_Bio(8)%IniBio)
+            CALL readgrid3D(dir_IniBE, 'BE', Nlayer, Nlath, Nlongh, IC_fish_Bio(9)%IniBio)
         end if
     end subroutine load_IC_fish
 
@@ -259,8 +270,8 @@ module GetNetCDFinf
     !:====================================================================== 
     ! Get the dimension of the netCDF 4D gridfile
     !:======================================================================  
-    subroutine griddims4D(dir, Ntime, Nlayer, Nlath, Nlongh, this)
-        type(Structure_group), intent(inout) :: this
+    subroutine Get_dim(dir, Ntime, Nlayer, Nlath, Nlongh, this)
+        type(FEISTY_type), intent(inout) :: this
         character(LEN=280), intent(in) :: dir
         integer, intent(inout) :: Ntime, Nlayer, Nlath, Nlongh
         integer :: ncid
@@ -296,7 +307,7 @@ module GetNetCDFinf
         print *, "3rd dimension =", trim(zname), "; length = ", Nlath
         print *, "4th dimension =", trim(hname), "; length = ", Nlongh
         print *, "------------------------------------"      
-    end subroutine griddims4D
+    end subroutine Get_dim
 
     subroutine readgrid4D(dir, varname, Ntime, Nlayer, Nlath, Nlongh, values)
         character(LEN=280), intent(in) :: dir, varname
@@ -407,26 +418,19 @@ module GetNetCDFinf
         ierr = nf90_close(ncid)
     end subroutine readgrid1D
 
-    subroutine FEISTY_Save_tracers(Spinup, that, Ntime, Nlayer, Nlath, Nlongh)
+    subroutine FEISTY_Save_tracers(Spinup, tracers, Ntime, Nlayer, Nlath, Nlongh)
         logical, intent(in) :: Spinup
-        type(Save_structure4D) :: that
+        type(FEISTY_tracers), intent(inout), dimension(nDeriv) :: tracers
         integer, intent(in) :: Ntime, Nlayer, Nlath, Nlongh
         character(LEN=280) :: filename = "../output/FEISTY_2023_10_spinup_subset.nc"
         integer(4) :: ncid, dimids(4)
         integer :: i,j,k,l
 
         call init_tracer_INPUT_nc(filename, ncid, Ntime, Nlayer, Nlath, Nlongh, dimids)
-
-        call add_tracer_INPUT_nc(ncid, dimids, "Sf_B", "Small forage fish biomass        ", that%SF, Ntime, Nlayer, Nlath, Nlongh)
-        call add_tracer_INPUT_nc(ncid, dimids, "Mf_B", "Medium forage fish biomass       ", that%MF, Ntime, Nlayer, Nlath, Nlongh)
-        call add_tracer_INPUT_nc(ncid, dimids, "Sp_B", "Small large pelagic fish biomass ", that%SP, Ntime, Nlayer, Nlath, Nlongh)
-        call add_tracer_INPUT_nc(ncid, dimids, "Mp_B", "Medium large pelagic fish biomass", that%MP, Ntime, Nlayer, Nlath, Nlongh)
-        call add_tracer_INPUT_nc(ncid, dimids, "Lp_B", "Large pelagic fish biomass       ", that%LP, Ntime, Nlayer, Nlath, Nlongh)
-        call add_tracer_INPUT_nc(ncid, dimids, "Sd_B", "Small demersal fish biomass      ", that%SD, Ntime, Nlayer, Nlath, Nlongh)
-        call add_tracer_INPUT_nc(ncid, dimids, "Md_B", "Medium demersal fish biomass     ", that%MD, Ntime, Nlayer, Nlath, Nlongh)
-        call add_tracer_INPUT_nc(ncid, dimids, "Ld_B", "Large demersal fish biomass      ", that%LD, Ntime, Nlayer, Nlath, Nlongh)
-        call add_tracer_INPUT_nc(ncid, dimids, "BE_B", "Benthic invertebrate biomass     ", that%BE, Ntime, Nlayer, Nlath, Nlongh)
-
+        do i = 1, nDeriv
+            call add_tracer_INPUT_nc(ncid, dimids, trim(tracers_name(i)) // "_B", tracers_long_name(i), &
+                                        tracers(i)%Bio, Ntime, Nlayer, Nlath, Nlongh)
+        end do
         call end_tracer_INPUT_nc(ncid)
 
     end subroutine FEISTY_Save_tracers
@@ -559,7 +563,7 @@ module GetNetCDFinf
         ! Define the variable
         status = nf90_def_var(ncid, varname, NF90_DOUBLE, dimids, varid)
         if (status /= NF90_NOERR) then
-            print *, "Error Def Var: ", trim(varname)
+            print *, "Error Def FEISTY: ", trim(varname)
             print *, trim(nf90_strerror(status))
             STOP
         end if
@@ -584,12 +588,12 @@ module GetNetCDFinf
         end if        
     end subroutine add_tracer_INPUT_nc
 
-    subroutine FEISTY_Save_diag(Spinup, fish_diag, Ntime, Nlayer, Nlath, Nlongh)
+    subroutine FEISTY_Save_diag(Spinup, diags, Ntime, Nlayer, Nlath, Nlongh)
+        type(FEISTY_diag)   :: diags
         logical, intent(in) :: Spinup
-        type(Structure_diag), dimension(nFishGroup) :: fish_diag
         integer, intent(in) :: Ntime, Nlayer, Nlath, Nlongh
-        character(LEN=280) :: filename, String_Spinup 
-        integer(4) :: ncid, dimids(4), i, j
+        character(LEN=280)  :: filename, String_Spinup 
+        integer(4)          :: ncid, dimids(4), i, j
 
         if(Spinup) then 
             String_Spinup = "Spinup"
@@ -598,55 +602,55 @@ module GetNetCDFinf
         end if 
 
         Do i = 1, nFishGroup
-            filename = '../output/' // trim(exp) // '_' // trim(fish_name(i)) // '_diag_Spinup_Time_Serie.nc'
+            filename = '../output/' // trim(exp) // '_' // trim(tracers_name(i)) // '_diag_Spinup_Time_Serie.nc'
 
             call init_Diag_nc(filename, ncid, Ntime, Nlayer, Nlath, Nlongh, dimids)
             
-            call add_Diag_nc(ncid, dimids, "f",    trim(fish_name(i)) // " Feeding level"            , &
-                                fish_diag(i)%f    , Ntime, Nlayer, Nlath, Nlongh)
-            call add_Diag_nc(ncid, dimids, "cmax", trim(fish_name(i)) // " Maximum consumption rate ", &
-                                fish_diag(i)%cmax , Ntime, Nlayer, Nlath, Nlongh)
-            call add_Diag_nc(ncid, dimids, "cons", trim(fish_name(i)) // " Consumption"              , &
-                                fish_diag(i)%cons , Ntime, Nlayer, Nlath, Nlongh)
-            call add_Diag_nc(ncid, dimids, "met",  trim(fish_name(i)) // " Metabolic loss"           , &
-                                fish_diag(i)%met  , Ntime, Nlayer, Nlath, Nlongh)
-            call add_Diag_nc(ncid, dimids, "mu_p", trim(fish_name(i)) // " Predation Mortality"      , &
-                                fish_diag(i)%mu_p , Ntime, Nlayer, Nlath, Nlongh)
-            call add_Diag_nc(ncid, dimids, "mu_f", trim(fish_name(i)) // " Fishing Mortality"        , &
-                                fish_diag(i)%mu_f , Ntime, Nlayer, Nlath, Nlongh)
-            call add_Diag_nc(ncid, dimids, "mu_a", trim(fish_name(i)) // " Background Mortality"     , &
-                                fish_diag(i)%mu_a , Ntime, Nlayer, Nlath, Nlongh)
-            call add_Diag_nc(ncid, dimids, "mu",   trim(fish_name(i)) // " Mortality "               , &
-                                fish_diag(i)%mu   , Ntime, Nlayer, Nlath, Nlongh)
-            call add_Diag_nc(ncid, dimids, "E_A",  trim(fish_name(i)) // " Energy Available"         , &
-                                fish_diag(i)%E_A  , Ntime, Nlayer, Nlath, Nlongh)
-            call add_Diag_nc(ncid, dimids, "Fout", trim(fish_name(i)) // " Flux out size class"      , &
-                                fish_diag(i)%Fout , Ntime, Nlayer, Nlath, Nlongh)
-            call add_Diag_nc(ncid, dimids, "Repro",trim(fish_name(i)) // " Reproductive output"      , &
-                                fish_diag(i)%Repro, Ntime, Nlayer, Nlath, Nlongh)
+            call add_Diag_nc(ncid, dimids, "f",    trim(tracers_name(i)) // " Feeding level"            , &
+                                diags%fish(i)%f    , Ntime, Nlayer, Nlath, Nlongh)
+            call add_Diag_nc(ncid, dimids, "cmax", trim(tracers_name(i)) // " Maximum consumption rate ", &
+                                diags%fish(i)%cmax , Ntime, Nlayer, Nlath, Nlongh)
+            call add_Diag_nc(ncid, dimids, "cons", trim(tracers_name(i)) // " Consumption"              , &
+                                diags%fish(i)%cons , Ntime, Nlayer, Nlath, Nlongh)
+            call add_Diag_nc(ncid, dimids, "met",  trim(tracers_name(i)) // " Metabolic loss"           , &
+                                diags%fish(i)%met  , Ntime, Nlayer, Nlath, Nlongh)
+            call add_Diag_nc(ncid, dimids, "mu_p", trim(tracers_name(i)) // " Predation Mortality"      , &
+                                diags%fish(i)%mu_p , Ntime, Nlayer, Nlath, Nlongh)
+            call add_Diag_nc(ncid, dimids, "mu_f", trim(tracers_name(i)) // " Fishing Mortality"        , &
+                                diags%fish(i)%mu_f , Ntime, Nlayer, Nlath, Nlongh)
+            call add_Diag_nc(ncid, dimids, "mu_a", trim(tracers_name(i)) // " Background Mortality"     , &
+                                diags%fish(i)%mu_a , Ntime, Nlayer, Nlath, Nlongh)
+            call add_Diag_nc(ncid, dimids, "mu",   trim(tracers_name(i)) // " Mortality "               , &
+                                diags%fish(i)%mu   , Ntime, Nlayer, Nlath, Nlongh)
+            call add_Diag_nc(ncid, dimids, "E_A",  trim(tracers_name(i)) // " Energy Available"         , &
+                                diags%fish(i)%E_A  , Ntime, Nlayer, Nlath, Nlongh)
+            call add_Diag_nc(ncid, dimids, "Fout", trim(tracers_name(i)) // " Flux out size class"      , &
+                                diags%fish(i)%Fout , Ntime, Nlayer, Nlath, Nlongh)
+            call add_Diag_nc(ncid, dimids, "Repro",trim(tracers_name(i)) // " Reproductive output"      , &
+                                diags%fish(i)%Repro, Ntime, Nlayer, Nlath, Nlongh)
 
-            call add_Diag_nc(ncid, dimids, "f_Zm", trim(fish_name(i)) // " Feeding level Medium Zoo     ", &
-                                fish_diag(i)%f_Zm, Ntime, Nlayer, Nlath, Nlongh)
-            call add_Diag_nc(ncid, dimids, "f_Zl", trim(fish_name(i)) // " Feeding level Large Zoo      ", &
-                                fish_diag(i)%f_Zl, Ntime, Nlayer, Nlath, Nlongh)
-            call add_Diag_nc(ncid, dimids, "f_Sf", trim(fish_name(i)) // " Feeding level Small Forage   ", &
-                                fish_diag(i)%f_Sf, Ntime, Nlayer, Nlath, Nlongh)
-            call add_Diag_nc(ncid, dimids, "f_Sp", trim(fish_name(i)) // " Feeding level Small Pelagic  ", &
-                                fish_diag(i)%f_Sp, Ntime, Nlayer, Nlath, Nlongh)
-            call add_Diag_nc(ncid, dimids, "f_Sd", trim(fish_name(i)) // " Feeding level Small Demersal ", &
-                                fish_diag(i)%f_Sd, Ntime, Nlayer, Nlath, Nlongh)
-            call add_Diag_nc(ncid, dimids, "f_Mf", trim(fish_name(i)) // " Feeding level Medium Forage  ", &
-                                fish_diag(i)%f_Mf, Ntime, Nlayer, Nlath, Nlongh)
-            call add_Diag_nc(ncid, dimids, "f_Mp", trim(fish_name(i)) // " Feeding level Medium Pelagic ", &
-                                fish_diag(i)%f_Mp, Ntime, Nlayer, Nlath, Nlongh)
-            call add_Diag_nc(ncid, dimids, "f_Md", trim(fish_name(i)) // " Feeding level Medium Demersal", &
-                                fish_diag(i)%f_Md, Ntime, Nlayer, Nlath, Nlongh)
-            call add_Diag_nc(ncid, dimids, "f_Lp", trim(fish_name(i)) // " Feeding level Large Pelagic  ", &
-                                fish_diag(i)%f_Lp, Ntime, Nlayer, Nlath, Nlongh)
-            call add_Diag_nc(ncid, dimids, "f_Ld", trim(fish_name(i)) // " Feeding level Large Demersal ", &
-                                fish_diag(i)%f_Ld, Ntime, Nlayer, Nlath, Nlongh)
-            call add_Diag_nc(ncid, dimids, "f_BE", trim(fish_name(i)) // " Feeding level Benthos        ", &
-                                fish_diag(i)%f_BE, Ntime, Nlayer, Nlath, Nlongh)
+            call add_Diag_nc(ncid, dimids, "f_Zm", trim(tracers_name(i)) // " Feeding level Medium Zoo     ", &
+                                diags%fish(i)%f_Zm, Ntime, Nlayer, Nlath, Nlongh)
+            call add_Diag_nc(ncid, dimids, "f_Zl", trim(tracers_name(i)) // " Feeding level Large Zoo      ", &
+                                diags%fish(i)%f_Zl, Ntime, Nlayer, Nlath, Nlongh)
+            call add_Diag_nc(ncid, dimids, "f_Sf", trim(tracers_name(i)) // " Feeding level Small Forage   ", &
+                                diags%fish(i)%f_Sf, Ntime, Nlayer, Nlath, Nlongh)
+            call add_Diag_nc(ncid, dimids, "f_Sp", trim(tracers_name(i)) // " Feeding level Small Pelagic  ", &
+                                diags%fish(i)%f_Sp, Ntime, Nlayer, Nlath, Nlongh)
+            call add_Diag_nc(ncid, dimids, "f_Sd", trim(tracers_name(i)) // " Feeding level Small Demersal ", &
+                                diags%fish(i)%f_Sd, Ntime, Nlayer, Nlath, Nlongh)
+            call add_Diag_nc(ncid, dimids, "f_Mf", trim(tracers_name(i)) // " Feeding level Medium Forage  ", &
+                                diags%fish(i)%f_Mf, Ntime, Nlayer, Nlath, Nlongh)
+            call add_Diag_nc(ncid, dimids, "f_Mp", trim(tracers_name(i)) // " Feeding level Medium Pelagic ", &
+                                diags%fish(i)%f_Mp, Ntime, Nlayer, Nlath, Nlongh)
+            call add_Diag_nc(ncid, dimids, "f_Md", trim(tracers_name(i)) // " Feeding level Medium Demersal", &
+                                diags%fish(i)%f_Md, Ntime, Nlayer, Nlath, Nlongh)
+            call add_Diag_nc(ncid, dimids, "f_Lp", trim(tracers_name(i)) // " Feeding level Large Pelagic  ", &
+                                diags%fish(i)%f_Lp, Ntime, Nlayer, Nlath, Nlongh)
+            call add_Diag_nc(ncid, dimids, "f_Ld", trim(tracers_name(i)) // " Feeding level Large Demersal ", &
+                                diags%fish(i)%f_Ld, Ntime, Nlayer, Nlath, Nlongh)
+            call add_Diag_nc(ncid, dimids, "f_BE", trim(tracers_name(i)) // " Feeding level Benthos        ", &
+                                diags%fish(i)%f_BE, Ntime, Nlayer, Nlath, Nlongh)
 
             call end_Diag_nc(ncid)
         end Do 
@@ -781,7 +785,7 @@ module GetNetCDFinf
         ! Define the variable
         status = nf90_def_var(ncid, varname, NF90_DOUBLE, dimids, varid)
         if (status /= NF90_NOERR) then
-            print *, "Error Def Var: ", trim(varname)
+            print *, "Error Def FEISTY: ", trim(varname)
             print *, trim(nf90_strerror(status))
             STOP
         end if
@@ -805,5 +809,22 @@ module GetNetCDFinf
             STOP
         end if        
     end subroutine add_Diag_nc
+
+    subroutine Print_FEISTY_diagnostic(FEISTY)
+        type(FEISTY_type), intent(inout) :: FEISTY
+        integer :: i
+
+        print *, " ------------------- FEISTY outputs --------------------- "
+        print *, "lath" , FEISTY%ilath
+        print *, "longh", FEISTY%ilongh
+        print *, "time" , FEISTY%itime
+        print *, "layer", FEISTY%ilayer
+
+        print *, " ------------------- all derivatives  --------------------- "
+
+        do i = 1, nFishGroup
+            print *, "d", trim(tracers_name(i)), "/dt = ", FEISTY%dBdt(i)
+        end do 
+    end subroutine Print_FEISTY_diagnostic
 
 end module GetNetCDFinf
