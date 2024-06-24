@@ -7,7 +7,7 @@ module GetNetCDFinf
 
     contains 
 
-    subroutine Init_FEISTY(Spinup, FEISTY, diags, IC_fish_Bio, tracers, &
+    subroutine Init_FEISTY(Spinup, FEISTY, diags, IC_tracers_Bio, tracers, &
                             Ntime, Nlayer, Nlath, Nlongh, &
                             DataTemp, Datadet, Datadzm, DataZM, Datadzl, DataZL)
         logical, intent(in) :: Spinup
@@ -15,7 +15,7 @@ module GetNetCDFinf
         type(FEISTY_type)       , intent(inout) :: FEISTY
         type(FEISTY_diag)       , intent(inout) :: diags
         type(FEISTY_tracers)    , intent(inout), dimension(nDeriv) :: tracers
-        type(Initial_conditions), intent(inout), dimension(nDeriv) :: IC_fish_Bio
+        type(Initial_conditions), intent(inout), dimension(nDeriv) :: IC_tracers_Bio
         real(dp), dimension(:, :, :, :), allocatable, intent(inout) ::  DataTemp, &
                                                                         Datadzm, DataZM, &
                                                                         Datadzl, DataZL, &
@@ -23,7 +23,7 @@ module GetNetCDFinf
 
         CALL Get_dim(dir_Temp, Ntime, Nlayer, Nlath, Nlongh, FEISTY)   
         CALL load_forcing_data(Ntime, Nlayer, Nlath, Nlongh, DataTemp, Datadet, Datadzm, DataZM, Datadzl, DataZL)
-        Call load_IC_fish(Spinup, Nlayer, Nlath, Nlongh, IC_fish_Bio)
+        Call load_IC_fish(Spinup, Nlayer, Nlath, Nlongh, IC_tracers_Bio)
 
         if (Spinup) then 
             Ntime = (Ntime-1) * Year_2_Spinup
@@ -212,12 +212,17 @@ module GetNetCDFinf
         integer, intent(in) :: iDAY, ilayer, ilath, ilongh
         
         FEISTY%Temp = DataTemp(ilongh, ilath, ilayer, iDAY)
-        FEISTY%dzm  = Datadzm (ilongh, ilath, ilayer, iDAY) * convers_dZm
+        FEISTY%mesozoo(1)%dz  = Datadzm (ilongh, ilath, ilayer, iDAY) * convers_dZm
         FEISTY%mesozoo(1)%B = DataZM  (ilongh, ilath, ilayer, iDAY) * convers_zm
         FEISTY%mesozoo(2)%B = DataZL  (ilongh, ilath, ilayer, iDAY) * convers_zm
-        FEISTY%dzl  = Datadzl (ilongh, ilath, ilayer, iDAY) * convers_dZm
+        FEISTY%mesozoo(2)%dz  = Datadzl (ilongh, ilath, ilayer, iDAY) * convers_dZm
         FEISTY%det  = Datadet (ilongh, ilath, ilayer, iDAY)
+        
+        ! give idx to track in calculcation (needed for ilayer)
         FEISTY%ilayer = ilayer
+        FEISTY%ilath  = ilath
+        FEISTY%ilongh = ilongh
+        FEISTY%itime  = iDAY
         
     end subroutine Get_Environental_data
 
@@ -247,22 +252,22 @@ module GetNetCDFinf
     !:====================================================================== 
     ! Load all the Spinup Initial condition to force the FEISTY
     !:======================================================================  
-    subroutine load_IC_fish(Spinup, Nlayer, Nlath, Nlongh, IC_fish_Bio)
+    subroutine load_IC_fish(Spinup, Nlayer, Nlath, Nlongh, IC_tracers_Bio)
         
-        type(Initial_conditions) , dimension(nDeriv) :: IC_fish_Bio
+        type(Initial_conditions) , dimension(nDeriv) :: IC_tracers_Bio
         logical, intent(in) :: Spinup
         integer, intent(in) :: Nlayer, Nlath, Nlongh
 
         if (Spinup .eqv. .false.) then 
-            CALL readgrid3D(dir_IniSf, 'Sf', Nlayer, Nlath, Nlongh, IC_fish_Bio(1)%IniBio)
-            CALL readgrid3D(dir_IniSp, 'Sp', Nlayer, Nlath, Nlongh, IC_fish_Bio(2)%IniBio)
-            CALL readgrid3D(dir_IniSd, 'Sd', Nlayer, Nlath, Nlongh, IC_fish_Bio(3)%IniBio)
-            CALL readgrid3D(dir_IniMf, 'Mf', Nlayer, Nlath, Nlongh, IC_fish_Bio(4)%IniBio)
-            CALL readgrid3D(dir_IniMp, 'Mp', Nlayer, Nlath, Nlongh, IC_fish_Bio(5)%IniBio)
-            CALL readgrid3D(dir_IniMd, 'Md', Nlayer, Nlath, Nlongh, IC_fish_Bio(6)%IniBio)
-            CALL readgrid3D(dir_IniLp, 'Lp', Nlayer, Nlath, Nlongh, IC_fish_Bio(7)%IniBio)
-            CALL readgrid3D(dir_IniLd, 'Ld', Nlayer, Nlath, Nlongh, IC_fish_Bio(8)%IniBio)
-            CALL readgrid3D(dir_IniBE, 'BE', Nlayer, Nlath, Nlongh, IC_fish_Bio(9)%IniBio)
+            CALL readgrid3D(dir_IniSf, 'Sf', Nlayer, Nlath, Nlongh, IC_tracers_Bio(1)%IniBio)
+            CALL readgrid3D(dir_IniSp, 'Sp', Nlayer, Nlath, Nlongh, IC_tracers_Bio(2)%IniBio)
+            CALL readgrid3D(dir_IniSd, 'Sd', Nlayer, Nlath, Nlongh, IC_tracers_Bio(3)%IniBio)
+            CALL readgrid3D(dir_IniMf, 'Mf', Nlayer, Nlath, Nlongh, IC_tracers_Bio(4)%IniBio)
+            CALL readgrid3D(dir_IniMp, 'Mp', Nlayer, Nlath, Nlongh, IC_tracers_Bio(5)%IniBio)
+            CALL readgrid3D(dir_IniMd, 'Md', Nlayer, Nlath, Nlongh, IC_tracers_Bio(6)%IniBio)
+            CALL readgrid3D(dir_IniLp, 'Lp', Nlayer, Nlath, Nlongh, IC_tracers_Bio(7)%IniBio)
+            CALL readgrid3D(dir_IniLd, 'Ld', Nlayer, Nlath, Nlongh, IC_tracers_Bio(8)%IniBio)
+            CALL readgrid3D(dir_IniBE, 'BE', Nlayer, Nlath, Nlongh, IC_tracers_Bio(9)%IniBio)
         end if
     end subroutine load_IC_fish
 
@@ -809,22 +814,5 @@ module GetNetCDFinf
             STOP
         end if        
     end subroutine add_Diag_nc
-
-    subroutine Print_FEISTY_diagnostic(FEISTY)
-        type(FEISTY_type), intent(inout) :: FEISTY
-        integer :: i
-
-        print *, " ------------------- FEISTY outputs --------------------- "
-        print *, "lath" , FEISTY%ilath
-        print *, "longh", FEISTY%ilongh
-        print *, "time" , FEISTY%itime
-        print *, "layer", FEISTY%ilayer
-
-        print *, " ------------------- all derivatives  --------------------- "
-
-        do i = 1, nFishGroup
-            print *, "d", trim(tracers_name(i)), "/dt = ", FEISTY%dBdt(i)
-        end do 
-    end subroutine Print_FEISTY_diagnostic
 
 end module GetNetCDFinf

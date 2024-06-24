@@ -2,6 +2,35 @@ module Parameters
 
     implicit none 
 
+    ! General parameters: ---------------------------------------------
+    integer, parameter  :: dp = kind(0.d0)   ! double precision
+    real(dp), parameter :: zero = 0.0        ! Zero
+    real(dp), parameter :: eps = 1d-30      ! Small number for divisions 
+    integer, parameter  :: YR = 1            ! Number of year in Time series
+    integer, parameter  :: Nmonth = YR*12    ! Number of month in Time series
+    integer, parameter  :: Year_2_Spinup = 100
+    integer, dimension(12), parameter ::  MNTH = (/ 31, 28, 31, 30, 31, 30, &
+                                                    31, 31, 30, 31, 30, 31 /) ! Length of month (days)
+
+    ! Environemental data for test: -----------------------------------
+    real(dp), parameter :: PI_be_cutoff = 200 ! Benthic-pelagic coupling cutoff (depth, m)
+    logical, parameter  :: diagnostic = .false.
+    logical, parameter  :: save_diagnostics = .false.
+    logical, parameter  :: prod_constrained = .true.
+    logical, parameter  :: Spinup_Time_Serie = .true.
+    logical, parameter  :: Initial_Condition_generic_FEISTY = .true.
+    real(dp), parameter :: conv_m2_to_m3 = 100.0
+    
+
+    ! Groupe information: ---------------------------------------------
+    integer, parameter :: nFishGroup = 8                     ! Number of fish functional group
+    integer, parameter :: nMesoZoo = 2
+    integer, parameter :: nBenthos = 1                       ! Benthic resource  
+    integer, parameter :: nDeriv = nFishGroup +  nBenthos    ! Number of group for witch the derivative is calculated
+    real(dp), parameter :: Delta_t = 1.0                     ! Time step [d]
+    real(dp), parameter :: IC = 1d-5                         ! Fish Initial Condition
+
+
     ! input files: ----------------------------------------------------
     character(LEN=280), parameter :: root_dir = "/project/rdenechere/COBALT_output/COBALT_offline_forcing_files/"
     character(LEN=280) , parameter :: exp = "COBALT_offline_BATS"
@@ -31,43 +60,26 @@ module Parameters
         Dir_IniMd = "../output/" // trim(exp) // "_Md_bio_Spinup.nc",&
         Dir_IniLp = "../output/" // trim(exp) // "_Lp_bio_Spinup.nc",&
         Dir_IniLd = "../output/" // trim(exp) // "_Ld_bio_Spinup.nc"
+    
+    ! Input files as array: ------------------------------------------
+    character(LEN=280), dimension(nDeriv), parameter :: &
+        Dir_IC = [  "../output/" // trim(exp) // "_Sf_bio_Spinup.nc", &
+                    "../output/" // trim(exp) // "_Sp_bio_Spinup.nc", &
+                    "../output/" // trim(exp) // "_Sd_bio_Spinup.nc", &
+                    "../output/" // trim(exp) // "_Mf_bio_Spinup.nc", &
+                    "../output/" // trim(exp) // "_Mp_bio_Spinup.nc", &
+                    "../output/" // trim(exp) // "_Md_bio_Spinup.nc", &
+                    "../output/" // trim(exp) // "_Lp_bio_Spinup.nc", &
+                    "../output/" // trim(exp) // "_Ld_bio_Spinup.nc", &
+                    "../output/" // trim(exp) // "_BE_bio_Spinup.nc"    ]
 
     character(LEN=280), parameter :: dir_COBALT_IC = "/project/CEFI-regional-MOM6/&
             &exps/OM4.single_column.COBALT/INPUT/COBALT_2023_10_spinup_2003_subset.nc"
     ! character(LEN=280), parameter :: dir_Diag_nc = "/project/CEFI-regional-MOM6/&
     !         &exps/OM4.single_column.COBALT/INPUT/" // trim(exp) // "_Diag.nc"
 
-    
-    
-    ! General parameters: ---------------------------------------------
-    integer, parameter  :: dp = kind(0.d0)   ! double precision
-    real(dp), parameter :: zero = 0.0        ! Zero
-    real(dp), parameter :: eps = 1d-30      ! Small number for divisions 
-    integer, parameter  :: YR = 1            ! Number of year in Time series
-    integer, parameter  :: Nmonth = YR*12    ! Number of month in Time series
-    integer, parameter  :: Year_2_Spinup = 100
-    integer, dimension(12), parameter ::  MNTH = (/ 31, 28, 31, 30, 31, 30, &
-                                                    31, 31, 30, 31, 30, 31 /) ! Length of month (days)
 
-    ! Environemental data for test: -----------------------------------
-    real(dp), parameter :: PI_be_cutoff = 200 ! Benthic-pelagic coupling cutoff (depth, m)
-    logical, parameter :: diagnostic = .false.
-    logical, parameter :: save_diagnostics = .false.
-    logical, parameter :: prod_constrained = .true.
-    logical, parameter :: Spinup_Time_Serie = .true.
-    logical, parameter :: Initial_Condition_generic_FEISTY = .true.
-    real(dp), parameter :: conv_m2_to_m3 = 100.0
-    
-
-    ! Groupe information: ---------------------------------------------
-    integer, parameter :: nFishGroup = 8                      ! Number of fish functional group
-    integer, parameter :: nMesoZoo = 2
-    integer, parameter :: nBenthos = 1                       ! Benthic resource  
-    integer, parameter :: nDeriv = nFishGroup +  nBenthos    ! Number of group for witch the derivative is calculated
-    real(dp), parameter :: Delta_t = 1.0                      ! Time step [d]
-    real(dp), parameter :: IC = 10**(-5)                      ! Fish Initial Condition
-
-    character(len=2), dimension(nDeriv) :: tracers_name = ["Sf", "Sp", "Sd", "Mf", "Mp", "Md", "Lp", "Ld", "BE"]
+    character(len=2), dimension(nDeriv)  :: tracers_name = ["Sf", "Sp", "Sd", "Mf", "Mp", "Md", "Lp", "Ld", "BE"]
     character(len=33), dimension(nDeriv) :: tracers_long_name =["Small forage fish biomass        ", &
                                                                 "Small large pelagic fish biomass ", &
                                                                 "Small demersal fish biomass      ", &
@@ -87,6 +99,9 @@ module Parameters
                             Lp = 7, &
                             Ld = 8, &
                             BE = 9
+
+    integer, parameter ::   Mz = 1, &  ! -- MesoZooplankton ID code --
+                            Lz = 2
 
     ! Parameters physiology: ------------------------------------------
     real(dp), parameter :: ke = 0.0630             ! [°c-1]                Temperature correction for cmax and encounter

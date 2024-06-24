@@ -72,6 +72,7 @@ module Structure
     !------------------------------------------------------------------------------------
     type :: MesoZooplankton 
         real(dp) :: B             = 0.0 , &  ! Biomass 
+                    dz            = 0.0 , &  ! Mortality by High trophic Level mortality
                     Zcons_VS_dZ   = 0.0      ! MesoZooplankton consumption from FEISTY over dZm estmated from COBALT
     end type MesoZooplankton
 
@@ -85,11 +86,7 @@ module Structure
         type(Fish)              , dimension(8) :: fish
         
         ! Global variable ()
-        real(dp) :: zfm = 0                  ! Fraction of zooplankton mortality loss consumed
-        real(dp) :: zfl = 0                  ! Fraction of zooplankton mortality loss consumed  
         real(dp) :: Temp = 0                 ! Pelagic temperature
-        real(dp) :: dzm = 0                  ! Biomass of medium zooplankton consumed by top predators 
-        real(dp) :: dzl = 0                  ! Biomass of Large zooplankton consumed by top predators 
         real(dp) :: det = 0                  ! Detritus flux to benthic community
         real(dp), dimension(nDeriv) :: dBdt  ! variable containing the derivative
         real(dp) :: tpel_Ld = 0              ! Time in pelagic of large demersal depending on depth and abundance of resource
@@ -171,9 +168,9 @@ module Structure
     end type FEISTY_tracers
 
 
-    type :: Save_structure1D
-        real(dp), dimension(:), allocatable :: Sf, Sp, Sd, Mf, Mp, Md, Lp, Ld, BE, Zcons_VS_dZm, Zcons_VS_dZl
-    end type
+    ! type :: Save_structure1D
+    !     real(dp), dimension(:), allocatable :: Sf, Sp, Sd, Mf, Mp, Md, Lp, Ld, BE, Zcons_VS_dZm, Zcons_VS_dZl
+    ! end type
 
     type :: Initial_conditions
         real(dp), dimension(:, :, :), allocatable :: IniBio
@@ -183,11 +180,11 @@ module Structure
     contains 
 
     ! Define initial condition for a grid cell
-    subroutine initPhysiology(Spinup, ilayer, ilath, ilongh, IC_fish_Bio, FEISTY)
+    subroutine initPhysiology(Spinup, ilayer, ilath, ilongh, IC_tracers_Bio, FEISTY)
         logical, intent(in) :: Spinup
         integer, intent(in) :: ilayer, ilath, ilongh
         type(FEISTY_type), intent(inout) :: FEISTY
-        type(Initial_conditions), intent(inout), dimension(nDeriv) :: IC_fish_Bio
+        type(Initial_conditions), intent(inout), dimension(nDeriv) :: IC_tracers_Bio
         integer :: i
     
         if (Spinup) then
@@ -197,27 +194,27 @@ module Structure
             end do
             
             ! Benthic: 
-            do i = nFishGroup + 1, nDeriv 
+            do i = 1, nBenthos  
                 FEISTY%benthos(i)%B = IC
             end do
             
         else 
             ! Fish:
             do i = 1, nFishGroup
-                FEISTY%fish(i)%B = IC_fish_Bio(i)%IniBio(ilayer, ilath, ilongh)
+                FEISTY%fish(i)%B = IC_tracers_Bio(i)%IniBio(ilayer, ilath, ilongh)
             end do
             ! Benthic: 
-            do i = nFishGroup + 1, nDeriv 
-                FEISTY%benthos(i)%B = IC_fish_Bio(i)%IniBio(ilayer, ilath, ilongh)
+            do i = 1, nBenthos  
+                FEISTY%benthos(i)%B = IC_tracers_Bio(i)%IniBio(ilayer, ilath, ilongh)
             end do
         end if 
 
     end subroutine initPhysiology
 
      ! Define initial condition for a grid cell
-    subroutine init_Biomass_Layer(Spinup, itime, ilayer, ilath, ilongh, IC_fish_Bio, FEISTY, tracers)
+    subroutine init_Biomass_Layer(Spinup, itime, ilayer, ilath, ilongh, IC_tracers_Bio, FEISTY, tracers)
         type(FEISTY_type)       , intent(inout)                    :: FEISTY
-        type(Initial_conditions), intent(in)   , dimension(nDeriv) :: IC_fish_Bio
+        type(Initial_conditions), intent(in)   , dimension(nDeriv) :: IC_tracers_Bio
         type(FEISTY_tracers)    , intent(in)   , dimension(nDeriv) :: tracers
         logical, intent(in) :: Spinup
         integer, intent(in) :: itime, ilayer, ilath, ilongh
@@ -230,24 +227,25 @@ module Structure
                 FEISTY%fish(i)%B = IC
             end do
             ! Benthic: 
-            do i = nFishGroup + 1, nDeriv 
+            do i = 1, nBenthos 
                 FEISTY%benthos(i)%B = IC
             end do
         
         ! Gives initial condition for 1st time step from spinup 
         elseif ((Spinup .eqv. .false.) .and. (itime .eq. int(1))) then
             do i = 1, nFishGroup
-                FEISTY%fish(i)%B = IC_fish_Bio(i)%IniBio(ilayer, ilath, ilongh)
+                FEISTY%fish(i)%B = IC_tracers_Bio(i)%IniBio(ilayer, ilath, ilongh)
             end do
         
         ! Gives uses biomass from previous time step for any time 
         elseif (itime .gt. int(1)) then 
+            ! Allocate fish biomass 
             do i = 1, nFishGroup
                 FEISTY%fish(i)%B = tracers(i)%Bio(itime-1, ilayer, ilath, ilongh)
             end do 
-            ! Benthic: 
-            do i = nFishGroup + 1, nDeriv 
-                FEISTY%benthos(i)%B = tracers(i)%Bio(itime-1, ilayer, ilath, ilongh)
+            ! allocate Benthic biomass: 
+            do i = 1, nBenthos  
+                FEISTY%benthos(i)%B = tracers(i + nFishGroup)%Bio(itime-1, ilayer, ilath, ilongh)
             end do
         end if 
 
@@ -269,7 +267,6 @@ module Structure
         type(FEISTY_diag) :: diags
         integer, intent(in) :: Ntime, Nlayer, Nlath, Nlongh
         integer :: i
-
         Do i = 1, nFishGroup
             allocate(diags%fish(i)%f(Ntime, Nlayer, Nlath, Nlongh))       ; diags%fish(i)%f = 0.0          ! Total feeding level
             allocate(diags%fish(i)%cmax(Ntime, Nlayer, Nlath, Nlongh))    ; diags%fish(i)%cmax = 0.0           ! Maximum consumption rate 
@@ -315,9 +312,8 @@ module Structure
         do i = 1, nFishGroup
             tracers(i)%Bio(itime, ilayer, ilath, ilongh) = FEISTY%fish(i)%B
         end do 
-
-        do i = nFishGroup + 1, nDeriv
-            tracers(i)%Bio(itime, ilayer, ilath, ilongh) = FEISTY%benthos(i)%B
+        do i = 1, nBenthos 
+            tracers(i+nFishGroup)%Bio(itime, ilayer, ilath, ilongh) = FEISTY%benthos(i)%B
         end do 
     end subroutine store_daily_biomass
 
@@ -373,70 +369,39 @@ module Structure
 
     end subroutine Calc_trans_layer
 
-    ! subroutine init_store_MNTH(this, Ndays)
-    !     type(Save_structure1D) :: this
-    !     integer, intent(in) :: Ndays
-    !     allocate(this%BE(Ndays))
-    !     allocate(this%Sf(Ndays))
-    !     allocate(this%Sp(Ndays))
-    !     allocate(this%Sd(Ndays))
-    !     allocate(this%Mf(Ndays))
-    !     allocate(this%Mp(Ndays))
-    !     allocate(this%Md(Ndays))
-    !     allocate(this%Lp(Ndays))
-    !     allocate(this%Ld(Ndays))
-    !     allocate(this%Zcons_VS_dZm(Ndays))
-    !     allocate(this%Zcons_VS_dZl(Ndays))
-    ! end subroutine init_store_MNTH
+    subroutine Print_FEISTY_diagnostic(FEISTY)
+        type(FEISTY_type), intent(in) :: FEISTY
+        integer :: i
 
-    ! subroutine store_MNTH(this, that, iDAY)
-    !     type(Save_structure1D) :: this
-    !     type(FEISTY_type) :: that
-    !     integer, intent(in) :: iDAY
-    !     this%BE(iDAY) = that%BE%B
-    !     this%Sf(iDAY) = that%Sf%B
-    !     this%Sp(iDAY) = that%Sp%B
-    !     this%Sd(iDAY) = that%Sd%B
-    !     this%Mf(iDAY) = that%Mf%B
-    !     this%Mp(iDAY) = that%Mp%B
-    !     this%Md(iDAY) = that%Md%B
-    !     this%Lp(iDAY) = that%Lp%B
-    !     this%Ld(iDAY) = that%Ld%B
-    !     this%Zcons_VS_dZm(iDay) = that%Zcons_VS_dZm
-    !     this%Zcons_VS_dZl(iDay) = that%Zcons_VS_dZl
-    ! end subroutine store_MNTH
+        print *, " ------------------- FEISTY outputs --------------------- "
+        print *, "lath " , FEISTY%ilath
+        print *, "longh",  FEISTY%ilongh
+        print *, "time " , FEISTY%itime
+        print *, "layer",  FEISTY%ilayer
+        
+        print *, 
+        print *, " ------------------- FEISTY inputs --------------------- "
+        print *, "Temperature             " , FEISTY%Temp                ! Pelagic temperature
+        print *, "Medium MesoZoo B        " , FEISTY%mesozoo(Mz)%B       ! Fraction of zooplankton mortality loss consumed
+        print *, "Large MesoZoo B         " , FEISTY%mesozoo(Lz)%B       ! Fraction of zooplankton mortality loss consumed  
+        print *, "mort Medium MesoZoo B   " , FEISTY%mesozoo(Mz)%dz      ! Biomass of medium zooplankton consumed by top predators 
+        print *, "mort Large MesoZoo B    " , FEISTY%mesozoo(Lz)%dz      ! Biomass of Large zooplankton consumed by top predators 
+        print *, "Detritus fluxto sea bed " , FEISTY%det                 ! Detritus flux to benthic community
+        
+        print *, 
+        print *, " ------------------- Biomass at t + 1  --------------------- "
+        do i = 1, nDeriv
+            print *, "bio ", trim(tracers_name(i)), "= ", FEISTY%fish(i)%B
+        end do
 
-    ! subroutine store_data_MNT(this, that, imonth, ilayer, ilath, ilongh, Ndays)
-    !     type(Save_structure4D) :: this         ! Storage (Space, month)
-    !     type(Save_structure1D) :: that         ! Daily data for the month 
-    !     integer, intent(in) :: imonth, ilayer, ilath, ilongh, Ndays
+        print *, 
+        print *, " ------------------- all derivatives  --------------------- "
+        do i = 1, nDeriv
+            print *, "d", trim(tracers_name(i)), "/dt = ", FEISTY%dBdt(i)
+        end do 
 
-    !     ! Store the average biomass of each group for the month
-    !     this%BE(imonth, ilayer, ilath, ilongh) = sum(that%BE)/Ndays
-    !     this%Sf(imonth, ilayer, ilath, ilongh) = sum(that%Sf)/Ndays
-    !     this%Sp(imonth, ilayer, ilath, ilongh) = sum(that%Sp)/Ndays
-    !     this%Sd(imonth, ilayer, ilath, ilongh) = sum(that%Sd)/Ndays
-    !     this%Mf(imonth, ilayer, ilath, ilongh) = sum(that%Mf)/Ndays
-    !     this%Mp(imonth, ilayer, ilath, ilongh) = sum(that%Mp)/Ndays
-    !     this%Md(imonth, ilayer, ilath, ilongh) = sum(that%Md)/Ndays
-    !     this%Lp(imonth, ilayer, ilath, ilongh) = sum(that%Lp)/Ndays
-    !     this%Ld(imonth, ilayer, ilath, ilongh) = sum(that%Ld)/Ndays
-    !     this%Zcons_VS_dZm(imonth, ilayer, ilath, ilongh) = sum(that%Zcons_VS_dZm)/Ndays
-    !     this%Zcons_VS_dZl(imonth, ilayer, ilath, ilongh) = sum(that%Zcons_VS_dZl)/Ndays
-
-    !     ! Deallocating the vectors to store next month daily values: 
-    !     deallocate(that%BE)
-    !     deallocate(that%Sf)
-    !     deallocate(that%Sp)
-    !     deallocate(that%Sd)
-    !     deallocate(that%Mf)
-    !     deallocate(that%Mp)
-    !     deallocate(that%Md)
-    !     deallocate(that%Lp)
-    !     deallocate(that%Ld)
-    !     deallocate(that%Zcons_VS_dZm)
-    !     deallocate(that%Zcons_VS_dZl)
-    ! end subroutine store_data_MNT
+        stop 
+    end subroutine Print_FEISTY_diagnostic
 
 
 end module Structure

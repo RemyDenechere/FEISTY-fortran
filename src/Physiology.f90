@@ -1,6 +1,7 @@
 module Physiology
     use Parameters
     use Structure
+
     implicit none 
 !:==================================================================================:!
 !!!!!!!!!!!!! Calculation of the physiological parameters in FEISTY !!!!!!!!!!!!!!!!
@@ -208,13 +209,13 @@ module Physiology
         Cons_Zl = (FEISTY%fish(4)%cons_Lz * FEISTY%fish(4)%B + FEISTY%fish(5)%cons_Lz * FEISTY%fish(5)%B)
         
         ! Calcul of fraction of Zoo consumption over estimated zoop consumption:
-        FEISTY%mesozoo(1)%Zcons_VS_dZ = Cons_Zm/(FEISTY%dzm + eps)
-        FEISTY%mesozoo(2)%Zcons_VS_dZ = Cons_Zl/(FEISTY%dzl + eps)
+        FEISTY%mesozoo(1)%Zcons_VS_dZ = Cons_Zm/(FEISTY%mesozoo(1)%dz + eps)
+        FEISTY%mesozoo(2)%Zcons_VS_dZ = Cons_Zl/(FEISTY%mesozoo(2)%dz + eps)
 
         ! If calculated consumtiion is higher than estimated recalcul the fraction of Z consumed 
         ! depending on every group relative fraction of consumtion on Z. 
         ! Mz: 
-        if (Cons_Zm > FEISTY%dzm .and. prod_constrained) then
+        if (Cons_Zm > FEISTY%mesozoo(1)%dz .and. prod_constrained) then
             ! Calcul fraction of consumption over total consumption of zoo
             frac_Sf = FEISTY%fish(1)%cons_Mz * FEISTY%fish(1)%B / (FEISTY%fish(1)%cons_Mz * FEISTY%fish(1)%B + &
                      FEISTY%fish(2)%cons_Mz * FEISTY%fish(2)%B + &
@@ -239,15 +240,15 @@ module Physiology
 
             ! Actual consumption as the faction of consumption * dz: -------------------------
             ! Divide the biomass consumed by the biomass of the predator to get a per g of predator rate. 
-            FEISTY%fish(1)%cons_Mz = frac_Sf * FEISTY%dzm / FEISTY%fish(1)%B
-            FEISTY%fish(2)%cons_Mz = frac_Sp * FEISTY%dzm / FEISTY%fish(2)%B
-            FEISTY%fish(3)%cons_Mz = frac_Sd * FEISTY%dzm / FEISTY%fish(3)%B
-            FEISTY%fish(4)%cons_Mz = frac_Mf * FEISTY%dzm / FEISTY%fish(4)%B
-            FEISTY%fish(5)%cons_Mz = frac_Mp * FEISTY%dzm / FEISTY%fish(5)%B
+            FEISTY%fish(1)%cons_Mz = frac_Sf * FEISTY%mesozoo(1)%dz / FEISTY%fish(1)%B
+            FEISTY%fish(2)%cons_Mz = frac_Sp * FEISTY%mesozoo(1)%dz / FEISTY%fish(2)%B
+            FEISTY%fish(3)%cons_Mz = frac_Sd * FEISTY%mesozoo(1)%dz / FEISTY%fish(3)%B
+            FEISTY%fish(4)%cons_Mz = frac_Mf * FEISTY%mesozoo(1)%dz / FEISTY%fish(4)%B
+            FEISTY%fish(5)%cons_Mz = frac_Mp * FEISTY%mesozoo(1)%dz / FEISTY%fish(5)%B
         end if  
         
         ! Lz:
-        if (Cons_Zl > FEISTY%dzl .and. prod_constrained) then
+        if (Cons_Zl > FEISTY%mesozoo(2)%dz .and. prod_constrained) then
             ! Calcul fraction of consumption over total consumption of zoo
             frac_Mf = FEISTY%fish(4)%cons_Lz * FEISTY%fish(4)%B / & 
                      (FEISTY%fish(4)%cons_Lz * FEISTY%fish(4)%B + FEISTY%fish(5)%cons_Lz * FEISTY%fish(5)%B)
@@ -256,8 +257,8 @@ module Physiology
 
             ! Actual consumption as the faction of consumption * dz: -------------------------
             ! Divide the biomass consumed by the biomass of the predator to get a per g of predator rate. 
-            FEISTY%fish(4)%cons_Lz = frac_Mf * FEISTY%dzl / FEISTY%fish(4)%B
-            FEISTY%fish(5)%cons_Lz = frac_Mp * FEISTY%dzl / FEISTY%fish(5)%B
+            FEISTY%fish(4)%cons_Lz = frac_Mf * FEISTY%mesozoo(2)%dz / FEISTY%fish(4)%B
+            FEISTY%fish(5)%cons_Lz = frac_Mp * FEISTY%mesozoo(2)%dz / FEISTY%fish(5)%B
         end if 
 
         ! Total consumption rate with adjusted consumption on zooplankton: ------------------
@@ -436,8 +437,10 @@ module Physiology
             end if 
         end do 
 
-        if (Diagnostic) then 
-            Print_FEISTY_diagnostic(FEISTY)
+
+        ! Print all diagnostics used in FEISTY 
+        if (diagnostic) then 
+             CALL Print_FEISTY_diagnostic(FEISTY)
         end if 
 
     end subroutine Calc_FEISTY_Deriv
