@@ -3,14 +3,17 @@ clear all
 close all
 
 %% Root directory: 
-param.Rockfish =true; %    false; % 
+param.Rockfish = true; %    false; % 
 param = param_setup(param);
 
 %! get directory containing output
 dir = '../output/'; 
 exp = 'COBALT_offline_BATS_';
 Spinup = {'_Spinup_Time_Serie', ''}; 
-var = {'Sf', 'Sp', 'Sd', 'Mf', 'Mp', 'Md', 'Lp', 'Ld', 'BE', 'dZm', 'dZl'}; 
+var = {'Sf', 'Sp', 'Sd', 'Mf', 'Mp', 'Md', 'Lp', 'Ld', 'BE', 'dZm', 'dZl'};
+var_diag = {'f', 'cmax', 'cons', 'met', 'mu_p', 'mu_f', 'mu_a', 'mu',...
+            'E_A', 'Fout', 'Repro', 'f_Zm', 'f_Zl', 'f_Sf', 'f_Sp', 'f_Sd',... 
+            'f_Mf', 'f_Mp', 'f_Md', 'f_Lp', 'f_Ld', 'f_BE'};
 
 if ~exist([dir 'Matlab_Average/'])
     mkdir([dir 'Matlab_Average/'])
@@ -121,6 +124,75 @@ for i = 1:(length(var)-2)
         [var{i} '_spacemean'] ,'-append')
 end
 
+%% diagnotic variables 
+% 
+% for sp = 2
+%     ! get diagnostics:
+%     for i = 1:(length(var)-3)
+%         ncid = netcdf.open([dir exp var{i} '_diag_' Spinup{sp} 'Time_Serie' '.nc'],'NC_NOWRITE');
+%         for j = 1:length(var_diag)
+%             varid = netcdf.inqVarID(ncid, var_diag{j});
+%             eval([ var{i} '_' var_diag{j} ' = netcdf.getVar(ncid, varid );']);
+%             eval([ var{i} '_' var_diag{j} '(' var{i} '_' var_diag{j} ' == -99999) = NaN;']);
+%         end 
+%         netcdf.close(ncid);
+%     end 
+%     
+%     dim = size(eval('Sf_f'));
+%     time = 1:dim(4);
+%     depth = 1:dim(3);
+%     
+%     Calcul average over dimensions: -----------------------------------------
+%     ! Calculate average over lat and long: 
+%     for i = 1:(length(var)-3)
+%         for j = 1:length(var_diag)
+%             eval([var{i} '_' var_diag{j} '_spacemean = transpose(squeeze(nanmean(' var{i} '_' var_diag{j} ', [1, 2])));']);
+%         end 
+%     end
+%     
+%     ! Integrated biomass over depth: 
+%     for i = 1:(length(var)-3)
+%         for j = 1:length(var_diag)
+%             eval([var{i} '_' var_diag{j} '_tmean = squeeze(sum(' var{i} '_' var_diag{j} '_spacemean, 2));']);
+%         end 
+%     end
+%     
+%     ! Average over time : 
+%     for i = 1:(length(var)-3)
+%         for j = 1:length(var_diag)
+%             eval([var{i} '_' var_diag{j} '_zmean = squeeze(nanmean(' var{i} '_' var_diag{j} '_spacemean, 1));']);
+%         end 
+%     end
+%     
+%     ! Save data: -------------------------------------------------------------
+%     !! average over lat and long: 
+%     save(['../output/Matlab_Average/' exp 'Time_Depth_Means_Diag' Spinup{sp} '.mat'], 'time', 'depth')
+%     for i = 1:(length(var)-3)
+%         for j = 1:length(var_diag)
+%             save(['../output/Matlab_Average/' exp 'Time_Depth_Means_Diag' Spinup{sp} '.mat'], ...
+%                 [var{i} '_' var_diag{j} '_spacemean'] ,'-append')
+%         end
+%     end
+%     
+%     !! integrated over depth
+%     save(['../output/Matlab_Average/' exp 'Time_Means_Diag' Spinup{sp} '.mat'], 'time')
+%     for i = 1:(length(var)-3)
+%         for j = 1:length(var_diag)
+%             save(['../output/Matlab_Average/' exp 'Time_Means_Diag' Spinup{sp} '.mat'], ...
+%                 [var{i} '_' var_diag{j} '_tmean'] ,'-append')
+%         end 
+%     end
+%     
+%     !! Average over time 
+%     save(['../output/Matlab_Average/' exp 'Depth_Means_Diag' Spinup{sp} '.mat'], 'depth')
+%     for i = 1:(length(var)-3)
+%         for j = 1:length(var_diag)
+%             save(['../output/Matlab_Average/' exp 'Depth_Means_Diag' Spinup{sp} '.mat'], ...
+%                 [var{i} '_' var_diag{j} '_zmean'] ,'-append')
+%         end 
+%     end
+% end 
+
 
 %% get FEISTY input varaibles from COBALT 
 dir = {'/rdenechere/COBALT_output/COBALT_offline_forcing_files/20040101.ocean_feisty_forcing_offline.nc', ...
@@ -187,5 +259,7 @@ for i = 1:length(var)
     save(['../output/Matlab_Average/' exp 'Depth_Means_forcing_files' '.mat'], ...
         [var{i} '_zmean'] ,'-append')
 end
+
+
 
 

@@ -3,7 +3,7 @@ clear all
 %! get directory containing output
 addpath('../../COBALT_output/COBALT_FEISTY/')
 dir_outpur = '../output/Matlab_Average/';
-exp = 'COBALT_online_BATS_';
+exp = 'COBALT_online_BATS_DemBottom_';
 Spinup = {''}; 
 
 %% Get Fish tracers: ------------------------------------------------------

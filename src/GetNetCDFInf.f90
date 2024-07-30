@@ -61,44 +61,17 @@ module GetNetCDFinf
         integer, intent(in) :: Ntime, Nlayer, Nlath, Nlongh
         integer :: i
     
-        if (Spinup) then 
-            ! Write each variable to a separate NetCDF file : ---------------------------
-            call write_nc_file3D(Dir_IniBE, 'BE', tracers(BE)%Bio(Ntime, 1:Nlayer, 1:Nlath, 1:Nlongh),  Nlayer, Nlath, Nlongh)
-            call write_nc_file3D(Dir_IniSf, 'Sf', tracers(Sf)%Bio(Ntime, 1:Nlayer, 1:Nlath, 1:Nlongh),  Nlayer, Nlath, Nlongh)
-            call write_nc_file3D(Dir_IniSp, 'Sp', tracers(Sp)%Bio(Ntime, 1:Nlayer, 1:Nlath, 1:Nlongh),  Nlayer, Nlath, Nlongh)
-            call write_nc_file3D(Dir_IniSd, 'Sd', tracers(Sd)%Bio(Ntime, 1:Nlayer, 1:Nlath, 1:Nlongh),  Nlayer, Nlath, Nlongh)
-            call write_nc_file3D(Dir_IniMf, 'Mf', tracers(Mf)%Bio(Ntime, 1:Nlayer, 1:Nlath, 1:Nlongh),  Nlayer, Nlath, Nlongh)
-            call write_nc_file3D(Dir_IniMp, 'Mp', tracers(Mp)%Bio(Ntime, 1:Nlayer, 1:Nlath, 1:Nlongh),  Nlayer, Nlath, Nlongh)
-            call write_nc_file3D(Dir_IniMd, 'Md', tracers(Md)%Bio(Ntime, 1:Nlayer, 1:Nlath, 1:Nlongh),  Nlayer, Nlath, Nlongh)
-            call write_nc_file3D(Dir_IniLp, 'Lp', tracers(Lp)%Bio(Ntime, 1:Nlayer, 1:Nlath, 1:Nlongh),  Nlayer, Nlath, Nlongh)
-            call write_nc_file3D(Dir_IniLd, 'Ld', tracers(Ld)%Bio(Ntime, 1:Nlayer, 1:Nlath, 1:Nlongh),  Nlayer, Nlath, Nlongh)
+        if (Spinup) then
+            do i = 1, nDeriv
+                call write_nc_file3D(Dir_IC(i), tracers_name(i), tracers(i)%Bio(Ntime, 1:Nlayer, 1:Nlath, 1:Nlongh), &
+                                     Nlayer, Nlath, Nlongh)
+            end do
             
             if (Spinup_Time_Serie) then 
-                ! Write each variable to a separate NetCDF file : ---------------------------
                 do i = 1, nDeriv
                 call write_nc_file4D('../output/' // trim(exp) // '_' // trim(tracers_name(i)) //'_bio_Spinup_Time_Serie.nc', &
                                         trim(tracers_name(i)), tracers(i)%Bio, Ntime, Nlayer, Nlath, Nlongh)
                 end do 
-                ! call write_nc_file4D('../output/' // trim(exp) // '_Sf_bio_Spinup_Time_Serie.nc', &
-                !                         'Sf', tracers%Sf, Ntime, Nlayer, Nlath, Nlongh)
-                ! call write_nc_file4D('../output/' // trim(exp) // '_Sp_bio_Spinup_Time_Serie.nc', &
-                !                         'Sp', tracers%Sp, Ntime, Nlayer, Nlath, Nlongh)
-                ! call write_nc_file4D('../output/' // trim(exp) // '_Sd_bio_Spinup_Time_Serie.nc', &
-                !                         'Sd', tracers%Sd, Ntime, Nlayer, Nlath, Nlongh)
-                ! call write_nc_file4D('../output/' // trim(exp) // '_Mf_bio_Spinup_Time_Serie.nc', & 
-                !                         'Mf', tracers%Mf, Ntime, Nlayer, Nlath, Nlongh)
-                ! call write_nc_file4D('../output/' // trim(exp) // '_Mp_bio_Spinup_Time_Serie.nc', &
-                !                         'Mp', tracers%Mp, Ntime, Nlayer, Nlath, Nlongh)
-                ! call write_nc_file4D('../output/' // trim(exp) // '_Md_bio_Spinup_Time_Serie.nc', &
-                !                         'Md', tracers%Md, Ntime, Nlayer, Nlath, Nlongh)
-                ! call write_nc_file4D('../output/' // trim(exp) // '_Lp_bio_Spinup_Time_Serie.nc', &
-                !                         'Lp', tracers%Lp, Ntime, Nlayer, Nlath, Nlongh)
-                ! call write_nc_file4D('../output/' // trim(exp) // '_Ld_bio_Spinup_Time_Serie.nc', &
-                !                         'Ld', tracers%Ld, Ntime, Nlayer, Nlath, Nlongh)
-                ! call write_nc_file4D('../output/' // trim(exp) // '_dZm_Spinup_Time_Serie.nc', &
-                !                         'dZm', tracers%Zcons_VS_dZm, Ntime, Nlayer, Nlath, Nlongh)
-                ! call write_nc_file4D('../output/' // trim(exp) // '_dZl_Spinup_Time_Serie.nc', &
-                !                         'dZl', tracers%Zcons_VS_dZl, Ntime, Nlayer, Nlath, Nlongh)
             end if 
             if(Initial_Condition_generic_FEISTY) then 
                 call FEISTY_Save_tracers(Spinup, tracers, Ntime, Nlayer, Nlath, Nlongh) 
@@ -110,25 +83,16 @@ module GetNetCDFinf
                 call write_nc_file4D('../output/' // trim(exp) // '_' // trim(tracers_name(i)) // '_bio.nc', & 
                                      trim(tracers_name(i)), tracers(i)%Bio, Ntime, Nlayer, Nlath, Nlongh)
             end do 
-            ! call write_nc_file4D('../output/' // trim(exp) // '_Sf_bio.nc', 'Sf', that%Sf, Ntime, Nlayer, Nlath, Nlongh)
-            ! call write_nc_file4D('../output/' // trim(exp) // '_Sp_bio.nc', 'Sp', that%Sp, Ntime, Nlayer, Nlath, Nlongh)
-            ! call write_nc_file4D('../output/' // trim(exp) // '_Sd_bio.nc', 'Sd', that%Sd, Ntime, Nlayer, Nlath, Nlongh)
-            ! call write_nc_file4D('../output/' // trim(exp) // '_Mf_bio.nc', 'Mf', that%Mf, Ntime, Nlayer, Nlath, Nlongh)
-            ! call write_nc_file4D('../output/' // trim(exp) // '_Mp_bio.nc', 'Mp', that%Mp, Ntime, Nlayer, Nlath, Nlongh)
-            ! call write_nc_file4D('../output/' // trim(exp) // '_Md_bio.nc', 'Md', that%Md, Ntime, Nlayer, Nlath, Nlongh)
-            ! call write_nc_file4D('../output/' // trim(exp) // '_Lp_bio.nc', 'Lp', that%Lp, Ntime, Nlayer, Nlath, Nlongh)
-            ! call write_nc_file4D('../output/' // trim(exp) // '_Ld_bio.nc', 'Ld', that%Ld, Ntime, Nlayer, Nlath, Nlongh)
+            !! Reformat !! 
             call write_nc_file4D('../output/' // trim(exp) // '_dZm.nc', 'dZm', diags%mesozoo(1)%Zcon_VS_dZ, & 
                                     Ntime, Nlayer, Nlath, Nlongh)
             call write_nc_file4D('../output/' // trim(exp) // '_dZl.nc', 'dZl', diags%mesozoo(2)%Zcon_VS_dZ, & 
                                     Ntime, Nlayer, Nlath, Nlongh)
+
+            if(save_diagnostics) then 
+                call FEISTY_Save_diag(Spinup, diags, Ntime, Nlayer, Nlath, Nlongh)
+            end if   
         end if 
-
-        if(save_diagnostics) then 
-
-
-        end if 
-
     end subroutine write_output_netcdf 
 
     subroutine write_nc_file4D(filename, varname, var, Ntime, Nlayer, Nlath, Nlongh)
@@ -395,7 +359,6 @@ module GetNetCDFinf
         real(dp), dimension(Dim1), intent(inout) :: values
         integer :: ierr, vartype, nAtts, ncid, varid
         integer, dimension(3) :: ndims
-        print*, varname
 
         ! Open NetCDF: --------------------------------------------
         ierr = nf90_open(dir, NF90_NOWRITE, ncid)
@@ -523,11 +486,19 @@ module GetNetCDFinf
         ! End the definitions mode: enter data mode
         status = nf90_enddef(ncid)
 
-        ! Write the variable data: get values from COBALT
+        ! Write the variable data: get values from COBALT (old method)
         call readgrid1D(dir_COBALT_IC, 'Time',  1,  Time_dim_val)
         call readgrid1D(dir_COBALT_IC, 'Layer', Nlayer, layer_dim_val)
         call readgrid1D(dir_COBALT_IC, 'lath',  Nlath,  lath_dim_val)       
         call readgrid1D(dir_COBALT_IC, 'lonh', Nlongh, longh_dim_val)
+
+        ! Forcing long and lat from ocean_hgrid.nc (new method)
+        call readgrid1D(dir_FEISTY_IC, 'Layer', Nlayer, layer_dim_val)
+        ! print*, "New depth values for Layer:", layer_dim_val
+        lath_dim_val = (/(long_min + (i-1) * ((long_max - long_min)/Nlath), i=1, Nlath, 1)/)
+        ! print*, 'lath_dim_val', lath_dim_val
+        longh_dim_val = (/(lat_min + (i-1) * ((lat_max - lat_min)/Nlongh), i=1, Nlongh, 1)/) 
+        ! print*, "longh_dim_val", longh_dim_val
 
         status = nf90_put_var(ncid, varid_Time, 1.0)
         status = nf90_put_var(ncid, varid_layer, layer_dim_val)
@@ -601,15 +572,16 @@ module GetNetCDFinf
         integer(4)          :: ncid, dimids(4), i, j
 
         if(Spinup) then 
-            String_Spinup = "Spinup"
+            String_Spinup = "Spinup_"
         else 
             String_Spinup = ""
         end if 
 
         Do i = 1, nFishGroup
-            filename = '../output/' // trim(exp) // '_' // trim(tracers_name(i)) // '_diag_Spinup_Time_Serie.nc'
+            filename = "../output/" // trim(exp) // "_" // trim(tracers_name(i)) // &
+                       "_diag_" // trim(String_Spinup) // "Time_Serie.nc"
 
-            call init_Diag_nc(filename, ncid, Ntime, Nlayer, Nlath, Nlongh, dimids)
+            call init_Diag_nc(Spinup, filename, ncid, Ntime, Nlayer, Nlath, Nlongh, dimids)
             
             call add_Diag_nc(ncid, dimids, "f",    trim(tracers_name(i)) // " Feeding level"            , &
                                 diags%fish(i)%f    , Ntime, Nlayer, Nlath, Nlongh)
@@ -658,11 +630,14 @@ module GetNetCDFinf
                                 diags%fish(i)%f_BE, Ntime, Nlayer, Nlath, Nlongh)
 
             call end_Diag_nc(ncid)
+
+            print *, trim(filename), " -- written" 
         end Do 
 
     end subroutine FEISTY_Save_diag
 
-    subroutine init_Diag_nc(filename, ncid, Ntime, Nlayer, Nlath, Nlongh, dimids)
+    subroutine init_Diag_nc(Spinup, filename, ncid, Ntime, Nlayer, Nlath, Nlongh, dimids)
+        logical, intent(in) :: Spinup
         character(LEN = 280), intent(in) :: filename 
         integer, intent(inout) :: ncid, dimids(4)
         integer, intent(in) :: Ntime, Nlayer, Nlath, Nlongh
@@ -670,10 +645,11 @@ module GetNetCDFinf
         integer :: Interface = 76, latq = 5, lonq = 5
         integer :: varid_time, varid_layer, varid_lath, varid_longh
         integer :: i
-        real(dp), dimension(1) :: time_dim_val
+        real(dp), dimension(Ntime)  :: time_dim_val
         real(dp), dimension(Nlayer) :: layer_dim_val
         real(dp), dimension(Nlath)  :: lath_dim_val
         real(dp), dimension(Nlongh) :: longh_dim_val
+
 
         ! Create the NetCDF file
         status = nf90_create(filename, NF90_CLOBBER, ncid)
@@ -746,12 +722,23 @@ module GetNetCDFinf
         status = nf90_enddef(ncid)
 
         ! Write the variable data: get values from COBALT
-        call readgrid1D(dir_COBALT_IC, 'Time',  1,  Time_dim_val)
-        call readgrid1D(dir_COBALT_IC, 'Layer', Nlayer, layer_dim_val)
-        call readgrid1D(dir_COBALT_IC, 'lath',  Nlath,  lath_dim_val)       
-        call readgrid1D(dir_COBALT_IC, 'lonh', Nlongh, longh_dim_val)
+        ! call readgrid1D(dir_COBALT_IC, 'Time',  1,  Time_dim_val)
+        Time_dim_val = (/(i, i=1, Ntime, 1)/)
+        call readgrid1D(dir_COBALT_IC, 'Layer'  , Nlayer, layer_dim_val)
+        call readgrid1D(dir_COBALT_IC, 'lath'   , Nlath,  lath_dim_val)       
+        call readgrid1D(dir_COBALT_IC, 'lonh'   , Nlongh, longh_dim_val)
 
-        status = nf90_put_var(ncid, varid_Time, 1.0)
+        ! dimlat = size(lath_dim_val)
+        ! print*, 'dimlat', dimlat
+        lath_dim_val = (/(long_min + (i-1) * ((long_max - long_min)/Nlath), i=1, Nlath, 1)/)
+        print*, 'lath_dim_val', lath_dim_val
+
+        ! dimlong = size(longh_dim_val)
+        ! print*, 'dimlat', dimlong
+        longh_dim_val = (/(lat_min + (i-1) * ((lat_max - lat_min)/Nlongh), i=1, Nlongh, 1)/) 
+        print*, "longh_dim_val", longh_dim_val
+
+        status = nf90_put_var(ncid, varid_Time , Time_dim_val)
         status = nf90_put_var(ncid, varid_layer, layer_dim_val)
         status = nf90_put_var(ncid, varid_lath,  lath_dim_val)
         status = nf90_put_var(ncid, varid_longh, longh_dim_val)
@@ -773,7 +760,7 @@ module GetNetCDFinf
 
     subroutine add_Diag_nc(ncid, dimids, varname, long_name, var, Ntime, Nlayer, Nlath, Nlongh)
         character(LEN=*), intent(in) :: varname
-        character(LEN=33), intent(in) ::  long_name
+        character(LEN=*), intent(in) :: long_name
         integer, intent(in) :: dimids(4)
         integer, intent(in) :: ncid, Ntime, Nlayer, Nlath, Nlongh
         real(dp), dimension(Ntime, Nlayer, Nlath, Nlongh), intent(in) :: var
@@ -805,7 +792,7 @@ module GetNetCDFinf
         status = nf90_enddef(ncid)
 
         ! Write the variable data
-        status = nf90_put_var(ncid, varid, var_reshaped(1:Nlongh, 1:Nlath, 1:Nlayer, Ntime)) !, &
+        status = nf90_put_var(ncid, varid, var_reshaped(1:Nlongh, 1:Nlath, 1:Nlayer, 1:Ntime)) !, &
                             !   start = (/1,      1,     1    ,  (Ntime-1) /), &
                             !   count = (/Nlongh, Nlath, Nlayer, 1         /))
         if (status /= NF90_NOERR) then

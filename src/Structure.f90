@@ -90,8 +90,9 @@ module Structure
         real(dp) :: det = 0                  ! Detritus flux to benthic community
         real(dp), dimension(nDeriv) :: dBdt  ! variable containing the derivative
         real(dp) :: tpel_Ld = 0              ! Time in pelagic of large demersal depending on depth and abundance of resource
-        real(dp) :: Sd_Fout_int = 0
+        real(dp) :: Sd_Fout_B_int = 0
         real(dp) :: Ld_Repro_end = 0
+        real(dp) :: Md_Fout_end = 0
 
         real(dp) :: Nlath
         real(dp) :: Nlongh
@@ -156,7 +157,7 @@ module Structure
         type(Diag_mesozoo), dimension(nMesoZoo) :: mesozoo
 
         ! Small Demersal growth to Medium dermersal
-        real(dp), dimension(:), allocatable :: Sd_Fout
+        real(dp), dimension(:), allocatable :: Sd_Fout_B
     end type FEISTY_diag
     
 
@@ -299,7 +300,7 @@ module Structure
             allocate(diags%mesozoo(i)%Zcon_VS_dZ(Ntime, Nlayer, Nlath, Nlongh))
         end do
         ! Small Demersal growth to Medium dermersal
-        allocate(diags%Sd_Fout(Nlayer))
+        allocate(diags%Sd_Fout_B(Nlayer))
     end subroutine allocate_diags
 
     subroutine store_daily_biomass(FEISTY, tracers, itime, ilayer, ilath, ilongh)
@@ -356,16 +357,19 @@ module Structure
         end do
 
         ! Small Demersal growth to Medium dermersal 
-        diags%Sd_Fout(ilayer) = FEISTY%fish(Sd)%Fout
+        diags%Sd_Fout_B(ilayer) = FEISTY%fish(Sd)%Fout * FEISTY%fish(Sd)%B       
 
     end subroutine store_daily_diag
 
     subroutine Calc_trans_layer(diags, FEISTY)
-        type(FEISTY_diag), intent(in)     :: diags         ! Storage (time layer, space)
-        type(FEISTY_type), intent(inout)  :: FEISTY       ! Daily data for the month 
+        ! If new grid cell it will take Fout from the last grid cell: it is therefore 
+        ! initialised at the begening of the lat and long with a value of 10-5
+        type(FEISTY_diag), intent(in)    :: diags         ! Storage (time layer, space)*
+        type(FEISTY_type), intent(inout) :: FEISTY       ! Daily data for the month 
 
-        FEISTY%Sd_Fout_int = sum(diags%Sd_Fout)
+        FEISTY%Sd_Fout_B_int  = sum(diags%Sd_Fout_B)
         FEISTY%Ld_Repro_end = FEISTY%fish(Ld)%Repro
+        FEISTY%Md_Fout_end  = FEISTY%fish(Md)%Fout
 
     end subroutine Calc_trans_layer
 

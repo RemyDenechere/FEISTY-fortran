@@ -13,22 +13,26 @@ module Parameters
                                                     31, 31, 30, 31, 30, 31 /) ! Length of month (days)
 
     ! Environemental data for test: -----------------------------------
-    real(dp), parameter :: PI_be_cutoff = 200 ! Benthic-pelagic coupling cutoff (depth, m)
-    logical, parameter  :: diagnostic = .false.
-    logical, parameter  :: save_diagnostics = .false.
-    logical, parameter  :: prod_constrained = .true.
-    logical, parameter  :: Spinup_Time_Serie = .true.
+    logical, parameter  :: diagnostic           = .false.
+    logical, parameter  :: save_diagnostics     = .false.
+    logical, parameter  :: prod_constrained     = .true.
+    logical, parameter  :: Spinup_Time_Serie    = .true.
     logical, parameter  :: Initial_Condition_generic_FEISTY = .true.
-    real(dp), parameter :: conv_m2_to_m3 = 100.0
+    logical, parameter  :: largDemPel           = .false.
+
     
 
-    ! Groupe information: ---------------------------------------------
+    ! Group information: ---------------------------------------------
     integer, parameter :: nFishGroup = 8                     ! Number of fish functional group
     integer, parameter :: nMesoZoo = 2
     integer, parameter :: nBenthos = 1                       ! Benthic resource  
     integer, parameter :: nDeriv = nFishGroup +  nBenthos    ! Number of group for witch the derivative is calculated
-    real(dp), parameter :: Delta_t = 1.0                     ! Time step [d]
-    real(dp), parameter :: IC = 1d-5                         ! Fish Initial Condition
+
+    ! Simulation parameters: ------------------------------------------
+    real(dp), parameter :: Delta_t          = 1.0             ! Time step [d]
+    real(dp), parameter :: IC               = 1d-5            ! Fish Initial Condition
+    real(dp), parameter :: PI_be_cutoff     = 200             ! Benthic-pelagic coupling cutoff (depth, m)
+    real(dp), parameter :: conv_m2_to_m3    = 100.0           ! Conversion from per area simulation to per depth simulation 
 
 
     ! input files: ----------------------------------------------------
@@ -73,10 +77,10 @@ module Parameters
                     "../output/" // trim(exp) // "_Ld_bio_Spinup.nc", &
                     "../output/" // trim(exp) // "_BE_bio_Spinup.nc"    ]
 
-    character(LEN=280), parameter :: dir_COBALT_IC = "/project/CEFI-regional-MOM6/&
+    character(LEN=280), parameter :: dir_COBALT_IC = "/project/CEFI-regional-MOM6-FEISTY/&
             &exps/OM4.single_column.COBALT/INPUT/COBALT_2023_10_spinup_2003_subset.nc"
-    ! character(LEN=280), parameter :: dir_Diag_nc = "/project/CEFI-regional-MOM6/&
-    !         &exps/OM4.single_column.COBALT/INPUT/" // trim(exp) // "_Diag.nc"
+    character(LEN=280), parameter :: dir_FEISTY_IC = "/project/rdenechere/FEISTY-fortran/&
+            &output/Yi_cheng_outputs/BE_B_IC_rescaled.nc"
 
 
     character(len=2), dimension(nDeriv)  :: tracers_name = ["Sf", "Sp", "Sd", "Mf", "Mp", "Md", "Lp", "Ld", "BE"]
@@ -89,6 +93,9 @@ module Parameters
                                                                 "Large pelagic fish biomass       ", &
                                                                 "Large demersal fish biomass      ", &
                                                                 "Benthic invertebrate biomass     "]
+    character(len=2), dimension(nMesoZoo)  :: MesoZoo_name = ["Mz", "Lz"]
+    character(len=22), dimension(nMesoZoo) :: MesoZoo_long_name = ["Medium MesoZooplankton", &
+                                                                   "Large MesoZooplankton "]
 
     integer, parameter ::   Sf = 1, &  ! -- Fish ID code --
                             Sp = 2, &
@@ -167,6 +174,11 @@ module Parameters
     real(dp), parameter :: convers_zm  = 6.625* 12.01 * 9.0 * 1000.0, &            ! zooplankton biomass mol N m-2 s-1 -to- gC ww m-2
                            convers_det = 1, &                                      ! detritus 
                            convers_dZm = 6.625*12.01*9.0*24.0*3600.0               ! zooplankton loss
+
+    real(dp), parameter ::  long_min = -64.3667 ,&
+                            long_max = -63.965 ,&  ! -63.9667
+                            lat_min  = 31.4667  ,&
+                            lat_max  = 31.865 
     
     
 end module Parameters

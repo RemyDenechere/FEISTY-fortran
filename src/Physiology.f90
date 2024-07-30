@@ -375,7 +375,7 @@ module Physiology
     ! The calculation has to be done after the derivative have been calculated 
     ! for each fish group ! 
     !:======================================================================
-    ! This%BE%B          : Benthic biomass 
+    ! FEISTY%benthos(i)%B          : Benthic biomass 
     ! Bent_eff =  0.075  :  Benthic Efficiency from detritus to benthic biomass
     ! CC = 80            : Carring Capacity for benthic chemostat
     !:======================================================================
@@ -395,23 +395,30 @@ module Physiology
     ! - B        : Biomass of the group                             [g m-2]
     ! - Delta_t  : Time step                                        [d]
     !:====================================================================== 
+        !SF
         FEISTY%dBdt(1) = eps_R * FEISTY%fish(4)%Repro * FEISTY%fish(4)%B + & 
                         (FEISTY%fish(1)%E_A - FEISTY%fish(1)%Fout - FEISTY%fish(1)%mu) * FEISTY%fish(1)%B
+        !SM
         FEISTY%dBdt(2) = eps_R * FEISTY%fish(7)%Repro * FEISTY%fish(7)%B + & 
                         (FEISTY%fish(2)%E_A - FEISTY%fish(2)%Fout - FEISTY%fish(2)%mu) * FEISTY%fish(2)%B
-        ! Reproduction from demersal is equaly divided between the first 30 layers (about 100m depth): 
+        ! Reproduction from Large demersal is equaly divided between the first 30 layers (about 100m depth): 
         ! for mass conservation: Fout is integrated Fout/Nlayer and repro = Ld_Repro_end/FEISTY%Nlayer
-        FEISTY%dBdt(3) = eps_R * (FEISTY%Ld_Repro_end/FEISTY%Nlayer) * &
-             & FEISTY%fish(8)%B + (FEISTY%fish(3)%E_A - FEISTY%fish(3)%Fout - FEISTY%fish(3)%mu) * FEISTY%fish(3)%B  
-
+        !SD:
+        if (largDemPel) then  ! Puts the large Demersals in the Pelagic Layer
+            FEISTY%dBdt(3) = eps_R * FEISTY%fish(Ld)%Repro * &
+                 & FEISTY%fish(Ld)%B + (FEISTY%fish(3)%E_A - FEISTY%fish(3)%Fout - FEISTY%fish(3)%mu) * FEISTY%fish(3)%B  
+        else   ! Large Demersals inhabit only the bottom 
+            FEISTY%dBdt(3) = eps_R * (FEISTY%Ld_Repro_end/FEISTY%Nlayer) * &
+                 & FEISTY%fish(8)%B + (FEISTY%fish(3)%E_A - FEISTY%fish(3)%Fout - FEISTY%fish(3)%mu) * FEISTY%fish(3)%B  
+        end if 
 
         ! Medium size (reproduction loss for Mf)
         FEISTY%dBdt(4) = FEISTY%fish(1)%Fout * FEISTY%fish(1)%B + (FEISTY%fish(4)%E_A - & 
                          FEISTY%fish(4)%Repro - FEISTY%fish(4)%mu) * FEISTY%fish(4)%B
         FEISTY%dBdt(5) = FEISTY%fish(2)%Fout * FEISTY%fish(2)%B + (FEISTY%fish(5)%E_A - & 
                          FEISTY%fish(5)%Fout  - FEISTY%fish(5)%mu) * FEISTY%fish(5)%B
-        if (FEISTY%ilayer .eq. FEISTY%Nlayer) then ! use Sd_Fout_int for last layer 
-            FEISTY%dBdt(6) = FEISTY%Sd_Fout_int * FEISTY%fish(3)%B + & 
+        if (FEISTY%ilayer .eq. FEISTY%Nlayer) then ! use Sd_Fout_B_int for last layer 
+            FEISTY%dBdt(6) = FEISTY%Sd_Fout_B_int + & 
                             (FEISTY%fish(6)%E_A - FEISTY%fish(6)%Fout  - FEISTY%fish(6)%mu) * FEISTY%fish(6)%B 
         else ! If not in last layer then demersal don't grow in water column (don't put Fout = 0.0 as we save the value later)
             FEISTY%dBdt(6) = 0.0
@@ -420,13 +427,31 @@ module Physiology
         ! Large fish (reproduction Fout = 0) 
         FEISTY%dBdt(7) = FEISTY%fish(5)%Fout * FEISTY%fish(5)%B + & 
                          (FEISTY%fish(7)%E_A - FEISTY%fish(7)%Repro - FEISTY%fish(7)%mu) * FEISTY%fish(7)%B
-                         
-        if (FEISTY%ilayer .eq. FEISTY%Nlayer) then
-            FEISTY%dBdt(8) = FEISTY%fish(6)%Fout * FEISTY%fish(6)%B + & 
-            (FEISTY%fish(8)%E_A - FEISTY%Ld_Repro_end - FEISTY%fish(8)%mu) * FEISTY%fish(8)%B
+        
+        if (largDemPel) then 
+            FEISTY%dBdt(8) = FEISTY%Md_Fout_end * FEISTY%Nlayer**(-1) * FEISTY%fish(6)%B + & 
+                (FEISTY%fish(8)%E_A - FEISTY%fish(6)%Repro - FEISTY%fish(8)%mu) * FEISTY%fish(8)%B
         else 
-            FEISTY%dBdt(8) = 0.0
+            if (FEISTY%ilayer .eq. FEISTY%Nlayer) then
+                FEISTY%dBdt(8) = FEISTY%fish(6)%Fout * FEISTY%fish(6)%B + & 
+                    (FEISTY%fish(8)%E_A - FEISTY%fish(6)%Repro - FEISTY%fish(8)%mu) * FEISTY%fish(8)%B 
+            else 
+                FEISTY%dBdt(8) = 0.0
+            endif
         endif
+        
+        !:======================================================================
+        ! Calcul Benthic chemostat and derivative from detritus flux to benthic 
+        !:======================================================================
+        ! FEISTY%benthos(i)%B          : Benthic biomass 
+        ! Bent_eff =  0.075  : Benthic Efficiency from detritus to benthic biomass
+        ! CC = 80            : Carring Capacity for benthic chemostat
+        !:======================================================================
+        do i = 1, nBenthos
+            pred = FEISTY%fish(Md)%cons_BE * FEISTY%fish(Md)%B + FEISTY%fish(Ld)%cons_BE * FEISTY%fish(Ld)%B
+            r = Bent_eff * FEISTY%det / FEISTY%benthos(i)%B 
+            FEISTY%benthos(i)%B = FEISTY%benthos(i)%B + r * FEISTY%benthos(i)%B * (1 - FEISTY%benthos(i)%B/CC) - pred 
+        enddo
 
         ! New biomass : ------------------------------------------
         do i = 1, nFishGroup
@@ -437,6 +462,11 @@ module Physiology
             end if 
         end do 
 
+        do i = 1, nBenthos
+            if (FEISTY%benthos(i)%B <= zero .or. isnan(FEISTY%benthos(i)%B)) then 
+                FEISTY%benthos(i)%B = 1.0d-5
+            end if 
+        enddo
 
         ! Print all diagnostics used in FEISTY 
         if (diagnostic) then 

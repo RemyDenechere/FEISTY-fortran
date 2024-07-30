@@ -25,24 +25,24 @@ if (~isfolder(fpath))
 end
 
 %% colors
-% cm10=[0.5 0.5 0;... %tan/army
-%     0 0.7 0;...     %g
-%     1 0 1;...       %m
-%     1 0 0;...       %r
-%     0.5 0 0;...     %maroon
-%     0/255 206/255 209/255;... %turq
-%     0 0.5 0.75;...  %med blue
-%     0 0 0.75;...    %b
-%     0.5 0.5 0.5; ...%med grey
-%     0 0 0];...      %black
-% 
+cm10=[0.5 0.5 0;... %tan/army
+    0 0.7 0;...     %g
+    1 0 1;...       %m
+    1 0 0;...       %r
+    0.5 0 0;...     %maroon
+    0/255 206/255 209/255;... %turq
+    0 0.5 0.75;...  %med blue
+    0 0 0.75;...    %b
+    0.5 0.5 0.5; ...%med grey
+    0 0 0];...      %black
+
 % set(groot,'defaultAxesColorOrder', cm10);
 
 %% plot Spinup 
 % Load Data: -------------------------------------------------------------- 
 %! Spinup time series: 
 figure(1)
-axes_formating()
+axes_formating(gcf, "defaultAxesColorOrder", cm10)
 
 load([dir exp 'Time_Means' Spinup{1} '.mat']);
 
@@ -86,7 +86,7 @@ save_graph(gcf, "png", [save_dir exp(1:(end-1)) Spinup{1}], 22, 12)
 %% plot time series: 
 %! Time series: 
 fig = figure(2);
-axes_formating()
+axes_formating(gcf, "defaultAxesColorOrder", cm10)
 
 load([dir exp 'Time_Means' Spinup{2} '.mat']);
 
@@ -126,7 +126,7 @@ save_graph(gcf, "png", [save_dir exp 'Time_Means' Spinup{2} ], 22, 12)
 %% plot Depth average: 
 %! Time series: 
 figure(3);
-axes_formating()
+axes_formating(gcf, "defaultAxesColorOrder", cm10)
 
 load([dir exp 'Depth_Means' Spinup{2} '.mat']);
 
@@ -160,6 +160,57 @@ ylabel(t, 'Layers')
 
 save_graph(gcf, "png", [save_dir exp 'Depth_Means' Spinup{2}], 22, 12)
 
+%% plot diagnostic Time Seire 
+var = {'Sf', 'Sp', 'Sd', 'Mf', 'Mp', 'Md', 'Lp', 'Ld'};
+var_diag = {'f', 'cmax', 'cons', 'met', 'mu_p', 'mu_f', 'mu_a', 'mu',...
+            'E_A', 'Fout', 'Repro', 'f_Zm', 'f_Zl', 'f_Sf', 'f_Sp', 'f_Sd',... 
+            'f_Mf', 'f_Mp', 'f_Md', 'f_Lp', 'f_Ld', 'f_BE'};
+FuncGrp = {'F_', 'P_', 'D_'};
+dimension_average = {'_tmean'};
+dimensions = {'time'};
+load(['../output/Matlab_Average/' exp 'Time_Means_Diag' Spinup{2} '.mat'])
+
+%!! Calcul mean per functional group:
+for j = 1:length(dimension_average)
+    for i = 1:length(var_diag)
+        eval(['F_' var_diag{i} dimension_average{j} ' = Sf_' var_diag{i} dimension_average{j} ' + Mf_' var_diag{i} dimension_average{j} ';']);
+        eval(['P_' var_diag{i} dimension_average{j} ' = Sp_' var_diag{i} dimension_average{j} ' + Md_' var_diag{i} dimension_average{j} ' + Lp_' var_diag{i} dimension_average{j} ';']);
+        eval(['D_' var_diag{i} dimension_average{j} ' = Sd_' var_diag{i} dimension_average{j} ' + Md_' var_diag{i} dimension_average{j} ' + Ld_' var_diag{i} dimension_average{j} ';']);
+    end 
+end
+
+% ! Plot per group of diagnostic variable
+close all 
+grp(1).name = 'Mortality rates'     ; grp(1).idx = 5:8;                 grp(1).panel_grid = [2, 2];
+grp(2).name = 'Feeding levels'      ; grp(2).idx = 12:22;               grp(2).panel_grid = [3, 4];
+grp(3).name = 'Physiological rates' ; grp(3).idx = [1:4, 9:11];         grp(3).panel_grid = [3, 3];
+grp(1).leg_loc = 'best'             ; grp(2).leg_loc = 'best';          grp(3).leg_loc = 'best'; 
+n=3;
+
+% Functional groups: ------------------------------------------------------
+for i = 1:3
+    n = n+1;
+    figure(n)
+    axes_formating(gcf, "defaultAxesColorOrder", cm10)
+
+    t = tiledlayout(grp(i).panel_grid(1), grp(i).panel_grid(2), ...
+                    "TileSpacing", "compact", "Padding", "compact");
+  
+    % loop over diagnostic for each group:
+    for j = 1:length(grp(i).idx)
+        ti = nexttile;
+        hold on
+        % Loop over all fish for each diagnostic: 
+        for v = 1:length(FuncGrp) 
+            plot(ti, eval(dimensions{1}), eval([FuncGrp{v} var_diag{grp(i).idx(j)} dimension_average{1}]))
+        end 
+        hold off 
+        title(ti, var_diag{grp(i).idx(j)}, Interpreter='none')
+    end
+    L = legend(FuncGrp, 'Location', grp(i).leg_loc);
+    title(t, [exp 'Diagnostic_' grp(i).name '_' dimension_average{1}(2:end) '_Functional_grp'], Interpreter='none')
+    save_graph(gcf, "png", [save_dir exp 'Diagnostic_' grp(i).name '_' dimension_average{1}(2:end) '_Functional_grp'], 16, 12)
+end
 
 %% Check Initial condition for Online simulations: 
 load(['../output/Matlab_Average/' 'COBALT_IC' '.mat'])
@@ -169,7 +220,7 @@ P_spacemean = Sp_spacemean + Mp_spacemean + Lp_spacemean;
 D_spacemean = Sd_spacemean + Md_spacemean + Ld_spacemean;
 
 figure(4)
-axes_formating()
+axes_formating(gcf, "defaultAxesColorOrder", cm10)
 t = tiledlayout(1,2,"TileSpacing","compact","Padding","compact");
 
 % plot all sizes: 
@@ -280,7 +331,7 @@ title(t, [exp 'forcing_files'], Interpreter = 'none')
 save_graph(gcf, "png", [save_dir exp 'forcing_files' Spinup{2}], 16, 12)
 
 %% Comparison Detritus flux to sea bed between COBALT output and FEISTY 2019
-param.Rockfish =  false; %true; %  
+param.Rockfish =  false; % true; %  
 param = param_setup(param);
 
 % data from COBALT reanalysis: --------------------------------------------
