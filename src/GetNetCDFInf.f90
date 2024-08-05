@@ -572,14 +572,14 @@ module GetNetCDFinf
         integer(4)          :: ncid, dimids(4), i, j
 
         if(Spinup) then 
-            String_Spinup = "Spinup_"
+            String_Spinup = "_Spinup_"
         else 
-            String_Spinup = ""
+            String_Spinup = "_"
         end if 
 
         Do i = 1, nFishGroup
             filename = "../output/" // trim(exp) // "_" // trim(tracers_name(i)) // &
-                       "_diag_" // trim(String_Spinup) // "Time_Serie.nc"
+                       "_diag" // trim(String_Spinup) // "Time_Serie.nc"
 
             call init_Diag_nc(Spinup, filename, ncid, Ntime, Nlayer, Nlath, Nlongh, dimids)
             
