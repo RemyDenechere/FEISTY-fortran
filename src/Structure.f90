@@ -394,15 +394,50 @@ module Structure
         
         print *, 
         print *, " ------------------- Biomass at t + 1  --------------------- "
-        do i = 1, nDeriv
+        do i = 1, nFishGroup
             print *, "bio ", trim(tracers_name(i)), "= ", FEISTY%fish(i)%B
         end do
+        print *, "bio BE= ", FEISTY%benthos(1)%B
 
         print *, 
         print *, " ------------------- all derivatives  --------------------- "
-        do i = 1, nDeriv
+        do i = 1, nFishGroup
             print *, "d", trim(tracers_name(i)), "/dt = ", FEISTY%dBdt(i)
         end do 
+
+        print *, 
+        print *, " ------------------- all diagnostics  --------------------- "
+        Do i = 1, nFishGroup
+            print *, trim(tracers_name(i)), ' diagnostics:'
+            print *, "Physiology"
+            print *, 'f: ', FEISTY%fish(i)%f          ! Total feeding level
+            print *, 'cmax: ', FEISTY%fish(i)%cmax           ! Maximum consumption rate 
+            print *, 'cons: ', FEISTY%fish(i)%cons          ! Total consumption rate
+            print *, 'met: ',FEISTY%fish(i)%met           ! metabolic cost 
+            print *, 'mu_p: ', FEISTY%fish(i)%mu_p          ! Predation mortality 
+            print *, 'mu_f: ', FEISTY%fish(i)%mu_f          ! Fishing mortality 
+            print *, 'mu_a: ', FEISTY%fish(i)%mu_a          ! Natural mortality 
+            print *, 'mu: ', FEISTY%fish(i)%mu          ! Total mortality
+            print *, 'E_A: ', FEISTY%fish(i)%E_A          ! Available energy 
+            print *, 'Fout: ', FEISTY%fish(i)%Fout          ! flux out of a size class 
+            print *, 'Repro: ', FEISTY%fish(i)%Repro         ! Reproduction flux 
+
+            print *, 
+            print *, "Feeding level for each prey : "
+            print *, 'f_Zm: ', FEISTY%fish(i)%f_Zm         
+            print *, 'f_Zl: ', FEISTY%fish(i)%f_Zl         ! --         
+            print *, 'f_Sf: ', FEISTY%fish(i)%f_Sf         ! --
+            print *, 'f_Sp: ', FEISTY%fish(i)%f_Sp         ! --
+            print *, 'f_Sd: ', FEISTY%fish(i)%f_Sd         ! --
+            print *, 'f_Mf: ', FEISTY%fish(i)%f_Mf         ! --
+            print *, 'f_Mp: ', FEISTY%fish(i)%f_Mp         ! --
+            print *, 'f_Md: ', FEISTY%fish(i)%f_Md        ! --
+            print *, 'f_Lp: ', FEISTY%fish(i)%f_Lp        ! --
+            print *, 'f_Ld: ', FEISTY%fish(i)%f_Ld         ! --
+            print *, 'f_BE: ', FEISTY%fish(i)%f_BE  
+
+            print *, 
+        end Do 
 
         stop 
     end subroutine Print_FEISTY_diagnostic

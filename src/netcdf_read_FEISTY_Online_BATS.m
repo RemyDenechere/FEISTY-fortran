@@ -3,7 +3,7 @@ clear all
 %! get directory containing output
 addpath('../../COBALT_output/COBALT_FEISTY/')
 dir_outpur = '../output/Matlab_Average/';
-exp = 'COBALT_online_BATS_DemBottom_';
+exp = 'COBALT_online_BATS_DemBottom_yr5_';
 Spinup = {''}; 
 
 %% Get Fish tracers: ------------------------------------------------------
@@ -14,7 +14,8 @@ ncid = netcdf.open('20040101.ocean_feisty_tracers.nc', 'NC_NOWRITE');
 for i = 1:length(var)
     varid = netcdf.inqVarID(ncid, [var{i} '_B']);
     eval([ var{i} '_B = netcdf.getVar(ncid, varid);']);
-    % eval([ var{i} '_B(' var{i} '_B == 99999) = NaN;']); keep NaN Values
+    % eval([ var{i} '_B(' var{i} '_B == -99999) = NaN;']); % keep NaN Values
+    eval([ var{i} '_B(' var{i} '_B < 0) = 0;']);
 end
 netcdf.close(ncid);
 dim = size(eval([var{1} '_B']));

@@ -10,6 +10,41 @@ module Physiology
 
     contains
     subroutine Calc_FEISTY_Deriv(FEISTY)
+        type(FEISTY_type), intent(inout) :: FEISTY
+        real(dp), dimension(3) :: T_e = 0.0, T_met = 0.0
+        real(dp) :: Cons_Zm, Cons_Zl, frac_Sf, frac_Sp, frac_Sd, frac_Mf, frac_Mp, pred_pel
+        real(dp) :: r       ! benthic growth rate ((g/m2/d) / (g/m2))
+        real(dp) :: pred    ! predation from demersals (g/m2/d)
+        integer :: i
+
+
+        if (diagnostic .and. FEISTY%ilayer .eq. 75) then 
+            ! give the fish biomass value needed to compare online and offline codes: 
+            FEISTY%fish(1)%B = 1.0000000000000001E-005
+            FEISTY%fish(2)%B = 1.0000000000000001E-005
+            FEISTY%fish(3)%B = 1.6412098492384683E-006
+            FEISTY%fish(4)%B = 1.0000000000000001E-005
+            FEISTY%fish(5)%B = 9.8166348525755042E-040
+            FEISTY%fish(6)%B = 1.5370985591160981E-007
+            FEISTY%fish(7)%B = 1.0000000000000001E-005
+            FEISTY%fish(8)%B = 0.50406323953996923
+
+            FEISTY%benthos(1)%B = 5.3168360691316741
+
+            FEISTY%Ld_Repro_end = 1.4278688242884946E-003
+
+            FEISTY%Sd_Fout_B_int = 1.7599935322202969E-010
+
+            ! give environemental parameters
+            FEISTY%Temp = 21.671012503201233
+            FEISTY%det = 0.0
+            FEISTY%mesozoo(Mz)%B = 0.0000000000000000     ! Fraction of zooplankton mortality loss consumed
+            FEISTY%mesozoo(Lz)%B = 0.0000000000000000     ! Fraction of zooplankton mortality loss consumed  
+            FEISTY%mesozoo(Mz)%dz = 0.0    ! Biomass of medium zooplankton consumed by top predators 
+            FEISTY%mesozoo(Lz)%dz = 0.0    ! Biomass of Large zooplankton consumed by top predators 
+
+        endif 
+
     !:====================================================================== 
     ! Calcul temperature experience and then Q10
     ! Tb      : Temperature in Benthic         [°C]
@@ -20,13 +55,6 @@ module Physiology
     ! kmet    : coeff on metabolic T-dep fn    [°c-1]
     ! Calculation are made for pelagic (i=1) and demersal (i=2)
     !:====================================================================== 
-
-        type(FEISTY_type), intent(inout) :: FEISTY
-        real(dp), dimension(3) :: T_e = 0.0, T_met = 0.0
-        real(dp) :: Cons_Zm, Cons_Zl, frac_Sf, frac_Sp, frac_Sd, frac_Mf, frac_Mp, pred_pel
-        real(dp) :: r       ! benthic growth rate ((g/m2/d) / (g/m2))
-        real(dp) :: pred    ! predation from demersals (g/m2/d)
-        integer :: i
 
         T_e = dexp(ke * (FEISTY%Temp-10.0))      ! for encounter rate and Cmax
         T_met = dexp(kmet * (FEISTY%Temp-10.0))  ! for metabolism
@@ -428,17 +456,17 @@ module Physiology
         FEISTY%dBdt(7) = FEISTY%fish(5)%Fout * FEISTY%fish(5)%B + & 
                          (FEISTY%fish(7)%E_A - FEISTY%fish(7)%Repro - FEISTY%fish(7)%mu) * FEISTY%fish(7)%B
         
-        if (largDemPel) then 
-            FEISTY%dBdt(8) = FEISTY%Md_Fout_end * FEISTY%Nlayer**(-1) * FEISTY%fish(6)%B + & 
-                (FEISTY%fish(8)%E_A - FEISTY%fish(6)%Repro - FEISTY%fish(8)%mu) * FEISTY%fish(8)%B
-        else 
+        ! if (largDemPel) then 
+        !     FEISTY%dBdt(8) = FEISTY%Md_Fout_end * FEISTY%Nlayer**(-1) * FEISTY%fish(6)%B + & 
+        !         (FEISTY%fish(8)%E_A - FEISTY%fish(6)%Repro - FEISTY%fish(8)%mu) * FEISTY%fish(8)%B
+        ! else 
             if (FEISTY%ilayer .eq. FEISTY%Nlayer) then
                 FEISTY%dBdt(8) = FEISTY%fish(6)%Fout * FEISTY%fish(6)%B + & 
-                    (FEISTY%fish(8)%E_A - FEISTY%fish(6)%Repro - FEISTY%fish(8)%mu) * FEISTY%fish(8)%B 
+                    (FEISTY%fish(8)%E_A - FEISTY%fish(8)%Repro - FEISTY%fish(8)%mu) * FEISTY%fish(8)%B 
             else 
                 FEISTY%dBdt(8) = 0.0
             endif
-        endif
+        ! endif
         
         !:======================================================================
         ! Calcul Benthic chemostat and derivative from detritus flux to benthic 
@@ -450,7 +478,7 @@ module Physiology
         do i = 1, nBenthos
             pred = FEISTY%fish(Md)%cons_BE * FEISTY%fish(Md)%B + FEISTY%fish(Ld)%cons_BE * FEISTY%fish(Ld)%B
             r = Bent_eff * FEISTY%det / FEISTY%benthos(i)%B 
-            FEISTY%benthos(i)%B = FEISTY%benthos(i)%B + r * FEISTY%benthos(i)%B * (1 - FEISTY%benthos(i)%B/CC) - pred 
+            FEISTY%benthos(i)%B = FEISTY%benthos(i)%B + r * FEISTY%benthos(i)%B * (1 - FEISTY%benthos(i)%B/CC) - pred
         enddo
 
         ! New biomass : ------------------------------------------
@@ -469,7 +497,7 @@ module Physiology
         enddo
 
         ! Print all diagnostics used in FEISTY 
-        if (diagnostic) then 
+        if (diagnostic .and. FEISTY%ilayer .eq. 75) then 
              CALL Print_FEISTY_diagnostic(FEISTY)
         end if 
 

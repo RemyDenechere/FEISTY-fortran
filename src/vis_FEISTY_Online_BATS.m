@@ -7,7 +7,7 @@ addpath('../../Programing-Tutorials/Matlab/Matlab_functions/')
 %! get directory containing output
 dir_output = '../output/Matlab_Average/';
 save_dir = '../Fig/';
-exp = 'COBALT_online_BATS_DemBottom_';
+exp = 'COBALT_online_BATS_DemBottom_yr5_';
 Spinup = {''}; 
 var = {'Sf', 'Sp', 'Sd', 'Mf', 'Mp', 'Md', 'Lp', 'Ld', 'BE'};
 var_COBALT = {'nmdz', 'jhploss_n_Mdz', 'nlgz', 'jhploss_n_Lgz', 'Pop_btm'};
@@ -36,12 +36,13 @@ cm10=[0.5 0.5 0;... %tan/army
 %                               Tracers 
 % -------------------------------------------------------------------------
 %% plot average tracer over depth: -----------------------------------------------
+n = n+1;
 %!! functional group: 
 F_B_zmean = Sf_B_zmean + Mf_B_zmean;
 P_B_zmean = Sp_B_zmean + Mp_B_zmean + Lp_B_zmean;
 D_B_zmean = Sd_B_zmean + Md_B_zmean + Ld_B_zmean;
 
-figure(n+1)
+figure(n)
 axes_formating(gcf, "defaultAxesColorOrder", cm10)
 t = tiledlayout(1, 2, "TileSpacing", "compact", "Padding", "compact");
 
@@ -51,15 +52,22 @@ hold on
 for i = 1:(length(var)-1)
     plot(ax, eval([var{i} '_B_zmean']), -depth)
 end
+%plot(ax, Ld_B_zmean, -depth, '.')
 hold off
 ax.XScale = "log";
-legend(var{1:(end-1)}, 'Location', 'best')
+L = legend(var{1:(end-1)}, 'Location', 'best'); 
+L.Box = 'off'; L.Color = 'none';
 title("All sizes")
 
 %! plot functional group:
-nexttile 
-semilogx(F_B_zmean, -depth, P_B_zmean, -depth, D_B_zmean, -depth, BE_B_zmean, -depth)
-legend('Forage', 'Pelagic', 'Demersal', 'Benthic', 'Location', 'southeast')
+nexttile
+semilogx(F_B_zmean, -depth, P_B_zmean, -depth, BE_B_zmean, -depth)
+hold on 
+semilogx(double(D_B_zmean(end)), -depth(end), '.')
+hold off 
+L = legend('Forage', 'Pelagic', 'Benthic', 'Demersal', 'Location', 'southwest');
+
+L.Box = 'off'; L.Color = 'none';
 title("Functional groups")
 
 % tiled labels: 
@@ -69,12 +77,13 @@ title(t, [exp 'Depth_Means_Time_Series'], Interpreter = 'none')
 
 save_graph(gcf, "png", [save_dir exp 'Depth_Means_Time_Series'], 16, 12)
 %% plot average over time:-------------------------------------------------
+n = n+1;
 %!! functional group: 
 F_B_tmean = Sf_B_tmean + Mf_B_tmean;
 P_B_tmean = Sp_B_tmean + Mp_B_tmean + Lp_B_tmean;
 D_B_tmean = Sd_B_tmean + Md_B_tmean + Ld_B_tmean;
 
-figure(n+1)
+figure(n)
 axes_formating(gcf, "defaultAxesColorOrder", cm10)
 t = tiledlayout(1, 2, "TileSpacing", "compact", "Padding", "compact");
 
@@ -86,14 +95,17 @@ for i = 1:length(var)
 end
 hold off 
 ax.YScale = "log";
-ax.XLim   = [0, length(time)*1.30];
-legend(var, 'Location', 'best')
+ax.XLim   = [0, length(time)*1.45];
+L = legend(var, 'Location', 'best');
+L.Color = 'none'; L.Box = 'off';
 title("All sizes")
 
 % plot functional groups: 
 nexttile 
 semilogy(time, F_B_tmean, time, P_B_tmean, time, D_B_tmean, time, BE_B_tmean)
-legend('Forage', 'Pelagic', 'Demersal', 'Benthos', 'Location', 'best')
+L = legend('Forage', 'Pelagic', 'Demersal', 'Benthos', ...
+        'Location', 'best');
+L.Color = 'none'; L.Box = 'off';
 title("Functional groups")
 
 ylabel(t, "Biomass gWW m-3")
@@ -103,7 +115,8 @@ title(t, [exp 'Time_Means_Time_Series'], Interpreter = 'none')
 save_graph(gcf, "png", [save_dir exp 'Time_Means_Time_Series'], 16, 12)
 
 %% Plot First time step for Fish tracers :---------------------------------
-figure()
+n = n+1;
+figure(n)
 axes_formating(gcf, "defaultAxesColorOrder", cm10)
 % plot all size: 
 hold on
@@ -112,14 +125,13 @@ for i = 1:length(var)
 end
 hold off
 set(gca, "XScale", "log")
-legend(var, 'Location', 'best')
+L = legend(var, 'Location', 'best');
+L.Color = 'none'; L.Box = 'off';
 title([exp '1st_step_Vert_distrib'], Interpreter="none")
-
-
 save_graph(gcf, "png",  [save_dir exp '1st_step_Vert_distrib'], 16, 12)
 
-
 %% plot over time and depth:-----------------------------------------------
+n= n+1;
 %!! functional group: 
 var_group = {'F', 'P', 'D'};
 F_B_spacemean = Sf_B_spacemean + Mf_B_spacemean;
@@ -127,7 +139,7 @@ P_B_spacemean = Sp_B_spacemean + Mp_B_spacemean + Lp_B_spacemean;
 D_B_spacemean = Sd_B_spacemean + Md_B_spacemean + Ld_B_spacemean;
 
 %! Plot each size:--------------------------------------------------------- 
-figure(n+1)
+figure(n)
 axes_formating(gcf, "defaultAxesColorOrder", cm10)
 t = tiledlayout(3, 3, "TileSpacing", "compact", "Padding", "compact");
 for i = 1:length(var)
@@ -148,7 +160,8 @@ title(t, [exp 'Time_depth_Time_series'], Interpreter = 'none'  )
 save_graph(gcf, "png", [save_dir exp 'Time_depth_Time_series_all_size'], 16, 12)
 
 % ! Plot each functional group: --------------------------------------------
-figure(n+1)
+n= n+1;
+figure(n)
 axes_formating(gcf, "defaultAxesColorOrder", cm10)
 t = tiledlayout(1, 3, "TileSpacing", "compact", "Padding", "compact");
 for i = 1:3
@@ -173,6 +186,7 @@ save_graph(gcf, "png", [save_dir exp 'Time_depth_Time_series_funct_grp'], 16, 12
 %% ------------------------------------------------------------------------
 %                         Zooplankton Biomass
 % -------------------------------------------------------------------------
+n= n+1;
 %! Load data offline : 
 exp_offline = 'COBALT_offline_BATS_';
 load([dir_output exp_offline 'Time_Depth_Means_forcing_files'  '.mat'])
@@ -189,7 +203,7 @@ end_date   = datetime("2004-12-31");
 time = start_date:end_date;
 
 % Plots average over time: 
-figure(n+1)
+figure(n)
 axes_formating(gcf, "defaultAxesColorOrder", cm10);
 t = tiledlayout(3, 1, "TileSpacing","compact","Padding","compact");
 
@@ -225,7 +239,8 @@ ylabel('')
 save_graph(gcf, "png", [save_dir exp 'Comparison_online_offline_zooplanktons'], 16, 12)
 
 % Plot the First time step for meso zooplankton 
-figure(n+1)
+n = n+1;
+figure(n)
 idx = [1, 3]; 
 hold on 
 for i = 1:length(idx)
@@ -262,7 +277,6 @@ end
 
 
 % ! Plot per group of diagnostic variable: --------------------------------
-close all 
 grp(1).name = 'Encounter rates'     ; grp(1).idx = 2:7;        grp(1).panel_grid = [2, 3];
 grp(2).name = 'Consumption rates'   ; grp(2).idx = 8:14;       grp(2).panel_grid = [2, 4];
 grp(3).name = 'Physiological rates' ; grp(3).idx = [1, 15:21]; grp(3).panel_grid = [2, 4];
@@ -299,6 +313,12 @@ for d = 1:length(dimension_average)-1
         end 
         title(L,'All Sizes');
         title(t, [exp 'Diagnostic_' grp(i).name '_' dimension_average{d}(2:end) '_all_size'], Interpreter='none')
+        ylabel(t, 'physiological rates')
+        if dimension_average{d} == "_zmean"
+            xlabel(t, 'depth (layer ID)')
+        elseif dimension_average{d} == "_tmean"
+            xlabel(t, 'time (days)')
+        end 
         save_graph(gcf, "png", [save_dir exp 'Diagnostic_' grp(i).name '_' dimension_average{d}(2:end) '_all_size'], 16, 12)
     end 
 end
@@ -335,6 +355,12 @@ for d = 1:length(dimension_average)-1
         end 
         title(L,'All Sizes');
         title(t, [exp 'Diagnostic_' grp(i).name '_' dimension_average{d}(2:end) '_Functional_grp'], Interpreter='none')
+        ylabel(t, 'physiological rates')
+        if dimension_average{d} == "_zmean"
+            xlabel(t, 'depth (layer ID)')
+        elseif dimension_average{d} == "_tmean"
+            xlabel(t, 'time (days)')
+        end 
         save_graph(gcf, "png", [save_dir exp 'Diagnostic_' grp(i).name '_' dimension_average{d}(2:end) '_Functional_grp'], 16, 12)
     end 
 end

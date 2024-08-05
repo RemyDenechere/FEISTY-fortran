@@ -62,7 +62,7 @@ program Run_physiology
                 CALL store_daily_biomass(FEISTY, tracers, itime, ilayer, ilath, ilongh)  ! Calcul and store the monthly average
                 CALL store_daily_diag(diags, FEISTY, itime, ilayer, ilath, ilongh)
             enddo
-            call Calc_trans_layer(diags, tracers, FEISTY)
+            call Calc_trans_layer(diags, FEISTY)
         enddo; enddo ! End Loop Year and day
     enddo ; enddo; ! } longh; lat; layer
 

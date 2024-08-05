@@ -13,9 +13,9 @@ module Parameters
                                                     31, 31, 30, 31, 30, 31 /) ! Length of month (days)
 
     ! Environemental data for test: -----------------------------------
-    logical, parameter  :: diagnostic           = .false.
+    logical, parameter  :: diagnostic           = .true.
     logical, parameter  :: save_diagnostics     = .false.
-    logical, parameter  :: prod_constrained     = .true.
+    logical, parameter  :: prod_constrained     = .false.
     logical, parameter  :: Spinup_Time_Serie    = .true.
     logical, parameter  :: Initial_Condition_generic_FEISTY = .true.
     logical, parameter  :: largDemPel           = .false.
@@ -32,7 +32,7 @@ module Parameters
     real(dp), parameter :: Delta_t          = 1.0             ! Time step [d]
     real(dp), parameter :: IC               = 1d-5            ! Fish Initial Condition
     real(dp), parameter :: PI_be_cutoff     = 200             ! Benthic-pelagic coupling cutoff (depth, m)
-    real(dp), parameter :: conv_m2_to_m3    = 100.0           ! Conversion from per area simulation to per depth simulation 
+    real(dp), parameter :: conv_m2_to_m3    = 100.00          ! Conversion from per area simulation to per depth simulation 
 
 
     ! input files: ----------------------------------------------------
@@ -155,14 +155,14 @@ module Parameters
     real(dp), parameter :: pref_Mp_Lz = 1.0             ! Preference for Large Mesozooplankton
     real(dp), parameter :: pref_Mp_S = 1.0              ! Preference for small fish
     ! Medium Demersal  
-    real(dp), parameter :: pref_Md_BE = 1.0             ! Preference for Benthos
+    real(dp), parameter :: pref_Md_BE = 1.0/conv_m2_to_m3! Preference for Benthos
     ! Large Pelagic
     real(dp), parameter :: pref_Lp_Mf = 1.0 * A         ! Preference for Medium forage
     real(dp), parameter :: pref_Lp_Mp = 1.0 
     ! Large Demersal
     real(dp), parameter :: pref_Ld_Mf = D * A           ! Preference for Medium forage
     real(dp), parameter :: pref_Ld_Mp = D               ! Preference for Medium pelagics
-    real(dp), parameter :: pref_Ld_Md =  1.0            ! Preference for Medium Demersal
+    real(dp), parameter :: pref_Ld_Md =  1.0/conv_m2_to_m3! Preference for Medium Demersal
     real(dp), parameter :: pref_Ld_BE = 1.0/conv_m2_to_m3 ! Preference for Benthos; divide conv_m2_to_m3 to unballance increase gamma 
                                                           ! as predation on demersal does not change unit.
 
