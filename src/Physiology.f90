@@ -37,7 +37,7 @@ module Physiology
 
             ! give environemental parameters
             FEISTY%Temp = 21.671012503201233
-            FEISTY%det = 0.0
+            FEISTY%det = 0.14023816301206588
             FEISTY%mesozoo(Mz)%B = 0.0000000000000000     ! Fraction of zooplankton mortality loss consumed
             FEISTY%mesozoo(Lz)%B = 0.0000000000000000     ! Fraction of zooplankton mortality loss consumed  
             FEISTY%mesozoo(Mz)%dz = 0.0    ! Biomass of medium zooplankton consumed by top predators 
@@ -397,22 +397,6 @@ module Physiology
         FEISTY%fish(7)%Fout = 0
         FEISTY%fish(8)%Fout = 0
 
-    !:======================================================================
-    ! Calcul the Benthic biomass from detritus flux to benthic 
-    ! Classic logistic growth rate
-    ! The calculation has to be done after the derivative have been calculated 
-    ! for each fish group ! 
-    !:======================================================================
-    ! FEISTY%benthos(i)%B          : Benthic biomass 
-    ! Bent_eff =  0.075  :  Benthic Efficiency from detritus to benthic biomass
-    ! CC = 80            : Carring Capacity for benthic chemostat
-    !:======================================================================
-
-        pred = FEISTY%fish(6)%cons_BE * FEISTY%fish(6)%B + FEISTY%fish(8)%cons_BE * FEISTY%fish(8)%B
-        r = Bent_eff * FEISTY%det / FEISTY%benthos(1)%B 
-        FEISTY%benthos(1)%B = FEISTY%benthos(1)%B + r * FEISTY%benthos(1)%B * (1 - FEISTY%benthos(1)%B/CC) - pred 
-
-
     !:====================================================================== 
     ! Calculate the derivative and New biomass for each fish group
     !:====================================================================== 
@@ -480,6 +464,13 @@ module Physiology
             r = Bent_eff * FEISTY%det / FEISTY%benthos(i)%B 
             FEISTY%benthos(i)%B = FEISTY%benthos(i)%B + r * FEISTY%benthos(i)%B * (1 - FEISTY%benthos(i)%B/CC) - pred
         enddo
+
+        if (diagnostic .and. FEISTY%ilayer .eq. 75) then 
+            print*, 'detritus flux to floor: ', FEISTY%det
+            print*, 'Benthic growth rate   : ', r 
+            print*, 'pred on Benthic       : ', pred
+        endif
+
 
         ! New biomass : ------------------------------------------
         do i = 1, nFishGroup

@@ -13,14 +13,12 @@ module Parameters
                                                     31, 31, 30, 31, 30, 31 /) ! Length of month (days)
 
     ! Environemental data for test: -----------------------------------
-    logical, parameter  :: diagnostic           = .true.
-    logical, parameter  :: save_diagnostics     = .false.
-    logical, parameter  :: prod_constrained     = .false.
+    logical, parameter  :: diagnostic           = .false.
+    logical, parameter  :: save_diagnostics     = .true.
+    logical, parameter  :: prod_constrained     = .true.
     logical, parameter  :: Spinup_Time_Serie    = .true.
     logical, parameter  :: Initial_Condition_generic_FEISTY = .true.
     logical, parameter  :: largDemPel           = .false.
-
-    
 
     ! Group information: ---------------------------------------------
     integer, parameter :: nFishGroup = 8                     ! Number of fish functional group
@@ -34,18 +32,22 @@ module Parameters
     real(dp), parameter :: PI_be_cutoff     = 200             ! Benthic-pelagic coupling cutoff (depth, m)
     real(dp), parameter :: conv_m2_to_m3    = 100.00          ! Conversion from per area simulation to per depth simulation 
 
+    ! Experimentation parameters: ------------------------------------------
+    character(LEN=280), parameter :: loc = "CCE"
+    character(LEN=280), parameter :: exp = "baseparam" ! "COBALT_offline_BATS"
+    character(LEN=280), parameter :: coupling = "offline"
 
     ! input files: ----------------------------------------------------
-    character(LEN=280), parameter :: root_dir = "/project/rdenechere/COBALT_output/COBALT_offline_forcing_files/"
-    character(LEN=280) , parameter :: exp = "COBALT_offline_BATS"
+    character(LEN=280), parameter :: root_dir = "/project/rdenechere/COBALT_output/COBALT_offline_forcing_files/"&
+                                                  // trim(loc) // "/"
 
     character(LEN=280), parameter :: &
-        dir_Temp = trim(root_dir) // "20040101.ocean_feisty_forcing_offline.nc", &
-        dir_zm = trim(root_dir) //   "20040101.ocean_feisty_forcing_offline.nc", &
-        dir_dzm = trim(root_dir) //  "20040101.ocean_feisty_forcing_offline.nc", &
-        dir_zl = trim(root_dir) //   "20040101.ocean_feisty_forcing_offline.nc", &
-        dir_dzl = trim(root_dir) //  "20040101.ocean_feisty_forcing_offline.nc", &
-        dir_det = trim(root_dir) //  "20040101.ocean_feisty_forcing_offline_detritus.nc", &
+        dir_Temp = trim(root_dir) // "20040101.ocean_feisty_forcing.nc", &
+        dir_zm = trim(root_dir)  //   "20040101.ocean_feisty_forcing.nc", &
+        dir_dzm = trim(root_dir) //  "20040101.ocean_feisty_forcing.nc", &
+        dir_zl = trim(root_dir)  //   "20040101.ocean_feisty_forcing.nc", &
+        dir_dzl = trim(root_dir) //  "20040101.ocean_feisty_forcing.nc", &
+        dir_det = trim(root_dir) //  "20040101.ocean_feisty_forcing_detritus.nc", &
         var_Temp =  "thetao" , &
         var_zm =  "nmdz" , &
         var_dzm =  "jhploss_n_Mdz", &
@@ -55,27 +57,45 @@ module Parameters
 
     ! Input data (Spinup): --------------------------------------------
     character(LEN=280), parameter :: &
-        Dir_IniBE = "../output/" // trim(exp) // "_BE_bio_Spinup.nc",&
-        Dir_IniSf = "../output/" // trim(exp) // "_Sf_bio_Spinup.nc",&
-        Dir_IniSp = "../output/" // trim(exp) // "_Sp_bio_Spinup.nc",&
-        Dir_IniSd = "../output/" // trim(exp) // "_Sd_bio_Spinup.nc",&
-        Dir_IniMf = "../output/" // trim(exp) // "_Mf_bio_Spinup.nc",&
-        Dir_IniMp = "../output/" // trim(exp) // "_Mp_bio_Spinup.nc",&
-        Dir_IniMd = "../output/" // trim(exp) // "_Md_bio_Spinup.nc",&
-        Dir_IniLp = "../output/" // trim(exp) // "_Lp_bio_Spinup.nc",&
-        Dir_IniLd = "../output/" // trim(exp) // "_Ld_bio_Spinup.nc"
+        Dir_IniBE = "../output/netcdf/" // trim(coupling) // "/" // trim(loc) // & 
+            "/COBALT_" // trim(coupling) // "_" // trim(loc) // "_" //  trim(exp) // "_BE_bio_Spinup.nc", &
+        Dir_IniSf = "../output/netcdf/" // trim(coupling) // "/" // trim(loc) // & 
+            "/COBALT_" // trim(coupling) // "_" // trim(loc) // "_" //  trim(exp) // "_Sf_bio_Spinup.nc",&
+        Dir_IniSp = "../output/netcdf/" // trim(coupling) // "/" // trim(loc) // & 
+            "/COBALT_" // trim(coupling) // "_" // trim(loc) // "_" //  trim(exp) // "_Sp_bio_Spinup.nc",&
+        Dir_IniSd = "../output/netcdf/" // trim(coupling) // "/" // trim(loc) // & 
+            "/COBALT_" // trim(coupling) // "_" // trim(loc) // "_" //  trim(exp) // "_Sd_bio_Spinup.nc",&
+        Dir_IniMf = "../output/netcdf/" // trim(coupling) // "/" // trim(loc) // & 
+            "/COBALT_" // trim(coupling) // "_" // trim(loc) // "_" //  trim(exp) // "_Mf_bio_Spinup.nc",&
+        Dir_IniMp = "../output/netcdf/" // trim(coupling) // "/" // trim(loc) // & 
+            "/COBALT_" // trim(coupling) // "_" // trim(loc) // "_" //  trim(exp) // "_Mp_bio_Spinup.nc",&
+        Dir_IniMd = "../output/netcdf/" // trim(coupling) // "/" // trim(loc) // & 
+            "/COBALT_" // trim(coupling) // "_" // trim(loc) // "_" //  trim(exp) // "_Md_bio_Spinup.nc",&
+        Dir_IniLp = "../output/netcdf/" // trim(coupling) // "/" // trim(loc) // & 
+            "/COBALT_" // trim(coupling) // "_" // trim(loc) // "_" //  trim(exp) // "_Lp_bio_Spinup.nc",&
+        Dir_IniLd = "../output/netcdf/" // trim(coupling) // "/" // trim(loc) // & 
+            "/COBALT_" // trim(coupling) // "_" // trim(loc) // "_" //  trim(exp) // "_Ld_bio_Spinup.nc"
     
     ! Input files as array: ------------------------------------------
     character(LEN=280), dimension(nDeriv), parameter :: &
-        Dir_IC = [  "../output/" // trim(exp) // "_Sf_bio_Spinup.nc", &
-                    "../output/" // trim(exp) // "_Sp_bio_Spinup.nc", &
-                    "../output/" // trim(exp) // "_Sd_bio_Spinup.nc", &
-                    "../output/" // trim(exp) // "_Mf_bio_Spinup.nc", &
-                    "../output/" // trim(exp) // "_Mp_bio_Spinup.nc", &
-                    "../output/" // trim(exp) // "_Md_bio_Spinup.nc", &
-                    "../output/" // trim(exp) // "_Lp_bio_Spinup.nc", &
-                    "../output/" // trim(exp) // "_Ld_bio_Spinup.nc", &
-                    "../output/" // trim(exp) // "_BE_bio_Spinup.nc"    ]
+        Dir_IC = [   "../output/netcdf/" // trim(coupling) // "/" // trim(loc) // & 
+            "/COBALT_" // trim(coupling) // "_" // trim(loc) // "_" //  trim(exp) // "_Sf_bio_Spinup.nc", &
+                     "../output/netcdf/" // trim(coupling) // "/" // trim(loc) // & 
+            "/COBALT_" // trim(coupling) // "_" // trim(loc) // "_" //  trim(exp) // "_Sp_bio_Spinup.nc", &
+                     "../output/netcdf/" // trim(coupling) // "/" // trim(loc) // & 
+            "/COBALT_" // trim(coupling) // "_" // trim(loc) // "_" //  trim(exp) // "_Sd_bio_Spinup.nc", &
+                     "../output/netcdf/" // trim(coupling) // "/" // trim(loc) // & 
+            "/COBALT_" // trim(coupling) // "_" // trim(loc) // "_" //  trim(exp) // "_Mf_bio_Spinup.nc", &
+                     "../output/netcdf/" // trim(coupling) // "/" // trim(loc) // & 
+            "/COBALT_" // trim(coupling) // "_" // trim(loc) // "_" //  trim(exp) // "_Mp_bio_Spinup.nc", &
+                     "../output/netcdf/" // trim(coupling) // "/" // trim(loc) // & 
+            "/COBALT_" // trim(coupling) // "_" // trim(loc) // "_" //  trim(exp) // "_Md_bio_Spinup.nc", &
+                     "../output/netcdf/" // trim(coupling) // "/" // trim(loc) // & 
+            "/COBALT_" // trim(coupling) // "_" // trim(loc) // "_" //  trim(exp) // "_Lp_bio_Spinup.nc", &
+                     "../output/netcdf/" // trim(coupling) // "/" // trim(loc) // & 
+            "/COBALT_" // trim(coupling) // "_" // trim(loc) // "_" //  trim(exp) // "_Ld_bio_Spinup.nc", &
+                     "../output/netcdf/" // trim(coupling) // "/" // trim(loc) // & 
+            "/COBALT_" // trim(coupling) // "_" // trim(loc) // "_" //  trim(exp) // "_BE_bio_Spinup.nc"    ]
 
     character(LEN=280), parameter :: dir_COBALT_IC = "/project/CEFI-regional-MOM6-FEISTY/&
             &exps/OM4.single_column.COBALT/INPUT/COBALT_2023_10_spinup_2003_subset.nc"

@@ -17,8 +17,13 @@ program Run_physiology
     integer :: Ntime, Nlayer, Nlath, Nlongh
     integer :: itime, iDAY, iYR, Year, ilayer, ilath, ilongh
     real(dp) :: T1, T2, T3, sim_time
-    logical :: Spinup = .true. !.false. !     
+    logical :: Spinup = .true. ! .false. ! 
 
+    print *, "-------------------------------------"
+    print *, " Simulation  of FEISTY offline using COBALT 1D "
+    print *, " at ", trim(loc), ", Spinup ", Spinup
+    print *, "-------------------------------------"
+    
     ! Initialisation: ----------------------------------------------------------
     CALL cpu_time(T1)
     CALL Init_FEISTY(Spinup, FEISTY, diags, IC_tracers_Bio, tracers, &
@@ -34,6 +39,8 @@ program Run_physiology
         Year = Ntime/365
         sim_time = 1.73/200.0 
     end if 
+
+    
 
     print *, "-------------------------------------"
     print *, "     Simulation parameters    "

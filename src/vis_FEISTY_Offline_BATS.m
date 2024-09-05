@@ -5,7 +5,7 @@ close all
 clear all
 addpath('../../Programing-Tutorials/Matlab/Matlab_functions/')
 %% Root directory: 
-param.Rockfish =  false; % true; %  
+param.Rockfish = true; %  false; % 
 param = param_setup(param);
 
 %! get directory containing output
@@ -331,8 +331,8 @@ title(t, [exp 'forcing_files'], Interpreter = 'none')
 save_graph(gcf, "png", [save_dir exp 'forcing_files' Spinup{2}], 16, 12)
 
 %% Comparison Detritus flux to sea bed between COBALT output and FEISTY 2019
-param.Rockfish =  false; % true; %  
-param = param_setup(param);
+% param.Rockfish = true; %  false; % 
+% param = param_setup(param);
 
 % data from COBALT reanalysis: --------------------------------------------
 load([param.rootdir '/Feisty/Fish-MIP/Phase3/QuarterDeg/gfdl-mom6-cobalt2_ctrlclim_expc-bot_15arcmin_global_monthly_1961_2010.mat']); 

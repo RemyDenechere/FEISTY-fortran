@@ -24,6 +24,7 @@ module GetNetCDFinf
         CALL Get_dim(dir_Temp, Ntime, Nlayer, Nlath, Nlongh, FEISTY)   
         CALL load_forcing_data(Ntime, Nlayer, Nlath, Nlongh, DataTemp, Datadet, Datadzm, DataZM, Datadzl, DataZL)
         Call load_IC_fish(Spinup, Nlayer, Nlath, Nlongh, IC_tracers_Bio)
+        ! CALL test_folder()
 
         if (Spinup) then 
             Ntime = (Ntime-1) * Year_2_Spinup
@@ -53,7 +54,26 @@ module GetNetCDFinf
 
     end subroutine Init_FEISTY
     
+    ! subroutine test_folder
+    !     logical :: dir_e, result
 
+    !     inquire(file="../output/netcdf/", exist=dir_e)
+    !     if (dir_e .eqv. .false.) then
+    !         result=makedirqq("../output/netcdf/")
+    !     end if
+
+    !     inquire(file="../output/netcdf/" // trim(coupling) // "/", exist=dir_e)
+    !     if (dir_e .eqv. .false.) then
+    !         result=makedirqq("../output/netcdf/" // trim(coupling) //"/")
+    !     end if
+
+    !     inquire(file="../output/netcdf/" // trim(coupling) // "/" // trim(loc) // "/", exist=dir_e)
+    !     if (dir_e .eqv. .false.) then
+    !         result=makedirqq("../output/netcdf/" // trim(coupling) // "/" // trim(loc) // "/")
+    !     end if     
+    ! end subroutine test_folder
+
+    
     subroutine write_output_netcdf(Spinup, tracers, diags, Ntime, Nlayer, Nlath, Nlongh)
         type(FEISTY_tracers), intent(inout), dimension(nDeriv) :: tracers
         type(FEISTY_diag)   :: diags
@@ -69,10 +89,13 @@ module GetNetCDFinf
             
             if (Spinup_Time_Serie) then 
                 do i = 1, nDeriv
-                call write_nc_file4D('../output/' // trim(exp) // '_' // trim(tracers_name(i)) //'_bio_Spinup_Time_Serie.nc', &
-                                        trim(tracers_name(i)), tracers(i)%Bio, Ntime, Nlayer, Nlath, Nlongh)
+                    call write_nc_file4D("../output/netcdf/" // trim(coupling) // "/" // trim(loc) // & 
+                        "/COBALT_" // trim(coupling) // "_" // trim(loc) // "_" //  trim(exp) //&
+                        "_" // trim(tracers_name(i)) // "_bio_Spinup_Time_Serie.nc",&
+                        trim(tracers_name(i)), tracers(i)%Bio, Ntime, Nlayer, Nlath, Nlongh)
                 end do 
             end if 
+
             if(Initial_Condition_generic_FEISTY) then 
                 call FEISTY_Save_tracers(Spinup, tracers, Ntime, Nlayer, Nlath, Nlongh) 
             end if 
@@ -80,14 +103,20 @@ module GetNetCDFinf
         else
             ! Write each variable to a separate NetCDF file : ---------------------------
             do i = 1, nDeriv
-                call write_nc_file4D('../output/' // trim(exp) // '_' // trim(tracers_name(i)) // '_bio.nc', & 
-                                     trim(tracers_name(i)), tracers(i)%Bio, Ntime, Nlayer, Nlath, Nlongh)
+                call write_nc_file4D("../output/netcdf/" // trim(coupling) // "/" // trim(loc) // & 
+                        "/COBALT_" // trim(coupling) // "_" // trim(loc) // "_" //  trim(exp) //&
+                        "_" // trim(tracers_name(i)) // "_bio.nc", & 
+                        trim(tracers_name(i)), tracers(i)%Bio, Ntime, Nlayer, Nlath, Nlongh)
             end do 
             !! Reformat !! 
-            call write_nc_file4D('../output/' // trim(exp) // '_dZm.nc', 'dZm', diags%mesozoo(1)%Zcon_VS_dZ, & 
-                                    Ntime, Nlayer, Nlath, Nlongh)
-            call write_nc_file4D('../output/' // trim(exp) // '_dZl.nc', 'dZl', diags%mesozoo(2)%Zcon_VS_dZ, & 
-                                    Ntime, Nlayer, Nlath, Nlongh)
+            call write_nc_file4D("../output/netcdf/" // trim(coupling) // "/" // trim(loc) // & 
+                        "/COBALT_" // trim(coupling) // "_" // trim(loc) // "_" //  trim(exp) //&
+                        "_dZm.nc", "dZm", diags%mesozoo(1)%Zcon_VS_dZ, & 
+                        Ntime, Nlayer, Nlath, Nlongh)
+            call write_nc_file4D("../output/netcdf/" // trim(coupling) // "/" // trim(loc) // & 
+                        "/COBALT_" // trim(coupling) // "_" // trim(loc) // "_" //  trim(exp) //&
+                        "_dZl.nc", "dZl", diags%mesozoo(2)%Zcon_VS_dZ, & 
+                        Ntime, Nlayer, Nlath, Nlongh)
 
             if(save_diagnostics) then 
                 call FEISTY_Save_diag(Spinup, diags, Ntime, Nlayer, Nlath, Nlongh)
@@ -390,10 +419,11 @@ module GetNetCDFinf
         logical, intent(in) :: Spinup
         type(FEISTY_tracers), intent(inout), dimension(nDeriv) :: tracers
         integer, intent(in) :: Ntime, Nlayer, Nlath, Nlongh
-        character(LEN=280) :: filename = "../output/FEISTY_2023_10_spinup_subset.nc"
+        character(LEN=280) :: filename 
         integer(4) :: ncid, dimids(4)
         integer :: i,j,k,l
 
+        filename = "../output/netcdf/" // trim(coupling) // "/" // trim(loc) // "/FEISTY_2023_10_spinup_subset.nc"
         call init_tracer_INPUT_nc(filename, ncid, Ntime, Nlayer, Nlath, Nlongh, dimids)
         do i = 1, nDeriv
             call add_tracer_INPUT_nc(ncid, dimids, trim(tracers_name(i)) // "_B", tracers_long_name(i), &
@@ -578,8 +608,9 @@ module GetNetCDFinf
         end if 
 
         Do i = 1, nFishGroup
-            filename = "../output/" // trim(exp) // "_" // trim(tracers_name(i)) // &
-                       "_diag" // trim(String_Spinup) // "Time_Serie.nc"
+            filename =  "../output/netcdf/" // trim(coupling) // "/" // trim(loc) // & 
+                        "/COBALT_" // trim(coupling) // "_" // trim(loc) // "_" //  trim(exp) // "_" //  &
+                        trim(tracers_name(i)) // "_diag" // trim(String_Spinup) // "Time_Serie.nc"
 
             call init_Diag_nc(Spinup, filename, ncid, Ntime, Nlayer, Nlath, Nlongh, dimids)
             
