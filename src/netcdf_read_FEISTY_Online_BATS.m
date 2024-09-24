@@ -3,8 +3,8 @@ clear all
 close all 
 
 loc = 'CCE';
-yr = 20;
-exp = 'F_pred_Z';
+yr = 5;
+exp = 'Cor_det_conv';
 coupling = 'online'; 
 Spinup = {''}; 
 var = {'Sf', 'Sp', 'Sd', 'Mf', 'Mp', 'Md', 'Lp', 'Ld', 'BE'}; 
@@ -170,9 +170,9 @@ end
     
     
 %% get COBALT Zooplankton outputs from the online simulations: 
-var = {'nmdz', 'jhploss_n_Mdz', 'nlgz', 'jhploss_n_Lgz', 'Pop_btm'};
-
 disp("Get Zooplankton outputs from COBALT-FEISTY online  & process them for visualisation")
+
+var = {'nmdz', 'jhploss_n_Mdz', 'nlgz', 'jhploss_n_Lgz', 'Pop_btm'};
 for yr_i = 1:yr
     %! get directory containing output
     dir_input = ['../../COBALT_output/COBALT_FEISTY/', loc, '/', exp, '/', ...
@@ -250,86 +250,6 @@ save([dir_output 'Depth_Means_forcing' '.mat'], 'time_days', 'time_year', 'depth
 for i = 1:length(var)
     save([dir_output 'Depth_Means_forcing' '.mat'], ...
         [var{i} '_zmean'] ,'-append')
-end
-
-%% get COBALT Zooplankton outputs from the COBALT offline simulations: 
-
-disp("Get Zooplankton outputs from COBALT offline simulations & process them for visualisation")
-
-var = {'nmdz', 'jhploss_n_Mdz', 'nlgz', 'jhploss_n_Lgz', 'Pop_btm'};
-coupling = 'offline';
-
-%! get directory containing output
-dir_input_offline_forcing = ['../../COBALT_output/COBALT_offline_forcing_files/' loc '/'];
-dir_output =['../output/Matlab_Average/', coupling, '/' loc, '/', ];
-
-if ~exist(dir_output) 
-    mkdir(dir_output)
-end 
-
-dir = {[dir_input_offline_forcing '20040101.ocean_feisty_forcing.nc'], ...
-       [dir_input_offline_forcing '20040101.ocean_feisty_forcing.nc'], ...
-       [dir_input_offline_forcing '20040101.ocean_feisty_forcing.nc'], ...
-       [dir_input_offline_forcing '20040101.ocean_feisty_forcing.nc'], ...
-       [dir_input_offline_forcing '20040101.ocean_feisty_forcing_detritus.nc']};
-
-% Getting data from netcdf
-for i = 1:length(var) 
-    ncid = netcdf.open(dir{i},'NC_NOWRITE');
-    varid = netcdf.inqVarID(ncid, var{i});
-    eval([ var{i} ' = netcdf.getVar(ncid, varid);']);
-    eval([ var{i} '(' var{i} ' == 99999) = NaN;']);
-    eval([ var{i} '=' var{i} '(:,:,:,1:365);']);
-    netcdf.close(ncid);
-
-    if ismember(i, [1, 3]) % conversions biomass 
-        eval([ var{i} ' = ' var{i} '*6.625* 12.01 * 9.0 * 1000.0;' ]);     % Conversion from Mol N/kg --> gC WW / m3
-    elseif ismember(i, [2, 4]) % conversion mortality
-        eval([ var{i} ' = ' var{i} '*6.625* 12.01 * 9.0 * 24.0*3600;' ]);  % Conversion from Mol mol N m-3 s-1 --> gC WW m-3 d-1
-    end
-end 
-
-%! Take mean over dimensions: ---------------------------------------------
-dim = size(eval([var{1}]));
-time = 1:dim(4);
-depth = 1:dim(3);
-timerange = time; 
-
-%! Calculate average over lat and long: 
-for i = 1:(length(var))
-    eval([var{i} '_offline_spacemean(timerange, :) = transpose(squeeze(nanmean(' var{i} ', [1,2])));']);
-end
-
-%! Integrated biomass over depth: 
-for i = 1:(length(var))
-    eval([var{i} '_offline_tmean(timerange) = squeeze(sum(' var{i} '_offline_spacemean(timerange, :), 2));']);
-end
-
-%! Average over time : 
-for i = 1:(length(var))
-    eval([var{i} '_offline_zmean(yr_i, :) = transpose(squeeze(nanmean(' var{i} '_offline_spacemean(timerange, :), 1)));']);
-end
-
-%! Save data: -------------------------------------------------------------
-%!! average over lat and long: 
-save([dir_output 'COBALT_offline_' loc '_Time_Depth_Means_forcing' '.mat'], 'time', 'depth')
-for i = 1:length(var)
-    save([dir_output 'COBALT_offline_' loc '_Time_Depth_Means_forcing' '.mat'], ...
-        [var{i} '_offline_spacemean'] ,'-append')
-end
-
-%!! integrated over depth
-save([dir_output 'COBALT_offline_' loc  '_Time_Means_forcing' '.mat'], 'time')
-for i = 1:length(var)
-    save([dir_output 'COBALT_offline_' loc  '_Time_Means_forcing' '.mat'], ...
-        [var{i} '_offline_tmean'] ,'-append')
-end
-
-%!! Average over time 
-save([dir_output 'COBALT_offline_' loc '_Depth_Means_forcing' '.mat'], 'time', 'depth')
-for i = 1:length(var)
-    save([dir_output 'COBALT_offline_' loc '_Depth_Means_forcing' '.mat'], ...
-        [var{i} '_offline_zmean'] ,'-append')
 end
 
 

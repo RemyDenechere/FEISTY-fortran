@@ -516,21 +516,15 @@ module GetNetCDFinf
         ! End the definitions mode: enter data mode
         status = nf90_enddef(ncid)
 
-        ! Write the variable data: get values from COBALT (old method)
-        call readgrid1D(dir_COBALT_IC, 'Time',  1,  Time_dim_val)
-        call readgrid1D(dir_COBALT_IC, 'Layer', Nlayer, layer_dim_val)
-        call readgrid1D(dir_COBALT_IC, 'lath',  Nlath,  lath_dim_val)       
-        call readgrid1D(dir_COBALT_IC, 'lonh', Nlongh, longh_dim_val)
+        ! Define valuse for each dimension : -----------------------------------------------------------
+        ! get values from COBALT hgrid files    
+        Time_dim_val = (/(i, i=1, Ntime, 1)/)
+        call readgrid1D(dir_FEISTY_IC_YC, 'Layer', Nlayer, layer_dim_val) ! Use layer from this file (I cannot get the actual layer depth from the grid files generated for each location)
+        ! Forcing long and lat from ocean_hgrid.nc (new method): 
+        call readgrid1D(dir_loc_grid, 'y',  Nlath,  lath_dim_val)
+        call readgrid1D(dir_loc_grid, 'x', Nlongh, longh_dim_val)
 
-        ! Forcing long and lat from ocean_hgrid.nc (new method)
-        call readgrid1D(dir_FEISTY_IC, 'Layer', Nlayer, layer_dim_val)
-        ! print*, "New depth values for Layer:", layer_dim_val
-        lath_dim_val = (/(long_min + (i-1) * ((long_max - long_min)/Nlath), i=1, Nlath, 1)/)
-        ! print*, 'lath_dim_val', lath_dim_val
-        longh_dim_val = (/(lat_min + (i-1) * ((lat_max - lat_min)/Nlongh), i=1, Nlongh, 1)/) 
-        ! print*, "longh_dim_val", longh_dim_val
-
-        status = nf90_put_var(ncid, varid_Time, 1.0)
+        status = nf90_put_var(ncid, varid_Time, Time_dim_val)
         status = nf90_put_var(ncid, varid_layer, layer_dim_val)
         status = nf90_put_var(ncid, varid_lath,  lath_dim_val)
         status = nf90_put_var(ncid, varid_longh, longh_dim_val)
@@ -752,22 +746,14 @@ module GetNetCDFinf
         ! End the definitions mode: enter data mode
         status = nf90_enddef(ncid)
 
-        ! Write the variable data: get values from COBALT
-        ! call readgrid1D(dir_COBALT_IC, 'Time',  1,  Time_dim_val)
+
+        ! Define valuse for each dimension : -----------------------------------------------------------
+        ! get values from COBALT hgrid files       
         Time_dim_val = (/(i, i=1, Ntime, 1)/)
-        call readgrid1D(dir_COBALT_IC, 'Layer'  , Nlayer, layer_dim_val)
-        call readgrid1D(dir_COBALT_IC, 'lath'   , Nlath,  lath_dim_val)       
-        call readgrid1D(dir_COBALT_IC, 'lonh'   , Nlongh, longh_dim_val)
-
-        ! dimlat = size(lath_dim_val)
-        ! print*, 'dimlat', dimlat
-        lath_dim_val = (/(long_min + (i-1) * ((long_max - long_min)/Nlath), i=1, Nlath, 1)/)
-        print*, 'lath_dim_val', lath_dim_val
-
-        ! dimlong = size(longh_dim_val)
-        ! print*, 'dimlat', dimlong
-        longh_dim_val = (/(lat_min + (i-1) * ((lat_max - lat_min)/Nlongh), i=1, Nlongh, 1)/) 
-        print*, "longh_dim_val", longh_dim_val
+        call readgrid1D(dir_FEISTY_IC_YC, 'Layer', Nlayer, layer_dim_val) ! Use layer from this file (I cannot get the actual layer depth from the grid files generated for each location)
+        ! Forcing long and lat from ocean_hgrid.nc (new method): 
+        call readgrid1D(dir_loc_grid, 'y',  Nlath,  lath_dim_val)
+        call readgrid1D(dir_loc_grid, 'x', Nlongh, longh_dim_val)
 
         status = nf90_put_var(ncid, varid_Time , Time_dim_val)
         status = nf90_put_var(ncid, varid_layer, layer_dim_val)

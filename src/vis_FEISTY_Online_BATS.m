@@ -5,8 +5,8 @@ addpath('../../Programing-Tutorials/Matlab/Matlab_functions/')
 
 %! get experiment information 
 loc = 'CCE';
-yr = 20;
-exp = 'F_pred_Z';
+yr = 5;
+exp = 'Cor_det_conv';
 coupling = 'online'; 
 Spinup = {''}; 
 
@@ -48,6 +48,10 @@ cm10=[0.5 0.5 0;... %tan/army
     0.5 0.5 0.5; ...%med grey
     0 0 0];...      %black
 
+cm10 = colormap(turbo(9));
+cm4  = colormap(turbo(4));
+cm3  =colormap(turbo(3));
+
 %% ------------------------------------------------------------------------
 %                               Tracers 
 % -------------------------------------------------------------------------
@@ -78,6 +82,7 @@ title("All sizes")
 
 %! plot functional group:
 nexttile
+axes_formating(gcf, "defaultAxesColorOrder", cm4)
 semilogx(F_B_zmean, -depth, P_B_zmean, -depth, BE_B_zmean, -depth)
 hold on 
 semilogx(double(D_B_zmean(end)), -depth(end), '.')
@@ -120,13 +125,62 @@ set(gca, 'YLim', [10^(-6) 2*10^2])
 hold off 
 ax.YScale = "log";
 % ax.XLim   = [0, 366*1.45];
+L = legend(var, 'Location', 'northeastoutside');
+L.Color = 'none'; L.Box = 'off';
+title("All sizes")
+
+% plot functional groups: 
+nexttile 
+axes_formating(gcf, "defaultAxesColorOrder", cm4)
+semilogy(time_days, F_B_tmean, time_days, P_B_tmean, time_days, D_B_tmean, time_days, BE_B_tmean)
+set(gca, 'YLim', [10^(-6) 2*10^2])
+L = legend('Forage', 'Pelagic', 'Demersal', 'Benthos', ...
+        'Location', 'northeastoutside');
+L.Color = 'none'; L.Box = 'off';
+title("Functional groups")
+
+ylabel(t, "Biomass gWW m-3")
+xlabel(t, "time days")
+% title(t, {[loc '_'  coupling '_' exp '_yr_' num2str(yr)], 'Time_Means_Time_Series'}, Interpreter = 'none')
+title(t, 'Offline Fish simulations')
+
+save_graph(gcf, "png", [dir_output 'Time_Means_Time_Series'], 16, 10)
+
+%% plot average over a year:-------------------------------------------------
+n = n+1;
+%!! functional group: 
+F_B_tmean = Sf_B_tmean + Mf_B_tmean;
+P_B_tmean = Sp_B_tmean + Mp_B_tmean + Lp_B_tmean;
+D_B_tmean = Sd_B_tmean + Md_B_tmean + Ld_B_tmean;
+
+start_date = datetime("2004-01-01");
+end_date   = datetime("2004-12-31");
+time = start_date:end_date;
+
+figure(n)
+axes_formating(gcf, "defaultAxesColorOrder", cm10)
+t = tiledlayout(2, 1, "TileSpacing", "compact", "Padding", "compact");
+
+% plot all size:
+ax = nexttile;
+hold on
+for i = 1:length(var)
+    plot(ax, time, eval([var{i} '_B_tmean((end-365):end)']))
+end
+set(gca, 'YLim', [10^(-6) 2*10^2])
+hold off 
+ax.YScale = "log";
+% ax.XLim   = [0, 366*1.45];
 L = legend(var, 'Location', 'best');
 L.Color = 'none'; L.Box = 'off';
 title("All sizes")
 
 % plot functional groups: 
 nexttile 
-semilogy(time_days, F_B_tmean, time_days, P_B_tmean, time_days, D_B_tmean, time_days, BE_B_tmean)
+semilogy(time, F_B_tmean((end-365):end), ...
+         time, P_B_tmean(end-365:end), ...
+         time, D_B_tmean(end-365:end), ...
+         time, BE_B_tmean(end-365:end))
 set(gca, 'YLim', [10^(-6) 2*10^2])
 L = legend('Forage', 'Pelagic', 'Demersal', 'Benthos', ...
         'Location', 'best');
@@ -135,9 +189,10 @@ title("Functional groups")
 
 ylabel(t, "Biomass gWW m-3")
 xlabel(t, "time days")
-title(t, {[loc '_'  coupling '_' exp '_yr_' num2str(yr)], 'Time_Means_Time_Series'}, Interpreter = 'none')
+title(t, {[loc '_'  coupling '_' exp '_yr_' num2str(yr)], 'Time_Means'}, Interpreter = 'none')
 
-save_graph(gcf, "png", [dir_output 'Time_Means_Time_Series'], 16, 12)
+save_graph(gcf, "png", [dir_output 'Time_Means'], 16, 12)
+
 
 %% Plot First time step for Fish tracers :---------------------------------
 % n = n+1;
@@ -209,7 +264,7 @@ save_graph(gcf, "png", [dir_output 'Time_Means_Time_Series'], 16, 12)
 % save_graph(gcf, "png", [dir_output 'Time_depth_Time_series_funct_grp'], 16, 12)
 
 %% ------------------------------------------------------------------------
-%                         Zooplankton Biomass
+%                Zooplankton Biomass TIME SERIES 
 % -------------------------------------------------------------------------
 n= n+1;
 %! Load data offline : 
@@ -232,7 +287,7 @@ idx_rate = [2,4,5];
 % ---------------------- plot zooplankton biomass -------------------------
 % Plots average over time: 
 figure(n)
-axes_formating(gcf, "defaultAxesColorOrder", cm10);
+axes_formating(gcf, "defaultAxesColorOrder", cm3);
 t = tiledlayout(3, 1, "TileSpacing","compact","Padding","compact");
 
 % Offline zooplankton Biomass
@@ -320,6 +375,117 @@ ylabel(t, "rates (mol N m-2 s-1) and (g WW m-3 d-1)")
 
 save_graph(gcf, "png", [dir_output 'Comparison_online_offline_zooplanktons'], 16, 12)
 
+%% ------------------------------------------------------------------------
+%                         Zooplankton Biomass
+% -------------------------------------------------------------------------
+n= n+1;
+%! Load data offline : 
+load([dir_input_offline 'COBALT_offline_' loc '_Time_Depth_Means_forcing' '.mat'])
+load([dir_input_offline 'COBALT_offline_' loc '_Time_Means_forcing' '.mat'])
+load([dir_input_offline 'COBALT_offline_' loc '_Depth_Means_forcing' '.mat'])
+
+%! Load data online : 
+load([dir_input 'Time_Depth_Means_forcing' '.mat'])
+load([dir_input 'Time_Means_forcing'       '.mat'])
+load([dir_input 'Depth_Means_forcing'      '.mat'])
+
+start_date = datetime("2004-01-01");
+end_date   = datetime("2004-12-31");
+% time = start_date:end_date;
+% indexes: 
+idx_bio = [1, 3]; 
+idx_rate = [2,4,5];
+
+% ---------------------- plot zooplankton biomass -------------------------
+% Plots average over time: 
+figure(n)
+axes_formating(gcf, "defaultAxesColorOrder", cm10);
+t = tiledlayout(3, 1, "TileSpacing","compact","Padding","compact");
+
+% Offline zooplankton Biomass
+nexttile
+hold on 
+for i = idx_bio
+    % Make offline data same length as the online :
+    val = repmat(eval([var_COBALT{i} '_offline_tmean']), 1, yr);
+    plot(time_days, val)
+end 
+hold off
+title('Offline')
+legend(var_COBALT{idx_bio}, Interpreter = 'none', Location = "best")
+
+% Online zooplankton Biomass
+nexttile
+hold on 
+for i = idx_bio
+    plot(time_days, eval([var_COBALT{i} '_tmean']))
+end 
+hold off
+title("Online")
+
+% difference: 
+nexttile
+hold on 
+for i = idx_bio
+        val = repmat(eval([var_COBALT{i} '_offline_tmean']), 1, yr);
+        plot(time_days, eval([var_COBALT{i} '_tmean']) - val)
+end 
+plot([time_days(1) time_days(end)], [0 0], 'k:', 'LineWidth', 1)
+hold off
+title("Difference")
+title(t, {[loc '_'  coupling '_' exp '_yr_' num2str(yr)], 'Zooplankton biomass COBALT ONLINE'}, ...
+    Interpreter = 'none')
+xlabel(t, "Time (days)")
+ylabel(t, "Biomass (mol N kg-1)")
+save_graph(gcf, "png", [dir_output 'Comparison_online_offline_zooplanktons_Biomass'], 16, 12)
+
+%% 
+% ---------------- plot zooplankton rate and detritus flux ----------------
+% Plots average over time: 
+n=n+1;
+figure(n)
+axes_formating(gcf, "defaultAxesColorOrder", cm10);
+t = tiledlayout(3, 1, "TileSpacing","compact","Padding","compact");
+
+% Offline zooplankton Biomass
+nexttile
+hold on 
+for i = idx_rate
+    % Make offline data same length as the online :
+    val = repmat(eval([var_COBALT{i} '_offline_tmean']), 1, yr);
+    plot(time_days, val)
+end 
+hold off
+title('Offline')
+legend(var_COBALT{idx_rate}, Interpreter = 'none', Location = "best")
+
+% Online zooplankton Biomass
+nexttile
+hold on 
+for i = idx_rate
+    plot(time_days, eval([var_COBALT{i} '_tmean']))
+end 
+hold off
+title("Online")
+
+% difference: 
+nexttile
+hold on 
+for i = idx_rate
+    val = repmat(eval([var_COBALT{i} '_offline_tmean']), 1, yr);
+    plot(time_days, eval([var_COBALT{i} '_tmean']) - val)
+end 
+plot([time_days(1) time_days(end)], [0 0], 'k:', 'LineWidth', 1)
+hold off
+title("Difference")
+
+title(t, {[loc '_'  coupling '_' exp '_yr_' num2str(yr)], ...
+    'Zooplankton mortality rates and det flux COBALT ONLINE'}, ...
+    Interpreter = 'none')
+xlabel(t, "Time (days)")
+ylabel(t, "rates (mol N m-2 s-1) and (g WW m-3 d-1)")
+
+save_graph(gcf, "png", [dir_output 'Comparison_online_offline_zooplanktons'], 16, 12)
 
 %% Plot the First time step for meso zooplankton 
 n = n+1;
@@ -390,9 +556,9 @@ for d = 1:length(dimension_average)-1
             % Loop over all fish for each diagnostic: 
             for v = 1:length(var) 
                 if d == 1
-                    plot(ti, -eval(dimensions{d}), eval([var{v} diag{grp(i).idx(j)} dimension_average{d}]))
+                    plot(ti, eval(dimensions{d}), eval([var{v} diag{grp(i).idx(j)} dimension_average{d}]))
                 elseif d == 2
-                    plot(ti, eval([var{v} diag{grp(i).idx(j)} dimension_average{d}]), eval(dimensions{d}))
+                    plot(ti, eval([var{v} diag{grp(i).idx(j)} dimension_average{d} '(end, :)']), -eval(dimensions{d}))
                 end 
             end 
             hold off 
@@ -437,7 +603,11 @@ for d = 1:length(dimension_average)-1
             hold on
             % Loop over all fish for each diagnostic: 
             for v = 1:length(var) 
-                plot(ti, eval(dimensions{d}), eval([var{v} diag{grp(i).idx(j)} dimension_average{d}]))
+                if d == 1
+                    plot(ti, eval(dimensions{d}), eval([var{v} diag{grp(i).idx(j)} dimension_average{d}]))
+                elseif d == 2
+                    plot(ti, eval([var{v} diag{grp(i).idx(j)} dimension_average{d} '(end, :)']), -eval(dimensions{d}))
+                end 
             end 
             hold off 
             title(ti, diag{grp(i).idx(j)}(2:end), Interpreter='none')
@@ -488,5 +658,114 @@ end
 % 
 % save_graph(gcf, "png", [dir_output exp 'Depth_per_layer'], 12, 10)
 
+%% Figure poster 
+
+%% ------------------------------------------------------------------------
+%                         Zooplankton Biomass
+% -------------------------------------------------------------------------
+n= n+1;
+%! Load data offline : 
+load([dir_input_offline 'COBALT_offline_' loc '_Time_Depth_Means_forcing' '.mat'])
+load([dir_input_offline 'COBALT_offline_' loc '_Time_Means_forcing' '.mat'])
+load([dir_input_offline 'COBALT_offline_' loc '_Depth_Means_forcing' '.mat'])
+
+%! Load data online : 
+load([dir_input 'Time_Depth_Means_forcing' '.mat'])
+load([dir_input 'Time_Means_forcing'       '.mat'])
+load([dir_input 'Depth_Means_forcing'      '.mat'])
+
+start_date = datetime("2004-01-01");
+end_date   = datetime("2004-12-31");
+% time = start_date:end_date;
+% indexes: 
+idx_bio = [1, 3]; 
+idx_rate = [2,4,5];
+
+% ---------------------- plot zooplankton biomass -------------------------
+% Plots average over time: 
+figure(n)
+axes_formating(gcf, "defaultAxesColorOrder", cm10);
+t = tiledlayout(5, 1, "TileSpacing","compact","Padding","compact");
+
+% Offline zooplankton Biomass
+nexttile
+hold on 
+for i = idx_bio
+    % Make offline data same length as the online :
+    val = repmat(eval([var_COBALT{i} '_offline_tmean']), 1, yr);
+    plot(time_days, val)
+end 
+hold off
+title('Mesozooplankton COBALT Offline')
+
+% Online zooplankton Biomass
+nexttile
+hold on 
+for i = idx_bio
+    plot(time_days, eval([var_COBALT{i} '_tmean']))
+end 
+hold off
+title('Mesozooplankton COBALT-FEISTY Oline')
+L = legend('Small','Large', Interpreter = 'none', Location = "eastoutside");
+L.Color = 'none'; L.Box = 'off';
+title(L, 'Mesozooplankton')
+
+% difference: 
+nexttile
+hold on 
+for i = idx_bio
+        val = repmat(eval([var_COBALT{i} '_offline_tmean']), 1, yr);
+        plot(time_days, eval([var_COBALT{i} '_tmean']) - val)
+end 
+plot([time_days(1) time_days(end)], [0 0], 'k:', 'LineWidth', 1)
+hold off
+title("Mesozooplankton difference online-offline")
+xlabel(t, "Time (days)")
+ylabel(t, "Biomass (mol N kg-1)")
+
+
+
+% plot average over time:-------------------------------------------------
+n = n+1;
+%!! functional group: 
+F_B_tmean = Sf_B_tmean + Mf_B_tmean;
+P_B_tmean = Sp_B_tmean + Mp_B_tmean + Lp_B_tmean;
+D_B_tmean = Sd_B_tmean + Md_B_tmean + Ld_B_tmean;
+
+start_date = datetime("2004-01-01");
+end_date   = datetime("2004-12-31");
+% time = start_date:end_date;
+
+axes_formating(gcf, "defaultAxesColorOrder", cm10)
+
+% plot all size: 
+ax = nexttile;
+hold on
+for i = 1:length(var)
+    plot(ax, time_days, eval([var{i} '_B_tmean']))
+end
+set(gca, 'YLim', [10^(-6) 2*10^2])
+hold off 
+ax.YScale = "log";
+% ax.XLim   = [0, 366*1.45];
+L = legend(var, 'Location', 'eastoutside');
+L.Color = 'none'; L.Box = 'off';
+title("Fish online all sizes")
+
+% plot functional groups: 
+nexttile 
+axes_formating(gcf, "defaultAxesColorOrder", cm4)
+semilogy(time_days, F_B_tmean, time_days, P_B_tmean, time_days, D_B_tmean, time_days, BE_B_tmean)
+set(gca, 'YLim', [10^(-6) 2*10^2])
+L = legend('Forage', 'Pelagic', 'Demersal', 'Benthos', ...
+        'Location', 'eastoutside');
+L.Color = 'none'; L.Box = 'off';
+title("Fish online functional groups")
+
+ylabel(t, "Biomass gWW m-3 (fish) and mol N kg-1 (zooplankton)")
+xlabel(t, "time days")
+% title(t, {[loc '_'  coupling '_' exp '_yr_' num2str(yr)], 'Time_Means_Time_Series'}, Interpreter = 'none')
+
+save_graph(gcf, "png", [dir_output 'Print_Poster'], 19, 20)
 
 

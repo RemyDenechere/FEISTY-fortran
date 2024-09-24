@@ -97,10 +97,13 @@ module Parameters
                      "../output/netcdf/" // trim(coupling) // "/" // trim(loc) // & 
             "/COBALT_" // trim(coupling) // "_" // trim(loc) // "_" //  trim(exp) // "_BE_bio_Spinup.nc"    ]
 
-    character(LEN=280), parameter :: dir_COBALT_IC = "/project/CEFI-regional-MOM6-FEISTY/&
+    character(LEN=280), parameter :: dir_COBALT_IC = "/project/rdenechere/CEFI-regional-MOM6-FEISTY/&
             &exps/OM4.single_column.COBALT/INPUT/COBALT_2023_10_spinup_2003_subset.nc"
-    character(LEN=280), parameter :: dir_FEISTY_IC = "/project/rdenechere/FEISTY-fortran/&
+    character(LEN=280), parameter :: dir_FEISTY_IC_YC = "/project/rdenechere/FEISTY-fortran/&
             &output/Yi_cheng_outputs/BE_B_IC_rescaled.nc"
+    character(LEN=280), parameter :: dir_loc_grid = "/project/rdenechere/CEFI-regional-MOM6-FEISTY/&
+            &exps/OM4.single_column.COBALT/" // trim(loc) // "/ocean_hgrid.nc"
+
 
 
     character(len=2), dimension(nDeriv)  :: tracers_name = ["Sf", "Sp", "Sd", "Mf", "Mp", "Md", "Lp", "Ld", "BE"]
@@ -195,10 +198,10 @@ module Parameters
                            convers_det = 1, &                                      ! detritus 
                            convers_dZm = 6.625*12.01*9.0*24.0*3600.0               ! zooplankton loss
 
-    real(dp), parameter ::  long_min = -64.3667 ,&
-                            long_max = -63.965 ,&  ! -63.9667
-                            lat_min  = 31.4667  ,&
-                            lat_max  = 31.865 
+    ! real(dp), parameter ::  long_min = -64.3667 ,&
+    !                         long_max = -63.965 ,&  ! -63.9667
+    !                         lat_min  = 31.4667  ,&
+    !                         lat_max  = 31.865 
     
     
 end module Parameters

@@ -21,7 +21,7 @@ program Run_physiology
 
     print *, "-------------------------------------"
     print *, " Simulation  of FEISTY offline using COBALT 1D "
-    print *, " at ", trim(loc), ", Spinup ", Spinup
+    print *, " at ", trim(loc), ", Spinup: ", Spinup
     print *, "-------------------------------------"
     
     ! Initialisation: ----------------------------------------------------------
@@ -39,8 +39,6 @@ program Run_physiology
         Year = Ntime/365
         sim_time = 1.73/200.0 
     end if 
-
-    
 
     print *, "-------------------------------------"
     print *, "     Simulation parameters    "
