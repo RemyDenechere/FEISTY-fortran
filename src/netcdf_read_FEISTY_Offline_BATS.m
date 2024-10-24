@@ -6,11 +6,11 @@ close all
 
 %% Root directory: 
 param.Rockfish = false; % true; % 
-param.loc_test = true; % false; %   
+param.loc_test = false; % false; %   
 param = param_setup(param);
 
-loc = 'CCE';
-yr = 5;
+loc = 'BATS';
+yr = 10;
 exp = 'baseparam'; % (all baseparam)
 coupling = 'offline'; 
 Spinup = {'_Spinup_Time_Serie', ''};
@@ -34,7 +34,6 @@ var_diag = {'f', 'cmax', 'cons', 'met', 'mu_p', 'mu_f', 'mu_a', 'mu',...
 if ~exist(['../output/Matlab_Average/', coupling, '/' loc, '/', exp, '/'])
     mkdir(['../output/Matlab_Average/', coupling, '/' loc, '/', exp, '/'])
 end
-    
 
 if ~param.loc_test
     %% Get Spinup Time Series data:
@@ -227,7 +226,7 @@ if ~param.loc_test
     
     disp("Get Zooplankton outputs from COBALT offline simulations & process them for visualisation")
     
-    var = {'nmdz', 'jhploss_n_Mdz', 'nlgz', 'jhploss_n_Lgz', 'Pop_btm'};
+    var = {'nmdz', 'jhploss_n_Mdz', 'jprod_nmdz', 'nlgz', 'jhploss_n_Lgz', 'jprod_nlgz', 'Pop_btm'};
     coupling = 'offline';
     
     %! get directory containing output
@@ -242,6 +241,8 @@ if ~param.loc_test
            [dir_input_offline_forcing '20040101.ocean_feisty_forcing.nc'], ...
            [dir_input_offline_forcing '20040101.ocean_feisty_forcing.nc'], ...
            [dir_input_offline_forcing '20040101.ocean_feisty_forcing.nc'], ...
+           [dir_input_offline_forcing '20040101.ocean_feisty_forcing.nc'], ...
+           [dir_input_offline_forcing '20040101.ocean_feisty_forcing.nc'], ...
            [dir_input_offline_forcing '20040101.ocean_feisty_forcing_detritus.nc']};
     
     % Getting data from netcdf
@@ -253,9 +254,9 @@ if ~param.loc_test
         eval([ var{i} '=' var{i} '(:,:,:,1:365);']);
         netcdf.close(ncid);
     
-        if ismember(i, [1, 3]) % conversions biomass 
+        if ismember(i, [1, 4]) % conversions biomass 
             eval([ var{i} ' = ' var{i} '*6.625* 12.01 * 9.0 * 1000.0;' ]);     % Conversion from Mol N/kg --> gC WW / m3
-        elseif ismember(i, [2, 4]) % conversion mortality
+        elseif ismember(i, [2, 3, 5, 6]) % conversion mortality
             eval([ var{i} ' = ' var{i} '*6.625* 12.01 * 9.0 * 24.0*3600;' ]);  % Conversion from Mol mol N m-3 s-1 --> gC WW m-3 d-1
         end
     end 
@@ -269,38 +270,19 @@ if ~param.loc_test
     %! Calculate average over lat and long: 
     for i = 1:(length(var))
         eval([var{i} '_offline_spacemean(timerange, :) = transpose(squeeze(nanmean(' var{i} ', [1,2])));']);
-    end
-    
-    %! Integrated biomass over depth: 
-    for i = 1:(length(var))
         eval([var{i} '_offline_tmean(timerange) = squeeze(sum(' var{i} '_offline_spacemean(timerange, :), 2));']);
-    end
-    
-    %! Average over time : 
-    for i = 1:(length(var))
         eval([var{i} '_offline_zmean = transpose(squeeze(nanmean(' var{i} '_offline_spacemean(timerange, :), 1)));']);
     end
     
     %! Save data: -------------------------------------------------------------
     %!! average over lat and long: 
     save([dir_output 'COBALT_offline_' loc '_Time_Depth_Means_forcing' '.mat'], 'time', 'depth')
-    for i = 1:length(var)
-        save([dir_output 'COBALT_offline_' loc '_Time_Depth_Means_forcing' '.mat'], ...
-            [var{i} '_offline_spacemean'] ,'-append')
-    end
-    
-    %!! integrated over depth
     save([dir_output 'COBALT_offline_' loc  '_Time_Means_forcing' '.mat'], 'time')
-    for i = 1:length(var)
-        save([dir_output 'COBALT_offline_' loc  '_Time_Means_forcing' '.mat'], ...
-            [var{i} '_offline_tmean'] ,'-append')
-    end
-    
-    %!! Average over time 
     save([dir_output 'COBALT_offline_' loc '_Depth_Means_forcing' '.mat'], 'time', 'depth')
     for i = 1:length(var)
-        save([dir_output 'COBALT_offline_' loc '_Depth_Means_forcing' '.mat'], ...
-            [var{i} '_offline_zmean'] ,'-append')
+        save([dir_output 'COBALT_offline_' loc '_Time_Depth_Means_forcing' '.mat'], [var{i} '_offline_spacemean']   ,'-append')
+        save([dir_output 'COBALT_offline_' loc  '_Time_Means_forcing' '.mat'],      [var{i} '_offline_tmean']       ,'-append')
+        save([dir_output 'COBALT_offline_' loc '_Depth_Means_forcing' '.mat'],      [var{i} '_offline_zmean']       ,'-append')
     end
 
 elseif param.loc_test

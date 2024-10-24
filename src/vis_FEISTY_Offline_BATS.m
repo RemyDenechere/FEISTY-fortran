@@ -10,10 +10,10 @@ addpath('../../Programing-Tutorials/Matlab/Matlab_functions/')
 %% Root directory: 
 param.Rockfish = false; % true; %  
 param = param_setup(param);
-param.loc_test = true;  % false; %
+param.loc_test = false; % true;  % 
 
-loc = 'CCE';
-yr = 5;
+loc = 'BATS';
+yr = 10;
 exp = 'baseparam'; % (all baseparam)
 coupling = 'offline'; 
 Spinup = {'_Spinup_Time_Serie', ''};
@@ -107,6 +107,7 @@ load([dir_input 'Time_Means' Spinup{2} '.mat']);
 F_tmean = Sf_tmean + Mf_tmean;
 P_tmean = Sp_tmean + Mp_tmean + Lp_tmean;
 D_tmean = Sd_tmean + Md_tmean + Ld_tmean;
+
 % Set up time 
 start_date = datetime("2004-01-01");
 end_date   = datetime("2004-12-30");
@@ -403,6 +404,25 @@ xlabel(t, 'Time (days)')
 title(t, {[loc '_'  coupling '_' exp], 'forcing_files'}, Interpreter = 'none')
 
 save_graph(gcf, "png", [dir_output 'forcing_files' Spinup{2}], 16, 12)
+
+%% plot for growth and biomass: 
+%! forcing variable names: 
+figure
+axes_formating(gcf, "defaultAxesColorOrder", cm10)
+var = {'nmdz', 'jprod_nmdz', 'nlgz', 'jprod_nlgz'};
+% time average: 
+hold on 
+for i = 1:length(var)
+    plot(time, eval([var{i} '_offline_tmean']), '-')
+end 
+hold off
+% set(gca, 'YScale', 'log', 'Ylim', [1.74969307072006e-05 1749.69307072006]);
+title('Time average growth and biomass Mesozooplankton')
+legend(var{:}, Interpreter = 'none', EdgeColor = 'none', Color = 'none');
+xlabel("Day of year")
+ylabel("gC WW m-3 (d-1 for prod)")
+
+save_graph(gcf, "png", [dir_output 'Growth_and_biomass_Zoop' Spinup{2}], 12, 12)
 
 %% plot forcing files in different locations: 
 if param.loc_test
