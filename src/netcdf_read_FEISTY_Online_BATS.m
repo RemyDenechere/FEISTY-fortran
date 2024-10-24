@@ -1,26 +1,18 @@
 %% Analysis FEISTY Coupled 
-function [] =  netcdf_read_FEISTY_Online_BATS(name)
+function [] =  netcdf_read_FEISTY_Online_BATS(name, loc, yr)
 
 arguments 
-    name      string  = 'BATS_nonFmort_0.1_encounter_70_k_1_k50_1_yr_'      % Default experiment
+    name      char    = 'BATS_nonFmort_0.1_encounter_70_k_1_k50_1_yr_'      % Default experiment
+    loc       char    = 'BATS'
+    yr        double  = 5      
 end 
 
-name = char(name);
-
-loc = 'BATS';
-yr = 5;
-% exp = 'Cor_det_conv';
+%! set up variable names
 coupling = 'online'; 
 Spinup = {''}; 
 
 disp(['Read netcdf files from COBALT-FEISTY ' coupling ' at ' loc, ...
     ' for ' num2str(yr) ' years spinup!'])
-
-% [exp_name] = experiment_name(); 
-% disp(name)
-
-% name = exp_name{nm}; 
-
 
 %% Get Fish tracers: ------------------------------------------------------
 disp("Get Fish tracer values & process them for visualisation")

@@ -1,24 +1,25 @@
 %% Analysis FEISTY Coupled 
-function [] =  vis_FEISTY_Online_BATS(list, name)
+function [] =  vis_FEISTY_Online_BATS(list, name, loc, yr)
 
 arguments 
     list      logical = false
     name      string  = 'BATS_nonFmort_0.1_encounter_70_k_1_k50_1_yr_'      % Default experiment
+    loc       char    = 'BATS'
+    yr        double  = 5
 end 
 
-addpath('../../Programing-Tutorials/Matlab/Matlab_functions/')
-
-%! get experiment information 
-loc = 'BATS';
-yr = 5;
-% exp = 'Cor_det_conv';
-coupling = 'online'; 
-Spinup = {''}; 
 
 %! set up variable names
 var = {'Sf', 'Sp', 'Sd', 'Mf', 'Mp', 'Md', 'Lp', 'Ld', 'BE'};
 var_COBALT = {'nmdz', 'jhploss_n_Mdz', 'nlgz', 'jhploss_n_Lgz', 'Pop_btm'};
 functional_group = {'Forage', 'Pelagic', 'Demersal'};
+coupling = 'online'; 
+addpath('../../Programing-Tutorials/Matlab/Matlab_functions/')
+
+%! colors
+cm10 = colormap(turbo(10));
+cm4  = colormap(turbo(4));
+cm3  = colormap(turbo(3));
 
 %! get experiment folder names: 
 if list
@@ -31,29 +32,12 @@ end
 disp(['Visualisation from COBALT-FEISTY ' coupling ' at ' loc, ...
     ' for ' num2str(yr) ' years spinup!'])
 
-%% colors
-cm10=[0.5 0.5 0;... %tan/army
-    0 0.7 0;...     %g
-    1 0 1;...       %m
-    1 0 0;...       %r
-    0.5 0 0;...     %maroon
-    0/255 206/255 209/255;... %turq
-    0 0.5 0.75;...  %med blue
-    0 0 0.75;...    %b
-    0.5 0.5 0.5; ...%med grey
-    0 0 0];...      %black
-
-cm10 = colormap(turbo(10));
-cm4  = colormap(turbo(4));
-cm3  = colormap(turbo(3));
-
-%% Loop over all experiments: 
-
+%% Loop over all experiments:
 for nm = 1:length(exp_name)
     n = 0; 
     name = exp_name{nm}; 
     name_yr = [name num2str(yr)]; 
-    disp(name_yr)
+    disp(['experiment: ' name_yr])
 
     coupling = 'online';
     dir_input =['../output/Matlab_Average/', coupling, '/' loc, '/', [name num2str(yr)] , '/'];
@@ -72,7 +56,6 @@ for nm = 1:length(exp_name)
     load([dir_input 'Time_Means_Tracers' '.mat'])
     load([dir_input 'Depth_Means_Tracers' '.mat'])
     
-    
     % plot average tracer over depth: -----------------------------------------------
     n = n+1;
     %!! functional group: 
@@ -90,7 +73,7 @@ for nm = 1:length(exp_name)
     for i = 1:(length(var)-1)
         plot(ax, eval([var{i} '_B_zmean(end, :)']), -depth)
     end
-    %plot(ax, Ld_B_zmean, -depth, '.')
+    % plot(ax, Ld_B_zmean, -depth, '.')
     hold off
     ax.XScale = "log";
     % ax.XLim = [10^(-6) 10^1];
@@ -161,7 +144,6 @@ for nm = 1:length(exp_name)
     
     ylabel(t, "Biomass gWW m-3")
     xlabel(t, "time days")
-    % title(t, {[loc '_'  coupling '_' exp '_yr_' num2str(yr)], 'Time_Means_Time_Series'}, Interpreter = 'none')
     title(t, 'Offline Fish simulations')
     
     save_graph(gcf, "png", [dir_output 'Time_Means_Time_Series'], 16, 10)
@@ -518,7 +500,8 @@ for nm = 1:length(exp_name)
             end
             %! place legend
             if i == 2
-                L = legend(var, 'Location', grp(i).leg_loc, 'Position', [0.797169564618937 0.07854110148341 0.113009922822492 0.303308823529412]);
+                L = legend(var, 'Location', grp(i).leg_loc, ...
+                    'Position', [0.797169564618937 0.07854110148341 0.113009922822492 0.303308823529412]);
             else 
                 L = legend(var, 'Location', grp(i).leg_loc);
             end 
@@ -566,7 +549,8 @@ for nm = 1:length(exp_name)
             end
             %! place legend
             if i == 2
-                L = legend(var, 'Location', grp(i).leg_loc, 'Position',[0.797169564618937 0.07854110148341 0.113009922822492 0.303308823529412]);
+                L = legend(var, 'Location', grp(i).leg_loc, ...
+                    'Position',[0.797169564618937 0.07854110148341 0.113009922822492 0.303308823529412]);
             else 
                 L = legend(var, 'Location', grp(i).leg_loc);
             end 
@@ -809,102 +793,4 @@ for nm = 1:length(exp_name)
          time_days, P_B_tmean - P_tmean_offline, ...
          time_days, D_B_tmean - D_tmean_offline)
 
-end 
-
-%% plot the depth of each layer *
-% addpath('../../COBALT_output/COBALT_FEISTY/')
-% dir_outpur = '../output/Matlab_Average/';
-% exp = 'COBALT_online_BATS_';
-% Spinup = {''}; 
-% 
-% % Get general information about the system: 
-% var = {'xh', 'yh', 'zl', 'time'}; 
-% long_name = {}; 
-% ncid = netcdf.open('20040101.ocean_feisty_tracers.nc', 'NC_NOWRITE');
-% for i = 1:length(var)
-%     varid = netcdf.inqVarID(ncid, [var{i}]);
-%     eval([var{i} '.val = netcdf.getVar(ncid, varid);']);
-%     eval([var{i} '.long_name = netcdf.getAtt(ncid, varid, "long_name");']);
-% end
-% 
-% % layer from the ouputs: 
-% axes_formating()
-% plot(1:length(zl.val), zl.val)
-% xlabel("layer ID")
-% ylabel("depth (m)")
-% title(zl.long_name)
-% 
-% save_graph(gcf, "png", [dir_output exp 'Depth_per_layer'], 12, 10)
-
-
-%% Plot First time step for Fish tracers :---------------------------------
-% n = n+1;
-% figure(n)
-% axes_formating(gcf, "defaultAxesColorOrder", cm10)
-% % plot all size: 
-% hold on
-% for i = 1:length(var)
-%     plot(eval([var{i} '_B_spacemean(1,:)']), -depth)
-% end
-% hold off
-% set(gca, "XScale", "log")
-% L = legend(var, 'Location', 'best');
-% L.Color = 'none'; L.Box = 'off';
-% title({[loc '_'  coupling '_' exp '_yr_' num2str(yr)], '1st_step_Vert_distrib'}, Interpreter="none")
-% save_graph(gcf, "png",  [dir_output '1st_step_Vert_distrib'], 16, 12)
-
-%% plot over time and depth:-----------------------------------------------
-% n= n+1;
-% %!! functional group: 
-% var_group = {'F', 'P', 'D'};
-% F_B_spacemean = Sf_B_spacemean + Mf_B_spacemean;
-% P_B_spacemean = Sp_B_spacemean + Mp_B_spacemean + Lp_B_spacemean;
-% D_B_spacemean = Sd_B_spacemean + Md_B_spacemean + Ld_B_spacemean;
-% 
-% %! Plot each size:--------------------------------------------------------- 
-% figure(n)
-% axes_formating(gcf, "defaultAxesColorOrder", cm10)
-% t = tiledlayout(3, 3, "TileSpacing", "compact", "Padding", "compact");
-% for i = 1:length(var)
-%     ti(i) = nexttile;
-%     surface(time_days, -depth, transpose(eval([var{i} '_B_spacemean'])), ...
-%         'EdgeColor', 'none')
-%     caxis([-8*10^(-10), 10^(-9)])
-%     title(var{i})
-% end
-% colormap autumn
-% cbr = colorbar(ti(end), 'orientation','vertical');
-% cbr.Layout.Tile = 'east'; 
-% title(cbr, {'Biomass', 'gWW m-3'}); 
-% xlabel(t, 'Time (days)')
-% ylabel(t, 'Depth (layers)')
-% title(t, {[loc '_'  coupling '_' exp '_yr_' num2str(yr)], 'Time_depth_Time_series'}, Interpreter = 'none'  )
-% 
-% save_graph(gcf, "png", [dir_output 'Time_depth_Time_series_all_size'], 16, 12)
-% 
-% % ! Plot each functional group: --------------------------------------------
-% n= n+1;
-% figure(n)
-% axes_formating(gcf, "defaultAxesColorOrder", cm10)
-% t = tiledlayout(1, 3, "TileSpacing", "compact", "Padding", "compact");
-% for i = 1:3
-%     ti = nexttile; 
-%     surface(time_days, -depth, transpose(eval([var_group{i} '_B_spacemean'])), ...
-%         'EdgeColor', 'none')
-%     caxis([-8*10^(-10), 10^(-9)])
-%     % set(gca,'CameraPosition', [-1965.326178421259,-536.7230011599994,8.072870736606727e-9])
-%     title(functional_group{i});
-% end
-% colormap autumn
-% cbr = colorbar(ti(end), 'orientation','vertical');
-% cbr.Layout.Tile = 'east'; 
-% title(cbr, {'Biomass', 'gWW m-3'}); 
-% 
-% ylabel(t, "Biomass gWW m-3")
-% xlabel(t, "time")
-% title(t, {[loc '_'  coupling '_' exp '_yr_' num2str(yr)], 'Time_depth_Time_series'}, Interpreter = 'none'  )
-% 
-% save_graph(gcf, "png", [dir_output 'Time_depth_Time_series_funct_grp'], 16, 12)
-
-
-
+end

@@ -3,7 +3,7 @@
 # SCRIPT TO PARALLELIZED THE ANALYSIS OF THE COBALT OUTPUT NETCDF FILES
 
 # RUN MATALB FUNCTION TO GET EXPERIMENTATION NAME LIST
-matlab -batch -nodesktop - nodisplay -nojvm "experiment_name()"
+matlab -batch "experiment_name()" -nodesktop -nosplash -nojvm 
 
 # WAIT FOR MATLAB TO BE DONE 
 wait
@@ -23,7 +23,7 @@ do
     echo "Extracted name: $name"
 
     # RUN MATALB FOR EACH EXPERIMENT NAME 
-    matlab -nodesktop - nodisplay -nojvm -r "netcdf_read_FEISTY_Online_BATS('$name'); exit" &
+    matlab -nodesktop -nodisplay -nojvm -r "netcdf_read_FEISTY_Online_BATS('$name'); exit" &
 done
 
 # WAIT FOR ALL BACKGROUND PROCESSES (MATLAB JOBS) TO FINISH
