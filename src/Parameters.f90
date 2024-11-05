@@ -33,28 +33,39 @@ module Parameters
     real(dp), parameter :: conv_m2_to_m3    = 100.00          ! Conversion from per area simulation to per depth simulation 
 
     ! Experimentation parameters: ------------------------------------------
-    character(LEN=280), parameter :: loc = "CCE"
+    character(LEN=280), parameter :: loc = "BATS"
     character(LEN=280), parameter :: exp = "baseparam" ! "COBALT_offline_BATS"
     character(LEN=280), parameter :: coupling = "offline"
 
     ! input files: ----------------------------------------------------
-    character(LEN=280), parameter :: root_dir = "/project/rdenechere/COBALT_output/COBALT_offline_forcing_files/"&
+    character(LEN=280), parameter :: root_dir_output = "/project/rdenechere/COBALT_output/COBALT_offline_forcing_files/"&
+                                                  // trim(loc) // "/"
+    character(LEN=280), parameter :: root_dir_loc = "/project/rdenechere/CEFI-regional-MOM6-FEISTY/exps/OM4.single_column.COBALT/"&
                                                   // trim(loc) // "/"
 
     character(LEN=280), parameter :: &
-        dir_Temp = trim(root_dir) // "20040101.ocean_feisty_forcing.nc", &
-        dir_zm = trim(root_dir)  //   "20040101.ocean_feisty_forcing.nc", &
-        dir_dzm = trim(root_dir) //  "20040101.ocean_feisty_forcing.nc", &
-        dir_zl = trim(root_dir)  //   "20040101.ocean_feisty_forcing.nc", &
-        dir_dzl = trim(root_dir) //  "20040101.ocean_feisty_forcing.nc", &
-        dir_det = trim(root_dir) //  "20040101.ocean_feisty_forcing_detritus.nc", &
+        dir_Temp = trim(root_dir_output) //  "20040101.ocean_feisty_forcing.nc", &
+        dir_zm = trim(root_dir_output)   //  "20040101.ocean_feisty_forcing.nc", &
+        dir_dzm = trim(root_dir_output)  //  "20040101.ocean_feisty_forcing.nc", &
+        dir_zl = trim(root_dir_output)   //  "20040101.ocean_feisty_forcing.nc", &
+        dir_dzl = trim(root_dir_output)  //  "20040101.ocean_feisty_forcing.nc", &
+        dir_det = trim(root_dir_output)  //  "20040101.ocean_feisty_forcing_detritus.nc", &
         var_Temp =  "thetao" , &
         var_zm =  "nmdz" , &
         var_dzm =  "jhploss_n_Mdz", &
         var_zl =  "nlgz" , &
         var_dzl =  "jhploss_n_Lgz",& 
-        var_det = "Pop_btm"
-
+        var_det = "Pop_btm",&
+        ! Information about the location: ---------------------------------
+        dir_zt  = trim(root_dir_output) // "20040101.ocean_feisty_forcing_detritus.nc", &
+        dir_lat  = trim(root_dir_loc) //'ocean_hgrid.nc',&
+        dir_lon  = trim(root_dir_loc) //'ocean_hgrid.nc',&
+        dir_max_depth  = trim(root_dir_loc) //'ocean_topog.nc',&
+        var_zt  = "zl", &
+        var_lat  = "y", &
+        var_lon = "x", &
+        var_max_depth = 'depth'
+        
     ! Input data (Spinup): --------------------------------------------
     character(LEN=280), parameter :: &
         Dir_IniBE = "../output/netcdf/" // trim(coupling) // "/" // trim(loc) // & 
@@ -194,9 +205,9 @@ module Parameters
     !                        convers_det = 10.0**(-9 +4)*12.01*9.0*24.0*3600.0, &      ! detritus 
     !                        convers_dZm = 10.0**(-2 -3)*12.01*9.0*24.0*3600.0         ! zooplankton loss
     ! No conversion for Colleen's data: 
-    real(dp), parameter :: convers_zm  = 6.625* 12.01 * 9.0 * 1000.0, &            ! zooplankton biomass mol N m-2 s-1 -to- gC ww m-2
+    real(dp), parameter :: convers_zm  = 6.625* 12.01 * 9.0 * 1000.0, &            ! zooplankton biomass Mol N/kg --> gC WW m-3
                            convers_det = 1, &                                      ! detritus 
-                           convers_dZm = 6.625*12.01*9.0*24.0*3600.0               ! zooplankton loss
+                           convers_dZm = 6.625*12.01*9.0*24.0*3600.0               ! zooplankton loss Mol N/kg s-1 --> gC WW m-3 d-1
 
     ! real(dp), parameter ::  long_min = -64.3667 ,&
     !                         long_max = -63.965 ,&  ! -63.9667

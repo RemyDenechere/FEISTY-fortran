@@ -1,23 +1,27 @@
 % FEISTY output at all locations
-clear all
-close all
+function [] = netcdf_read_FEISTY_Offline_BATS(loc, Rockfish, loc_test, ...
+                                              start_loc, end_loc)
+
+arguments 
+    loc                   char    = 'BATS'
+    Rockfish              logical = true
+    loc_test              logical = false
+    start_loc              double = 1
+    end_loc                double = 11
+end 
 
 % dbstop in netcdf_read_FEISTY_Offline_BATS at 138
 
 %% Root directory: 
-param.Rockfish = false; % true; % 
-param.loc_test = false; % false; %   
+param.Rockfish = Rockfish; % true; % 
+param.loc_test = loc_test; % false; %   
 param = param_setup(param);
 
-loc = 'BATS';
-yr = 10;
 exp = 'baseparam'; % (all baseparam)
 coupling = 'offline'; 
 Spinup = {'_Spinup_Time_Serie', ''};
 
-numb_loc  = 11;
-start_loc = 1;
-end_loc   = 11;
+
 
 %! get directory containing output
 dir_input_offline_forcing = ['../../COBALT_output/COBALT_offline_forcing_files/' loc '/']; 
@@ -106,14 +110,14 @@ if ~param.loc_test
     end
     
     %! Save data: -------------------------------------------------------------
-    %!! average over lat and long: 
+    %!! Average over lat and long: 
     save([dir_output 'Time_Depth_Means' Spinup{2} '.mat'], 'time', 'depth')
     for i = 1:length(var)
         save([dir_output 'Time_Depth_Means' Spinup{2} '.mat'], ...
             [var{i} '_spacemean'] ,'-append')
     end
     
-    %!! integrated over depth
+    %!! Integrated over depth
     save([dir_output 'Time_Means' Spinup{2} '.mat'], 'time')
     for i = 1:length(var)
         save([dir_output 'Time_Means' Spinup{2} '.mat'], ...

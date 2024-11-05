@@ -10,10 +10,13 @@ program Run_physiology
     ! type(Save_structure1D)  :: Data_MNTH
     type(FEISTY_type)    :: FEISTY
     type(FEISTY_diag)    :: diags
-    type(FEISTY_tracers)    , dimension(nDeriv) :: tracers
-    type(Initial_conditions), dimension(nDeriv) :: IC_tracers_Bio
-    real(dp), dimension(:, :, :, :), allocatable :: DataTemp, Datadet, &
-                                                    DataZM, Datadzm, DataZL, Datadzl
+    type(FEISTY_tracers)    , dimension(nDeriv)     :: tracers
+    type(Initial_conditions), dimension(nDeriv)     :: IC_tracers_Bio
+    real(dp), dimension(:, :, :, :), allocatable    :: DataTemp, Datadet, &
+                                                        DataZM, Datadzm, DataZL, Datadzl
+    real(dp), dimension(9, 9)                       :: Datalat, Datalon
+    real(dp), dimension(4, 4)                       :: Datamax_depth
+    real(dp), dimension(75)                         :: Datazt
     integer :: Ntime, Nlayer, Nlath, Nlongh
     integer :: itime, iDAY, iYR, Year, ilayer, ilath, ilongh
     real(dp) :: T1, T2, T3, sim_time
@@ -28,7 +31,8 @@ program Run_physiology
     CALL cpu_time(T1)
     CALL Init_FEISTY(Spinup, FEISTY, diags, IC_tracers_Bio, tracers, &
                      Ntime, Nlayer, Nlath, Nlongh, &
-                     DataTemp, Datadet, Datadzm, DataZM, Datadzl, DataZL)
+                     DataTemp, Datadet, Datadzm, DataZM, Datadzl, DataZL, &
+                     Datazt, Datalat, Datalon, Datamax_depth)
     CALL cpu_time(T2)
  
     ! Increasing the spinup time! 
@@ -71,7 +75,7 @@ program Run_physiology
         enddo; enddo ! End Loop Year and day
     enddo ; enddo; ! } longh; lat; layer
 
-    CALL write_output_netcdf(Spinup, tracers, diags, Ntime, Nlayer, Nlath, Nlongh)  ! Save Netcdf 
+    CALL write_output_netcdf(Spinup, tracers, diags, Ntime, Nlayer, Nlath, Nlongh, FEISTY%lat, FEISTY%lon, FEISTY%zt)  ! Save Netcdf 
 
 
     CALL cpu_time(T3)

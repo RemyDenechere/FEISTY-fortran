@@ -103,6 +103,11 @@ module Structure
         real(dp) :: ilongh
         real(dp) :: itime
         real(dp) :: ilayer
+
+        real(dp), dimension(75) :: zt  
+        real(dp), dimension(9, 9) :: lat 
+        real(dp), dimension(9, 9) :: lon
+        real(dp), dimension(4, 4) :: max_depth
     end type FEISTY_type
 
 

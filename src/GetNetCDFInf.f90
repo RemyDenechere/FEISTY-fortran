@@ -9,22 +9,26 @@ module GetNetCDFinf
 
     subroutine Init_FEISTY(Spinup, FEISTY, diags, IC_tracers_Bio, tracers, &
                             Ntime, Nlayer, Nlath, Nlongh, &
-                            DataTemp, Datadet, Datadzm, DataZM, Datadzl, DataZL)
+                            DataTemp, Datadet, Datadzm, DataZM, Datadzl, DataZL, &
+                            Datazt, Datalat, Datalon, Datamax_depth)
         logical, intent(in) :: Spinup
         integer, intent(inout)  :: Ntime, Nlayer, Nlath, Nlongh
         type(FEISTY_type)       , intent(inout) :: FEISTY
         type(FEISTY_diag)       , intent(inout) :: diags
-        type(FEISTY_tracers)    , intent(inout), dimension(nDeriv) :: tracers
-        type(Initial_conditions), intent(inout), dimension(nDeriv) :: IC_tracers_Bio
+        type(FEISTY_tracers)    , intent(inout), dimension(nDeriv)  :: tracers
+        type(Initial_conditions), intent(inout), dimension(nDeriv)  :: IC_tracers_Bio
         real(dp), dimension(:, :, :, :), allocatable, intent(inout) ::  DataTemp, &
                                                                         Datadzm, DataZM, &
                                                                         Datadzl, DataZL, &
                                                                         Datadet
+        real(dp), dimension(9, 9), intent(inout)            :: Datalat, Datalon
+        real(dp), dimension(4, 4)                           :: Datamax_depth
+        real(dp), dimension(Nlayer), intent(inout)          :: Datazt ! pseudo layer depth
 
-        CALL Get_dim(dir_Temp, Ntime, Nlayer, Nlath, Nlongh, FEISTY)   
-        CALL load_forcing_data(Ntime, Nlayer, Nlath, Nlongh, DataTemp, Datadet, Datadzm, DataZM, Datadzl, DataZL)
+        CALL Get_dim(dir_Temp, Ntime, Nlayer, Nlath, Nlongh)   
+        CALL load_forcing_data(Ntime, Nlayer, Nlath, Nlongh, DataTemp, Datadet, Datadzm, DataZM, Datadzl, DataZL, &
+                                Datazt, Datalat, Datalon, Datamax_depth)
         Call load_IC_fish(Spinup, Nlayer, Nlath, Nlongh, IC_tracers_Bio)
-        ! CALL test_folder()
 
         if (Spinup) then 
             Ntime = (Ntime-1) * Year_2_Spinup
@@ -37,6 +41,23 @@ module GetNetCDFinf
         FEISTY%Nlayer = Nlayer
         FEISTY%Nlath  = Nlath
         FEISTY%Nlongh = Nlongh 
+
+        ! Save location information in FEISTY
+        FEISTY%zt  = Datazt ! pseudo layer depth 
+        FEISTY%lat = Datalat ! latitude 
+        FEISTY%lon = Datalon ! longitude
+        FEISTY%max_depth = Datamax_depth ! max depth  
+
+        ! Save location information in tracers
+        FEISTY%zt  = Datazt ! pseudo layer depth 
+        FEISTY%lat = Datalat ! latitude 
+        FEISTY%lon = Datalon ! longitude
+        FEISTY%max_depth = Datamax_depth ! max depth  
+
+        print*, FEISTY%zt
+        print*, FEISTY%lat
+        print*, FEISTY%lon
+        print*, FEISTY%max_depth
 
         ! Allocate storage variables 
         CALL allocate_tracers(tracers, Ntime, Nlayer, Nlath, Nlongh)
@@ -53,32 +74,14 @@ module GetNetCDFinf
         FEISTY%fish(Ld)%w = 10.0**((log10(250.0)+log10(125000.0))/2)
 
     end subroutine Init_FEISTY
-    
-    ! subroutine test_folder
-    !     logical :: dir_e, result
-
-    !     inquire(file="../output/netcdf/", exist=dir_e)
-    !     if (dir_e .eqv. .false.) then
-    !         result=makedirqq("../output/netcdf/")
-    !     end if
-
-    !     inquire(file="../output/netcdf/" // trim(coupling) // "/", exist=dir_e)
-    !     if (dir_e .eqv. .false.) then
-    !         result=makedirqq("../output/netcdf/" // trim(coupling) //"/")
-    !     end if
-
-    !     inquire(file="../output/netcdf/" // trim(coupling) // "/" // trim(loc) // "/", exist=dir_e)
-    !     if (dir_e .eqv. .false.) then
-    !         result=makedirqq("../output/netcdf/" // trim(coupling) // "/" // trim(loc) // "/")
-    !     end if     
-    ! end subroutine test_folder
-
-    
-    subroutine write_output_netcdf(Spinup, tracers, diags, Ntime, Nlayer, Nlath, Nlongh)
+        
+    subroutine write_output_netcdf(Spinup, tracers, diags, Ntime, Nlayer, Nlath, Nlongh, lat, lon, zt)
         type(FEISTY_tracers), intent(inout), dimension(nDeriv) :: tracers
         type(FEISTY_diag)   :: diags
         logical, intent(in) :: Spinup
         integer, intent(in) :: Ntime, Nlayer, Nlath, Nlongh
+        real(dp), dimension(9,9):: lat, lon
+        real(dp), dimension(75) :: zt
         integer :: i
     
         if (Spinup) then
@@ -97,7 +100,7 @@ module GetNetCDFinf
             end if 
 
             if(Initial_Condition_generic_FEISTY) then 
-                call FEISTY_Save_tracers(Spinup, tracers, Ntime, Nlayer, Nlath, Nlongh) 
+                call FEISTY_Save_tracers(Spinup, tracers, Ntime, Nlayer, Nlath, Nlongh, lat, lon, zt) 
             end if 
 
         else
@@ -183,7 +186,7 @@ module GetNetCDFinf
         status = nf90_put_var(ncid, varid, var)
 
         ! add a unit attribute 
-        status = nf90_put_att(ncid, varid, 'units', 'gWW m-2')
+        status = nf90_put_att(ncid, varid, 'units', 'gWW m-3')
         
         ! Close the file
         status = nf90_close(ncid)
@@ -224,22 +227,39 @@ module GetNetCDFinf
     ! Load all the imput values to force the model
     !:======================================================================  
     subroutine load_forcing_data(Ntime, Nlayer, Nlath, Nlongh, DataTemp, &
-                                 Datadet, Datadzm, DataZM, Datadzl, DataZL)
+                                 Datadet, Datadzm, DataZM, Datadzl, DataZL, &
+                                 Datazt, Datalat, Datalon, Datamax_depth)
         ! Declare variables
         real(dp), dimension(:, :, :, :), allocatable, intent(inout) ::  DataTemp, &
                                                                         Datadzm, DataZM, &
                                                                         Datadzl, DataZL, &
                                                                         Datadet
         integer :: Ntime, Nlayer, Nlath, Nlongh
+        real(dp), dimension(9, 9), intent(inout)                        :: Datalat, Datalon
+        real(dp), dimension(4, 4)                                       :: Datamax_depth
+        real(dp), dimension(Nlayer), intent(inout)                      :: Datazt ! pseudo layer depth
 
         ! Get the input grid data to force the model: 
-            CALL readgrid4D(dir_Temp, var_Temp, Ntime, Nlayer, Nlath, Nlongh, DataTemp)
-            CALL readgrid4D(dir_zm, var_zm, Ntime, Nlayer, Nlath, Nlongh, DataZM)
-            CALL readgrid4D(dir_dzm, var_dzm, Ntime, Nlayer, Nlath, Nlongh, Datadzm)
-            CALL readgrid4D(dir_zl, var_zl, Ntime, Nlayer, Nlath, Nlongh, DataZL)
-            CALL readgrid4D(dir_dzl, var_dzl, Ntime, Nlayer, Nlath, Nlongh, Datadzl)
-            CALL readgrid4D(dir_det, var_det, Ntime, Nlayer, Nlath, Nlongh, Datadet)
-        end subroutine load_forcing_data
+        ! Get physiological data:
+        CALL readgrid4D(dir_Temp, var_Temp, Ntime, Nlayer, Nlath, Nlongh, DataTemp)
+        CALL readgrid4D(dir_zm, var_zm, Ntime, Nlayer, Nlath, Nlongh, DataZM)
+        CALL readgrid4D(dir_dzm, var_dzm, Ntime, Nlayer, Nlath, Nlongh, Datadzm)
+        CALL readgrid4D(dir_zl, var_zl, Ntime, Nlayer, Nlath, Nlongh, DataZL)
+        CALL readgrid4D(dir_dzl, var_dzl, Ntime, Nlayer, Nlath, Nlongh, Datadzl)
+        CALL readgrid4D(dir_det, var_det, Ntime, Nlayer, Nlath, Nlongh, Datadet)
+        
+        ! Get data about the location 
+        CALL readgrid1D(dir_zt, var_zt, Nlayer, Datazt)  ! pseudo layer depth 
+        CALL readgrid2D(dir_lat, var_lat, int(9), int(9), Datalat) ! latitude 
+        CALL readgrid2D(dir_lon, var_lon, int(9), int(9),  Datalon) ! longitude
+        CALL readgrid2D(dir_max_depth, var_max_depth, int(9), int(9),  Datamax_depth) ! max depth   
+
+        ! Convert depth grid into actual depth:
+        ! var_zt is constant for every location and goes from 1 to  6212.405 m depth,
+        ! we use maxdepth of the location 'var_max_depth' to rescale the depth. 
+        Datazt = Datazt * Datamax_depth(1,1) / 6212.405
+
+    end subroutine load_forcing_data
 
 
     !:====================================================================== 
@@ -268,8 +288,7 @@ module GetNetCDFinf
     !:====================================================================== 
     ! Get the dimension of the netCDF 4D gridfile
     !:======================================================================  
-    subroutine Get_dim(dir, Ntime, Nlayer, Nlath, Nlongh, this)
-        type(FEISTY_type), intent(inout) :: this
+    subroutine Get_dim(dir, Ntime, Nlayer, Nlath, Nlongh)
         character(LEN=280), intent(in) :: dir
         integer, intent(inout) :: Ntime, Nlayer, Nlath, Nlongh
         integer :: ncid
@@ -382,6 +401,42 @@ module GetNetCDFinf
         ierr = nf90_close(ncid)
     end subroutine readgrid3D
 
+    subroutine readgrid2D(dir, varname, Dim1, Dim2, values)
+        character(LEN=*), intent(in) :: dir, varname
+        integer, intent(in) :: Dim1, Dim2
+        real(dp), dimension(:, :), intent(inout) :: values
+        integer :: ierr, vartype, nAtts, ncid, varid
+        integer, dimension(3) :: ndims
+
+        ! allocate(values(9, 9))
+        
+        ! Open NetCDF: --------------------------------------------
+        ierr = nf90_open(dir, NF90_NOWRITE, ncid)
+        if (ierr /= NF90_NOERR) then
+            print *, nf90_strerror(ierr)
+            print *, "Error opening file: ", trim(dir)
+            stop
+        end if
+        
+        ! Get variable id: 
+        ierr = nf90_inq_varid(ncid, varname, varid)
+        if (ierr /= NF90_NOERR) then
+            print *, "Error in ", trim(varname), " nf90_inquire_variable: ", nf90_strerror(ierr)
+            stop
+        end if
+
+        ! Get values of the variable 
+        ierr = nf90_get_var(ncid, varid, values) ! , start = start, count = count
+        if (ierr /= NF90_NOERR) then
+            print *, "Error in ", trim(varname), " nf90_get_var: ", nf90_strerror(ierr)
+            stop
+        end if
+        print *, "Initial condition ", trim(varname), " loaded"
+        
+        ! Close the netCDF files : ----------------------------------------------------------------
+        ierr = nf90_close(ncid)
+    end subroutine readgrid2D
+
     subroutine readgrid1D(dir, varname, Dim1, values)
         character(LEN=*), intent(in) :: dir, varname
         integer, intent(in) :: Dim1
@@ -400,14 +455,14 @@ module GetNetCDFinf
         ! Get variable id: 
         ierr = nf90_inq_varid(ncid, varname, varid)
         if (ierr /= NF90_NOERR) then
-            print *, "Error nf90_inquire_variable: ", nf90_strerror(ierr)
+            print *, "Error in ", trim(varname), " nf90_inquire_variable: ", nf90_strerror(ierr)
             stop
         end if
 
         ! Get values of the variable 
         ierr = nf90_get_var(ncid, varid, values) ! , start = start, count = count
         if (ierr /= NF90_NOERR) then
-            print *, "Error nf90_get_var: ", nf90_strerror(ierr)
+            print *, "Error in ", trim(varname), " nf90_get_var: ", nf90_strerror(ierr)
             stop
         end if
         
@@ -415,36 +470,44 @@ module GetNetCDFinf
         ierr = nf90_close(ncid)
     end subroutine readgrid1D
 
-    subroutine FEISTY_Save_tracers(Spinup, tracers, Ntime, Nlayer, Nlath, Nlongh)
+    subroutine FEISTY_Save_tracers(Spinup, tracers, Ntime, Nlayer, Nlath, Nlongh, lat, lon, zt)
         logical, intent(in) :: Spinup
         type(FEISTY_tracers), intent(inout), dimension(nDeriv) :: tracers
         integer, intent(in) :: Ntime, Nlayer, Nlath, Nlongh
+        real(dp), dimension(9,9):: lat, lon
+        real(dp), dimension(75) :: zt
         character(LEN=280) :: filename 
         integer(4) :: ncid, dimids(4)
         integer :: i,j,k,l
+        
 
         filename = "../output/netcdf/" // trim(coupling) // "/" // trim(loc) // "/FEISTY_2023_10_spinup_subset.nc"
-        call init_tracer_INPUT_nc(filename, ncid, Ntime, Nlayer, Nlath, Nlongh, dimids)
+        call init_tracer_INPUT_nc(filename, ncid, Ntime, Nlayer, Nlath, Nlongh, dimids, lat, lon, zt)
         do i = 1, nDeriv
             call add_tracer_INPUT_nc(ncid, dimids, trim(tracers_name(i)) // "_B", tracers_long_name(i), &
                                         tracers(i)%Bio, Ntime, Nlayer, Nlath, Nlongh)
         end do
         call end_tracer_INPUT_nc(ncid)
-
+        print*, "COBALT IC saved :", filename
     end subroutine FEISTY_Save_tracers
 
-    subroutine init_tracer_INPUT_nc(filename, ncid, Ntime, Nlayer, Nlath, Nlongh, dimids)
+
+    subroutine init_tracer_INPUT_nc(filename, ncid, Ntime, Nlayer, Nlath, Nlongh, dimids, lat, lon, zt)
         character(LEN = 280), intent(in) :: filename 
         integer, intent(inout) :: ncid, dimids(4)
         integer, intent(in) :: Ntime, Nlayer, Nlath, Nlongh
         integer :: status
-        integer :: Interface = 76, latq = 5, lonq = 5
         integer :: varid_time, varid_layer, varid_lath, varid_longh
         integer :: i
         real(dp), dimension(1) :: time_dim_val
         real(dp), dimension(Nlayer) :: layer_dim_val
         real(dp), dimension(Nlath)  :: lath_dim_val
         real(dp), dimension(Nlongh) :: longh_dim_val
+        real(dp), dimension(8)  :: lath_temp_val
+        real(dp), dimension(8)  :: lonh_temp_val
+        real(dp), dimension(9,9):: lat, lon
+        real(dp), dimension(75) :: zt
+
 
         ! Create the NetCDF file
         status = nf90_create(filename, NF90_CLOBBER, ncid)
@@ -463,9 +526,6 @@ module GetNetCDFinf
         status = nf90_def_dim(ncid, 'Layer', Nlayer, dimids(3))
         status = nf90_def_dim(ncid, 'lath' , Nlath , dimids(2))
         status = nf90_def_dim(ncid, 'lonh' , Nlongh, dimids(1))
-        !status = nf90_def_dim(ncid, 'lonq' , lonq  , dimids(3))
-        !status = nf90_def_dim(ncid, 'latq' , latq  , dimids(2))
-        !status = nf90_def_dim(ncid, 'Interface' , Interface, dimids(1))
 
         ! Put opened netcdf into definition mode: 
         status = nf90_redef(ncid)
@@ -487,8 +547,8 @@ module GetNetCDFinf
             status = nf90_def_var(ncid, 'Layer', NF90_DOUBLE, dimids(3), varid_layer)
             ! Add a attributes: 
             status = nf90_put_att(ncid, varid_layer, 'long_name', 'Layer')
-            status = nf90_put_att(ncid, varid_layer, 'units', 'gWW m-3')
-            status = nf90_put_att(ncid, varid_layer, 'positive', 'up')
+            status = nf90_put_att(ncid, varid_layer, 'units', 'm')
+            status = nf90_put_att(ncid, varid_layer, 'positive', 'down')
             status = nf90_put_att(ncid, varid_layer, 'axis', 'Z')
             status = nf90_put_att(ncid, varid_layer, 'cartesian_axis', 'Z')
             status = nf90_put_att(ncid, varid_layer, '_FillValue', -9999.0_dp)
@@ -517,17 +577,27 @@ module GetNetCDFinf
         status = nf90_enddef(ncid)
 
         ! Define valuse for each dimension : -----------------------------------------------------------
-        ! get values from COBALT hgrid files    
+        ! Time in days: 
         Time_dim_val = (/(i, i=1, Ntime, 1)/)
-        call readgrid1D(dir_FEISTY_IC_YC, 'Layer', Nlayer, layer_dim_val) ! Use layer from this file (I cannot get the actual layer depth from the grid files generated for each location)
-        ! Forcing long and lat from ocean_hgrid.nc (new method): 
-        call readgrid1D(dir_loc_grid, 'y',  Nlath,  lath_dim_val)
-        call readgrid1D(dir_loc_grid, 'x', Nlongh, longh_dim_val)
+        ! Layer pseudo-depth: 
+        layer_dim_val = zt
+        ! lat and long 
+        lath_temp_val = lat(1, 1) + (lat(1, 1:8) - lat(1, 2:9))/2
+        lonh_temp_val = lon(1, 1) + (lon(1, 1:8) - lon(1, 2:9))/2  
+        lath_dim_val  = lath_temp_val([1, 3, 5, 7])
+        longh_dim_val = lonh_temp_val([1, 3, 5, 7])
+
+        (/(i, i=1, 4, 1)/)
 
         status = nf90_put_var(ncid, varid_Time, Time_dim_val)
         status = nf90_put_var(ncid, varid_layer, layer_dim_val)
         status = nf90_put_var(ncid, varid_lath,  lath_dim_val)
         status = nf90_put_var(ncid, varid_longh, longh_dim_val)
+
+        print*, "layer_dim_val ", layer_dim_val
+        print*, "lath_dim_val " , lath_dim_val
+        print*, "longh_dim_val ", longh_dim_val
+
     end subroutine init_tracer_INPUT_nc
 
     subroutine end_tracer_INPUT_nc(ncid)
