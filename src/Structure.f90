@@ -105,6 +105,7 @@ module Structure
         real(dp) :: ilayer
 
         real(dp), dimension(75) :: zt  
+        real(dp), dimension(75) :: layer_thickness
         real(dp), dimension(9, 9) :: lat 
         real(dp), dimension(9, 9) :: lon
         real(dp), dimension(4, 4) :: max_depth
@@ -361,8 +362,8 @@ module Structure
             diags%mesozoo(i)%Zcon_VS_dZ(itime, ilayer, ilath, ilongh) =  FEISTY%mesozoo(i)%Zcons_VS_dZ 
         end do
 
-        ! Small Demersal growth to Medium dermersal 
-        diags%Sd_Fout_B(ilayer) = FEISTY%fish(Sd)%Fout * FEISTY%fish(Sd)%B       
+        ! Small Demersal growth to Medium dermersal:
+        diags%Sd_Fout_B(ilayer) = FEISTY%fish(Sd)%Fout * FEISTY%fish(Sd)%B      
 
     end subroutine store_daily_diag
 
@@ -370,10 +371,10 @@ module Structure
         ! If new grid cell it will take Fout from the last grid cell: it is therefore 
         ! initialised at the begening of the lat and long with a value of 10-5
         type(FEISTY_diag), intent(in)    :: diags         ! Storage (time layer, space)*
-        type(FEISTY_type), intent(inout) :: FEISTY       ! Daily data for the month 
+        type(FEISTY_type), intent(inout) :: FEISTY        ! Daily data for the month 
 
-        FEISTY%Sd_Fout_B_int  = sum(diags%Sd_Fout_B)
-        FEISTY%Ld_Repro_end = FEISTY%fish(Ld)%Repro
+        FEISTY%Sd_Fout_B_int  = sum(diags%Sd_Fout_B * FEISTY%layer_thickness(1:75)) / FEISTY%layer_thickness(75)
+        FEISTY%Ld_Repro_end = FEISTY%fish(Ld)%Repro / FEISTY%layer_thickness(75)
         FEISTY%Md_Fout_end  = FEISTY%fish(Md)%Fout
 
     end subroutine Calc_trans_layer

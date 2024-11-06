@@ -419,8 +419,8 @@ module Physiology
         if (largDemPel) then  ! Puts the large Demersals in the Pelagic Layer
             FEISTY%dBdt(3) = eps_R * FEISTY%fish(Ld)%Repro * &
                  & FEISTY%fish(Ld)%B + (FEISTY%fish(3)%E_A - FEISTY%fish(3)%Fout - FEISTY%fish(3)%mu) * FEISTY%fish(3)%B  
-        else   ! Large Demersals inhabit only the bottom 
-            FEISTY%dBdt(3) = eps_R * (FEISTY%Ld_Repro_end/FEISTY%Nlayer) * &
+        else   ! Large Demersals inhabit only the bottom and reproduction comes from that layer
+            FEISTY%dBdt(3) = eps_R * (FEISTY%Ld_Repro_end/FEISTY%layer_thickness(FEISTY%ilayer)) * &
                  & FEISTY%fish(8)%B + (FEISTY%fish(3)%E_A - FEISTY%fish(3)%Fout - FEISTY%fish(3)%mu) * FEISTY%fish(3)%B  
         end if 
 

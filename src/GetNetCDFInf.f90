@@ -24,6 +24,7 @@ module GetNetCDFinf
         real(dp), dimension(9, 9), intent(inout)            :: Datalat, Datalon
         real(dp), dimension(4, 4)                           :: Datamax_depth
         real(dp), dimension(Nlayer), intent(inout)          :: Datazt ! pseudo layer depth
+        integer :: i
 
         CALL Get_dim(dir_Temp, Ntime, Nlayer, Nlath, Nlongh)   
         CALL load_forcing_data(Ntime, Nlayer, Nlath, Nlongh, DataTemp, Datadet, Datadzm, DataZM, Datadzl, DataZL, &
@@ -52,12 +53,17 @@ module GetNetCDFinf
         FEISTY%zt  = Datazt ! pseudo layer depth 
         FEISTY%lat = Datalat ! latitude 
         FEISTY%lon = Datalon ! longitude
-        FEISTY%max_depth = Datamax_depth ! max depth  
+        FEISTY%max_depth = Datamax_depth ! max depth
+        FEISTY%layer_thickness(1) =  FEISTY%zt(1)
+        Do i = 2, 75
+            FEISTY%layer_thickness(i) = FEISTY%zt(i) - FEISTY%zt(i-1) 
+        end do 
 
-        print*, FEISTY%zt
-        print*, FEISTY%lat
-        print*, FEISTY%lon
-        print*, FEISTY%max_depth
+        ! print*, FEISTY%zt
+        ! print*, FEISTY%layer_thickness
+        ! print*, FEISTY%lat
+        ! print*, FEISTY%lon
+        ! print*, FEISTY%max_depth
 
         ! Allocate storage variables 
         CALL allocate_tracers(tracers, Ntime, Nlayer, Nlath, Nlongh)
@@ -199,16 +205,17 @@ module GetNetCDFinf
 
     subroutine Get_Environental_data(FEISTY, DataTemp, Datadet, &
                                      Datadzm, DataZM, Datadzl, DataZL, &
-                                     iDAY, ilayer, ilath, ilongh)
+                                     iDAY, ilayer, ilath, ilongh, layer_thickness)
         type(FEISTY_type), intent(inout) :: FEISTY
         real(dp), dimension(:, :, :, :), allocatable, intent(inout) ::  DataTemp, &
                                                                         Datadzm, DataZM, &
                                                                         Datadzl, DataZL, &
                                                                         Datadet
         integer, intent(in) :: iDAY, ilayer, ilath, ilongh
+        real(dp), dimension(75), intent(in) :: layer_thickness
         
         FEISTY%Temp = DataTemp(ilongh, ilath, ilayer, iDAY)
-        FEISTY%mesozoo(1)%dz  = Datadzm (ilongh, ilath, ilayer, iDAY) * convers_dZm
+        FEISTY%mesozoo(1)%dz  = Datadzm (ilongh, ilath, ilayer, iDAY) * convers_dZm 
         FEISTY%mesozoo(1)%B = DataZM  (ilongh, ilath, ilayer, iDAY) * convers_zm
         FEISTY%mesozoo(2)%B = DataZL  (ilongh, ilath, ilayer, iDAY) * convers_zm
         FEISTY%mesozoo(2)%dz  = Datadzl (ilongh, ilath, ilayer, iDAY) * convers_dZm
@@ -587,16 +594,14 @@ module GetNetCDFinf
         lath_dim_val  = lath_temp_val([1, 3, 5, 7])
         longh_dim_val = lonh_temp_val([1, 3, 5, 7])
 
-        (/(i, i=1, 4, 1)/)
-
         status = nf90_put_var(ncid, varid_Time, Time_dim_val)
         status = nf90_put_var(ncid, varid_layer, layer_dim_val)
         status = nf90_put_var(ncid, varid_lath,  lath_dim_val)
         status = nf90_put_var(ncid, varid_longh, longh_dim_val)
 
-        print*, "layer_dim_val ", layer_dim_val
-        print*, "lath_dim_val " , lath_dim_val
-        print*, "longh_dim_val ", longh_dim_val
+        ! print*, "layer_dim_val ", layer_dim_val
+        ! print*, "lath_dim_val " , lath_dim_val
+        ! print*, "longh_dim_val ", longh_dim_val
 
     end subroutine init_tracer_INPUT_nc
 
