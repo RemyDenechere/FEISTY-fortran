@@ -205,14 +205,13 @@ module GetNetCDFinf
 
     subroutine Get_Environental_data(FEISTY, DataTemp, Datadet, &
                                      Datadzm, DataZM, Datadzl, DataZL, &
-                                     iDAY, ilayer, ilath, ilongh, layer_thickness)
+                                     iDAY, ilayer, ilath, ilongh)
         type(FEISTY_type), intent(inout) :: FEISTY
         real(dp), dimension(:, :, :, :), allocatable, intent(inout) ::  DataTemp, &
                                                                         Datadzm, DataZM, &
                                                                         Datadzl, DataZL, &
                                                                         Datadet
         integer, intent(in) :: iDAY, ilayer, ilath, ilongh
-        real(dp), dimension(75), intent(in) :: layer_thickness
         
         FEISTY%Temp = DataTemp(ilongh, ilath, ilayer, iDAY)
         FEISTY%mesozoo(1)%dz  = Datadzm (ilongh, ilath, ilayer, iDAY) * convers_dZm 

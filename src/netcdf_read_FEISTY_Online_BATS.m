@@ -1,18 +1,20 @@
 %% Analysis FEISTY Coupled 
-function [] =  netcdf_read_FEISTY_Online_BATS(name, loc, yr)
+function [] =  netcdf_read_FEISTY_Online_BATS(name, loc, yr, exp)
 % TO DO: 
 % use get 
 arguments 
     name      char    = 'BATS_nonFmort_0.1_encounter_70_k_1_k50_1_yr_'      % Default experiment
     loc       char    = 'BATS'
-    yr        double  = 5      
+    yr        char    = '5'      
+    exp       char    = 'Consumption'
 end 
 
-% dbstop in netcdf_read_FEISTY_Online_BATS at 186
+% dbstop in netcdf_read_FEISTY_Online_BATS at 15
 
 %! set up variable names
 coupling = 'online'; 
 Spinup = {''}; 
+yr = str2num(yr);
 
 disp(['Read netcdf files from COBALT-FEISTY ' coupling ' at ' loc, ...
     ' for ' num2str(yr) ' years spinup!'])
@@ -24,6 +26,7 @@ topog.var = {'x', 'y', 'depth', 'Layer'};
 topog.longname = {'geographic_longitude', 'geographic_latitude', 'depth', 'Layer pseudo-depth'};
 topog.unit = {'degree_east', 'degree_north', 'meters', 'meters'};
 topog.files = {'ocean_hgrid.nc', 'ocean_hgrid.nc', 'ocean_topog.nc', 'FEISTY_2023_10_spinup_subset.nc'}; 
+topog.Layer_thikness = zeros(1, 75, "double"); 
 
 for i = 1:length(topog.var)
     ncid = netcdf.open([topog.dir, topog.files{i}], 'NC_NOWRITE');
@@ -34,6 +37,10 @@ end
 % Calculate the actual depth for each layer based on the layer pseuco-depth
 % and the max depth from the location: 
 topog.Layer_depth = mean(topog.depth, [1, 2]) .* (topog.Layer/4000);
+
+topog.Layer_thikness(1) = topog.Layer_depth(1);
+topog.Layer_thikness(2:end) = topog.Layer_depth(2:end) - topog.Layer_depth(1:(end-1));
+
 % save in folder of the location as its the same for every experiment in a location
 save(['../output/Matlab_Average/', coupling, '/' loc, '/Topology.mat'], 'topog') 
 
@@ -45,8 +52,8 @@ for yr_i = 1:yr
     disp(['year: ', num2str(yr_i)])
 
     %! get data 
-    dir_input = ['../../COBALT_output/parallel/', loc, '/' name_yr , '/'];
-    dir_output =['../output/Matlab_Average/', coupling, '/' loc, '/', [name num2str(yr)] , '/' ];
+    dir_input = ['../../COBALT_output/parallel/', loc, '/', exp, '/',  name_yr , '/'];
+    dir_output =['../output/Matlab_Average/', coupling, '/' loc, '/', exp, '/', [name num2str(yr)] , '/' ];
     if ~exist(dir_output,"dir") 
         mkdir(dir_output)
     end    
@@ -74,10 +81,10 @@ for yr_i = 1:yr
     %! Calculate average over lat and long: 
     for i = idx_var_pel
         eval([var{i} '_B_spacemean(timerange, :) = transpose(squeeze(nanmean(' var{i} '_B, [1,2])));']);
-        eval([var{i} '_B_tmean(timerange) = squeeze(sum(' var{i} '_B_spacemean(timerange, :) * topog.Layer_depth, 2));']);
+        eval([var{i} '_B_tmean(timerange) = squeeze(sum(' var{i} '_B_spacemean(timerange, :) .* topog.Layer_thikness, 2));']);
         eval([var{i} '_B_zmean(yr_i,:) = transpose(squeeze(nanmean(' var{i} '_B_spacemean(timerange, :), 1)));']);
     end
-    for i = idx_var_dem %! for demersal we assume the last layer 1m thick (topog.Layer_depth = 1)
+    for i = idx_var_dem %! for demersal we assume the last layer 1m thick (topog.Layer_thikness = 1)
         eval([var{i} '_B_spacemean(timerange, :) = transpose(squeeze(nanmean(' var{i} '_B, [1,2])));']);
         eval([var{i} '_B_tmean(timerange) = squeeze(sum(' var{i} '_B_spacemean(timerange, :), 2));']);
         eval([var{i} '_B_zmean(yr_i,:) = transpose(squeeze(nanmean(' var{i} '_B_spacemean(timerange, :), 1)));']);
@@ -106,8 +113,8 @@ disp("Get Fish Diagnostic values & process them for visualisation")
 for yr_i = 1:yr
     %! get directory containing output
     name_yr = [name num2str(yr_i)];
-    dir_input = ['../../COBALT_output/parallel/', loc, '/' name_yr , '/'];
-    dir_output =['../output/Matlab_Average/', coupling, '/' loc, '/', [name num2str(yr)], '/'];
+    dir_input = ['../../COBALT_output/parallel/', loc, '/', exp, '/' name_yr , '/'];
+    dir_output =['../output/Matlab_Average/', coupling, '/' loc, '/', exp, '/', [name num2str(yr)], '/'];
     if ~exist(dir_output, 'dir') 
         mkdir(dir_output)
     end 
@@ -163,7 +170,7 @@ for yr_i = 1:yr
     for j = 1:length(diag)
         for i = idx_var_pel
             eval([var{i} diag{j} '_spacemean(timerange, :) = transpose(squeeze(nanmean(' var{i} diag{j} ', [1,2])));']);
-            eval([var{i} diag{j} '_tmean(timerange) = squeeze(sum(' var{i} diag{j} '_spacemean(timerange, :) * topog.Layer_depth, 2));']);
+            eval([var{i} diag{j} '_tmean(timerange) = squeeze(sum(' var{i} diag{j} '_spacemean(timerange, :) .* topog.Layer_thikness, 2));']);
             eval([var{i} diag{j} '_zmean(yr_i, :) = transpose(squeeze(nanmean(' var{i} diag{j} '_spacemean(timerange, :), 1)));']);
         end 
         for i = idx_var_dem(1:end-1)
@@ -197,8 +204,8 @@ var = {'nmdz', 'jhploss_n_Mdz', 'jprod_nmdz', 'nlgz', 'jhploss_n_Lgz', 'jprod_nl
 for yr_i = 1:yr
     %! get directory containing output   
     name_yr = [name num2str(yr_i)]; 
-    dir_input = ['../../COBALT_output/parallel/', loc, '/' name_yr , '/'];
-    dir_output =['../output/Matlab_Average/', coupling, '/' loc, '/', [name num2str(yr)], '/'];
+    dir_input = ['../../COBALT_output/parallel/', loc, '/', exp, '/' name_yr , '/'];
+    dir_output =['../output/Matlab_Average/', coupling, '/' loc, '/', exp, '/', [name num2str(yr)], '/'];
 
     if ~exist(dir_output, 'dir') 
         mkdir(dir_output)
@@ -237,7 +244,7 @@ for yr_i = 1:yr
     %! Calculate average over lat and long: 
     for i = 1:(length(var)-1)
         eval([var{i} '_spacemean(timerange, :) = transpose(squeeze(nanmean(' var{i} ', [1,2])));']);
-        eval([var{i} '_tmean(timerange) = squeeze(sum(' var{i} '_spacemean(timerange, :) * topog.Layer_depth, 2));']); % integrated biomass over depth
+        eval([var{i} '_tmean(timerange) = squeeze(sum(' var{i} '_spacemean(timerange, :) .* topog.Layer_thikness, 2));']); % integrated biomass over depth
         eval([var{i} '_zmean(yr_i, :) = transpose(squeeze(nanmean(' var{i} '_spacemean(timerange, :), 1)));']); % concentration at every depth
     end
     for i = length(var) % pop_flux already in dimension of per area. 

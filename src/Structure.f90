@@ -99,10 +99,10 @@ module Structure
         real(dp) :: Ntime
         real(dp) :: Nlayer
 
-        real(dp) :: ilath
-        real(dp) :: ilongh
-        real(dp) :: itime
-        real(dp) :: ilayer
+        integer :: ilath
+        integer :: ilongh
+        integer :: itime
+        integer :: ilayer
 
         real(dp), dimension(75) :: zt  
         real(dp), dimension(75) :: layer_thickness

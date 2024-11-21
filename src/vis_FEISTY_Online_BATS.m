@@ -1,11 +1,13 @@
 %% Analysis FEISTY Coupled 
-function [] =  vis_FEISTY_Online_BATS(list, name, loc, yr)
+function [] =  vis_FEISTY_Online_BATS(list, name, loc, yr, exp)
 arguments 
     list      logical = false
     name      string  = 'BATS_nonFmort_0.1_encounter_70_k_1_k50_1_yr_'      % Default experiment
     loc       char    = 'BATS'
-    yr        double  = 5
+    yr        char    = '5'
+    exp       char    = 'Consumption'
 end 
+yr = str2num(yr);
 
 %! set up variable names
 var = {'Sf', 'Sp', 'Sd', 'Mf', 'Mp', 'Md', 'Lp', 'Ld', 'BE'};
@@ -30,7 +32,7 @@ cm_mz_rate_growth = cm7(idx_mz_rate_growth, :);
 
 %! get experiment folder names: 
 if list
-    [exp_name] = experiment_name(); 
+    [exp_name, yr] = getExpList(exp, loc);
 else 
     exp_name = name;
 end 
@@ -50,8 +52,8 @@ for nm = 1:length(exp_name)
     disp(['experiment: ' name_yr])
 
     coupling = 'online';
-    dir_input =['../output/Matlab_Average/', coupling, '/' loc, '/', [name num2str(yr)] , '/'];
-    dir_output =['../Fig/', coupling, '/' loc, '/', [name num2str(yr)], '/'];
+    dir_input =['../output/Matlab_Average/', coupling, '/' loc, '/', exp, '/', [name num2str(yr)] , '/'];
+    dir_output =['../Fig/', coupling, '/' loc, '/', exp , '/', [name num2str(yr)], '/'];
     dir_input_offline = ['../output/Matlab_Average/', 'offline', '/' loc, '/'];
 
     if ~exist(dir_output) 
@@ -583,10 +585,10 @@ for nm = 1:length(exp_name)
     %% Comparison Online Offline Fish biomass 
 
     %! get directory containing output
-    exp = 'baseparam';
+    exp_offline = 'baseparam';
     coupling = 'offline';
-    dir_input_offline_fish =['../output/Matlab_Average/', coupling, '/' loc, '/', exp, '/', ...
-                            'FEISTY_' coupling '_' loc '_' exp '_'];
+    dir_input_offline_fish =['../output/Matlab_Average/', coupling, '/' loc, '/', exp_offline, '/', ...
+                            'FEISTY_' coupling '_' loc '_' exp_offline '_'];
     var = {'Sf', 'Sp', 'Sd', 'Mf', 'Mp', 'Md', 'Lp', 'Ld', 'BE'}; % 
     
     %! Load data offline: 

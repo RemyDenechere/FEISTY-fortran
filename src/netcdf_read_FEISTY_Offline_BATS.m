@@ -9,8 +9,8 @@ arguments
     start_loc              double = 1
     end_loc                double = 11
 end 
-
-% dbstop in netcdf_read_FEISTY_Offline_BATS at 138
+dbclear all 
+% dbstop in netcdf_read_FEISTY_Offline_BATS at 213
 
 %% Root directory: 
 param.Rockfish = Rockfish; % true; % 
@@ -39,6 +39,31 @@ if ~exist(['../output/Matlab_Average/', coupling, '/' loc, '/', exp, '/'])
     mkdir(['../output/Matlab_Average/', coupling, '/' loc, '/', exp, '/'])
 end
 
+%% Get information about the simulation 
+disp(['Get information about the ' loc ' system'])
+topog.dir = ['../../CEFI-regional-MOM6-FEISTY/exps/OM4.single_column.COBALT/' loc '/'];
+topog.var = {'x', 'y', 'depth', 'Layer'};
+topog.longname = {'geographic_longitude', 'geographic_latitude', 'depth', 'Layer pseudo-depth'};
+topog.unit = {'degree_east', 'degree_north', 'meters', 'meters'};
+topog.files = {'ocean_hgrid.nc', 'ocean_hgrid.nc', 'ocean_topog.nc', 'FEISTY_2023_10_spinup_subset.nc'}; 
+topog.Layer_thikness = zeros(75, 1);
+
+for i = 1:length(topog.var)
+    ncid = netcdf.open([topog.dir, topog.files{i}], 'NC_NOWRITE');
+    varid = netcdf.inqVarID(ncid, topog.var{i});
+    topog.(topog.var{i}) = netcdf.getVar(ncid, varid);
+end
+
+% Calculate the actual depth for each layer based on the layer pseuco-depth
+% and the max depth from the location: 
+topog.Layer_depth = mean(topog.depth, [1, 2]) .* (topog.Layer/4000);
+
+topog.Layer_thikness(1) = topog.Layer_depth(1);
+topog.Layer_thikness(2:end) = topog.Layer_depth(2:end)' - topog.Layer_depth(1:(end-1))';
+
+% save in folder of the location as its the same for every experiment in a location
+save(['../output/Matlab_Average/', coupling, '/' loc, '/Topology.mat'], 'topog') 
+
 if ~param.loc_test
     %% Get Spinup Time Series data:
     disp('Get Spinup Time Series data')
@@ -55,8 +80,8 @@ if ~param.loc_test
     time = 1:dim(1);
     
     for i = 1:(length(var)-2)
-        sum_depth(:,:,:) = squeeze(eval(['sum(' var{i} ', 2)'])); 
-        eval([var{i} '_tmean = transpose(nanmean(sum_depth, [2, 3]));']);
+        mean_loc = eval(['transpose(squeeze(nanmean(' var{i} ', [3, 4])))']); 
+        eval([var{i} '_tmean = sum(mean_loc .* topog.Layer_thikness, 1);']);
         eval([var{i} '_Spin_end = transpose(nanmean(' var{i} '(end, :, :, :), [3, 4]));']);
     end 
     clear sum_depth
@@ -101,7 +126,7 @@ if ~param.loc_test
     
     %! Integrated biomass over depth: 
     for i = 1:(length(var))
-        eval([var{i} '_tmean = squeeze(sum(' var{i} '_spacemean, 1));']);
+        eval([var{i} '_tmean = squeeze(sum(' var{i} '_spacemean .* topog.Layer_thikness , 1));']);
     end
     
     %! Average over time : 
@@ -185,7 +210,7 @@ if ~param.loc_test
         % Integrated biomass over depth: 
         for i = 1:(length(var)-3)
             for j = 1:length(var_diag)
-                eval([var{i} '_' var_diag{j} '_tmean = squeeze(sum(' var{i} '_' var_diag{j} '_spacemean, 2));']);
+                eval([var{i} '_' var_diag{j} '_tmean = squeeze(sum(' var{i} '_' var_diag{j} '_spacemean  .* transpose(topog.Layer_thikness) , 2));']);
             end 
         end
         
