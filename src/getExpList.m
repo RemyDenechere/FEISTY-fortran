@@ -2,7 +2,7 @@
 % 
 % Rémy Denéchère <rdenechere@ucsd.edu>
 %
-% USAGE: getSubDir()
+% USAGE: getSubDir()dir_FE  
 %        getSubDir('Consumption')
 %        matlab -batch "getSubDir()"
 %        matlab -batch "getSubDir('Consumption')"
