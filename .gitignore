@@ -10,5 +10,6 @@
 *.mod
 *.png
 *.mat
+*.jpg
 
 output/Matlab_Average/
