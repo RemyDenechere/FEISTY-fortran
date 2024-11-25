@@ -20,6 +20,7 @@ sudo apt install gfortran make netcdf-bin libnetcdf-dev libnetcdff-dev openmpi-b
 - NetCDF packages: netcdf-bin libnetcdf-dev libnetcdff-dev
 - parallel simulation: openmpi-bin libopenmpi-dev
 
+<<<<<<< HEAD
 Flags for netcdf and OpenMP are already in the makefile.    
 
 ## Run Matlab analysis 
@@ -34,3 +35,10 @@ vis_FEISTY_fort
 # To Do
 - Move weight, Cmax and clearance rate calculation to param.
 - Construct a parallel version 
+=======
+Flags for netcdf and OpenMP are already in the makefile.
+
+------------------------------------------------------------------------
+# To Do
+- add Mesozooplankton loss output
+>>>>>>> d3a33d778be71c4f5dc33bc75dacaf86431d5cd7
