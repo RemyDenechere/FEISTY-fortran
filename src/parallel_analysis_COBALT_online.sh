@@ -4,8 +4,9 @@
 #
 # USAGE: ./parallel_analysis_COBALT_online.sh BATS Consumption
 # 
-# SCRIPT TO PARALLELIZED THE ANALYSIS OF THE COBALT OUTPUT NETCDF FILES
-FILE='experiment_name.txt'
+# SCRIPT TO PARALLELIZED THE ANALYSIS OF THE COBALT OUTPUT NETCDF FILE_EXPS
+FILE_EXP='experiment_name.txt'
+FILE_YEAR='nmb_yr.txt'
 
 # INPUT PARAMETERS:
 if [ "$#" -eq 2 ]; then 
@@ -17,10 +18,15 @@ else
     echo "USAGE: ./parallel_analysis_COBALT_online.sh <Experimentation location> <Experimentation Name> "
     exit 1
 fi
+1
 
 # IF experiment_name.txt ALREADY EXIST THEN CLEAR IT
-if [ -f "$FILE" ]; then
-	rm -f "$FILE"
+if [ -f "$FILE_EXP" ]; then
+	rm -f "$FILE_EXP"
+fi
+
+if [ -f "$FILE_YEAR" ]; then
+	rm -f "$FILE_YEAR"
 fi
 
 # RUN MATALB FUNCTION TO GET EXPERIMENTATION NAME LIST

@@ -33,7 +33,7 @@ module Parameters
     real(dp), parameter :: conv_m2_to_m3    = 100.00          ! Conversion from per area simulation to per depth simulation 
 
     ! Experimentation parameters: ------------------------------------------
-    character(LEN=280), parameter :: loc = "BATS"
+    character(LEN=280), parameter :: loc = "CCE"
     character(LEN=280), parameter :: exp = "baseparam" ! "COBALT_offline_BATS"
     character(LEN=280), parameter :: coupling = "offline"
 
