@@ -234,4 +234,3 @@ save_graph(gcf, "jpeg", "../Fig/Comparison_summing_methods", 16, 12)
 
 
 
-

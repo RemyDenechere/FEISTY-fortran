@@ -662,6 +662,73 @@ module GetNetCDFinf
         end if        
     end subroutine add_tracer_INPUT_nc
 
+    subroutine FEISTY_Save_2D_tracers(Spinup, tracers, Ntime, Nlayer, Nlath, Nlongh, lat, lon, zt)
+        logical, intent(in) :: Spinup
+        type(FEISTY_tracers), intent(inout), dimension(nDeriv) :: tracers
+        integer, intent(in) :: Ntime, Nlayer, Nlath, Nlongh
+        real(dp), dimension(9,9):: lat, lon
+        real(dp), dimension(75) :: zt
+        real(dp), dimension(Ntime, Nlayer, Nlath, Nlongh) :: tracers_data
+        character(LEN=280) :: filename 
+        integer(4) :: ncid, dimids(4)
+        integer :: i,j,k,l
+        
+        tracers_data = 0.00001
+
+        filename = "../output/netcdf/" // trim(coupling) // "/" // trim(loc) // "/FEISTY_2D_2023_10_spinup_subset.nc"
+        call init_tracer_INPUT_nc(filename, ncid, Ntime, Nlayer, Nlath, Nlongh, dimids, lat, lon, zt)
+        do i = 1, nDeriv
+            call add_2D_tracer_INPUT_nc(ncid, dimids, trim(tracers_name(i)) // "_B", tracers_long_name(i), &
+                                        tracers_data, Ntime, Nlayer, Nlath, Nlongh)
+        end do
+        call end_tracer_INPUT_nc(ncid)
+        print*, "FEISTY 2D IC saved :", filename
+    end subroutine FEISTY_Save_2D_tracers
+
+    subroutine add_2D_tracer_INPUT_nc(ncid, dimids, varname, long_name, var, Ntime, Nlayer, Nlath, Nlongh)
+        character(LEN=*), intent(in) :: varname
+        character(LEN=33), intent(in) ::  long_name
+        integer, intent(in) :: dimids(3)
+        integer, intent(in) :: ncid, Ntime, Nlayer, Nlath, Nlongh
+        real(dp), dimension(Ntime, Nlath, Nlongh), intent(in) :: var
+        real(dp), dimension(Nlongh, Nlath, Ntime) ::  var_reshaped
+        integer :: varid
+        integer :: status
+
+        ! Reshaping variable before saving for COBALT ouput:
+        var_reshaped = RESHAPE(var, SHAPE(var_reshaped), ORDER = (/3, 2, 1/))
+
+        ! Put opened netcdf into definition mode: 
+        status = nf90_redef(ncid)
+
+        ! Define the variable
+        status = nf90_def_var(ncid, varname, NF90_DOUBLE, dimids([1, 2, 4]), varid)
+        if (status /= NF90_NOERR) then
+            print *, "Error Def FEISTY: ", trim(varname)
+            print *, trim(nf90_strerror(status))
+            STOP
+        end if
+        
+        ! Add a attributes: 
+        status = nf90_put_att(ncid, varid, "long_name", trim(long_name))
+        status = nf90_put_att(ncid, varid, 'units', 'gWW m-2')
+        status = nf90_put_att(ncid, varid, 'checksum', "               0")
+        status = nf90_put_att(ncid, varid, '_FillValue', -9999.0_dp)
+
+        ! End the definitions mode: enter data mode
+        status = nf90_enddef(ncid)
+
+        ! Write the variable data
+        status = nf90_put_var(ncid, varid, var_reshaped(1:Nlongh, 1:Nlath, Ntime)) !, &
+                            !   start = (/1,      1,     1    ,  (Ntime-1) /), &
+                            !   count = (/Nlongh, Nlath, Nlayer, 1         /))
+        if (status /= NF90_NOERR) then
+            print *, "Error in nf90_put_var: " , trim(varname), " in add_tracer_INPUT_nc "
+            print *, trim(nf90_strerror(status))
+            STOP
+        end if        
+    end subroutine add_2D_tracer_INPUT_nc
+
     subroutine FEISTY_Save_diag(Spinup, diags, Ntime, Nlayer, Nlath, Nlongh)
         type(FEISTY_diag)   :: diags
         logical, intent(in) :: Spinup
