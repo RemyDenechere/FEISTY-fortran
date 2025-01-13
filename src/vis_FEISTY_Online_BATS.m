@@ -2,10 +2,10 @@
 function [] =  vis_FEISTY_Online_BATS(list, name, loc, yr, exp)
 arguments 
     list      logical = false
-    name      string  = 'BATS_nonFmort_0.1_encounter_70_k_1_k50_1_yr_'      % Default experiment
+    name      string  = 'BATS_nonFmort_0_encounter_70.000_k_1_k50_1_yr_'      % Default experiment
     loc       char    = 'BATS'
-    yr        char    = '5'
-    exp       char    = 'Consumption'
+    yr        char    = '1'
+    exp       char    = 'FEISTY--non-vertical_1'
 end 
 yr = str2num(yr);
 
@@ -26,9 +26,9 @@ addpath('../../Programing-Tutorials/Matlab/Matlab_functions/')
 cm10 = colormap(turbo(10));
 cm4  = colormap(turbo(4));
 cm7  = colormap(turbo(7));
-cm_mz_bio  = cm7(idx_mz_bio, :);
-cm_mz_rate_loss  = cm7(idx_mz_rate_loss, :);
-cm_mz_rate_growth = cm7(idx_mz_rate_growth, :);
+cm_mz_bio           = cm7(idx_mz_bio, :);
+cm_mz_rate_loss     = cm7(idx_mz_rate_loss, :);
+cm_mz_rate_growth   = cm7(idx_mz_rate_growth, :);
 
 %! get experiment folder names: 
 if list
@@ -64,52 +64,8 @@ for nm = 1:length(exp_name)
     %                               Tracers 
     % -------------------------------------------------------------------------
     %!  get tracers: 
-    load([dir_input 'Time_Depth_Means_Tracers' '.mat'])
     load([dir_input 'Time_Means_Tracers' '.mat'])
-    load([dir_input 'Depth_Means_Tracers' '.mat'])
-    
-    %% plot average tracer over depth: ------------------------------------
-    n = n+1;
-    %!! functional group: 
-    F_B_zmean = Sf_B_zmean(end, :) + Mf_B_zmean(end, :);
-    P_B_zmean = Sp_B_zmean(end, :) + Mp_B_zmean(end, :) + Lp_B_zmean(end, :);
-    D_B_zmean = Sd_B_zmean(end, :) + Md_B_zmean(end, :) + Ld_B_zmean(end, :);
-    
-    figure(n)
-    axes_formating(gcf, "defaultAxesColorOrder", cm10)
-    t = tiledlayout(1, 2, "TileSpacing", "compact", "Padding", "compact");
-    
-    %! plot all size:------------------------------------------------------
-    ax = nexttile;
-    hold on 
-    for i = 1:(length(var)-1)
-        plot(ax, eval([var{i} '_B_zmean(end, :)']), -topog.Layer_depth)
-    end
-    hold off
-    ax.XScale = "log";
-    L = legend(var{1:(end-1)}, 'Location', 'southwest'); 
-    L.Box = 'off'; L.Color = 'none';
-    title("All sizes")
-    
-    %! plot functional group:----------------------------------------------
-    nexttile
-    axes_formating(gcf, "defaultAxesColorOrder", cm4)
-    semilogx(F_B_zmean, -topog.Layer_depth, P_B_zmean, -topog.Layer_depth, BE_B_zmean, -topog.Layer_depth)
-    hold on 
-    semilogx(double(D_B_zmean(end)), -topog.Layer_depth(end), '.')
-    hold off 
-    L = legend('Forage', 'Pelagic', 'Benthic', 'Demersal', 'Location', 'southwest');
-    L.Box = 'off'; L.Color = 'none';
-    title("Functional groups")
-    
-    % tiled labels: 
-    xlabel(t, "Biomass gWW m-3")
-    ylabel(t, "Depth (m)")
-    title(t, {[coupling '_' name_yr '_yr_' num2str(yr)], 'Depth_Means_Time_Series'}, ...
-        Interpreter = 'none')
-    
-    save_graph(gcf, "png", [dir_output 'Depth_Means_Time_Series'], 16, 14)
-    
+
     %% plot average over time:-------------------------------------------------
     n = n+1;
 
@@ -133,8 +89,8 @@ for nm = 1:length(exp_name)
     ax.YScale = "log";
     L = legend(var, 'Location', 'eastoutside');
     L.Color = 'none'; L.Box = 'off';
-    xticks(0:365:max(time_days))
-    xticklabels(0:length(0:365:max(time_days)))
+    xticks(0:366:max(time_days))
+    xticklabels(0:length(0:366:max(time_days)))
     xtickangle(0)
     title("All sizes")
     
@@ -146,8 +102,8 @@ for nm = 1:length(exp_name)
     L = legend('Forage', 'Pelagic', 'Demersal', 'Benthos', ...
             'Location', 'eastoutside');
     L.Color = 'none'; L.Box = 'off';
-    xticks(0:365:max(time_days))
-    xticklabels(0:length(0:365:max(time_days)))
+    xticks(0:366:max(time_days))
+    xticklabels(0:length(0:366:max(time_days)))
     xtickangle(0)
     title("Functional groups")
     
@@ -158,7 +114,7 @@ for nm = 1:length(exp_name)
     
     save_graph(gcf, "png", [dir_output 'Time_Means_Time_Series'], 20, 14)
     
-    %% plot average over a year:-------------------------------------------------
+    %% plot average over last year:-------------------------------------------------
     n = n+1;
     %!! functional group: 
     F_B_tmean = Sf_B_tmean + Mf_B_tmean;
@@ -233,8 +189,8 @@ for nm = 1:length(exp_name)
         val = repmat(eval([var_COBALT{i} '_offline_tmean']), 1, yr);
         plot(time_days, val)
     end 
-    xticks(0:365:max(time_days))
-    xticklabels(0:length(0:365:max(time_days)))
+    xticks(0:366:max(time_days))
+    xticklabels(0:length(0:366:max(time_days)))
     xtickangle(0)
     hold off
     title('Offline')
@@ -246,8 +202,8 @@ for nm = 1:length(exp_name)
     for i = idx_mz_bio
         plot(time_days, eval([var_COBALT{i} '_tmean']))
     end 
-    xticks(0:365:max(time_days))
-    xticklabels(0:length(0:365:max(time_days)))
+    xticks(0:366:max(time_days))
+    xticklabels(0:length(0:366:max(time_days)))
     xtickangle(0)
     hold off
     title("Online")
@@ -261,8 +217,8 @@ for nm = 1:length(exp_name)
     end 
     plot([time_days(1) time_days(end)], [0 0], 'k:', 'LineWidth', 1)
     hold off
-    xticks(0:365:max(time_days))
-    xticklabels(0:length(0:365:max(time_days)))
+    xticks(0:366:max(time_days))
+    xticklabels(0:length(0:366:max(time_days)))
     xtickangle(0)
     title("Difference")
     title(t, {[coupling '_' name_yr '_yr_' num2str(yr)], ...
@@ -289,8 +245,8 @@ for nm = 1:length(exp_name)
         plot(time_days, val)
     end 
     hold off
-    xticks(0:365:max(time_days))
-    xticklabels(0:length(0:365:max(time_days)))
+    xticks(0:366:max(time_days))
+    xticklabels(0:length(0:366:max(time_days)))
     xtickangle(0)
     title('Offline')
     legend(var_COBALT{idx_mz_rate_loss}, Interpreter = 'none', Location = "best")
@@ -313,8 +269,8 @@ for nm = 1:length(exp_name)
     end 
     plot([time_days(1) time_days(end)], [0 0], 'k:', 'LineWidth', 1)
     hold off
-    xticks(0:365:max(time_days))
-    xticklabels(0:length(0:365:max(time_days)))
+    xticks(0:366:max(time_days))
+    xticklabels(0:length(0:366:max(time_days)))
     xtickangle(0)
     title("Difference")
     
@@ -342,8 +298,8 @@ for nm = 1:length(exp_name)
         plot(time_days, val)
     end 
     hold off
-    xticks(0:365:max(time_days))
-    xticklabels(0:length(0:365:max(time_days)))
+    xticks(0:366:max(time_days))
+    xticklabels(0:length(0:366:max(time_days)))
     xtickangle(0)
     title('Offline')
     legend(var_COBALT{idx_mz_rate_growth}, Interpreter = 'none', Location = "best")
@@ -366,8 +322,8 @@ for nm = 1:length(exp_name)
     end 
     plot([time_days(1) time_days(end)], [0 0], 'k:', 'LineWidth', 1)
     hold off
-    xticks(0:365:max(time_days))
-    xticklabels(0:length(0:365:max(time_days)))
+    xticks(0:366:max(time_days))
+    xticklabels(0:length(0:366:max(time_days)))
     xtickangle(0)
     title("Difference")
     
@@ -389,7 +345,7 @@ for nm = 1:length(exp_name)
     axes_formating(gcf, "defaultAxesColorOrder", cm7);
     t = tiledlayout(3, 1, "TileSpacing","compact","Padding","compact");
     start_date = datetime("2004-01-01");
-    end_date   = datetime("2004-12-30");
+    end_date   = datetime("2004-12-31");
     time = start_date:end_date;
 
     % Offline zooplankton -------------------------------------------------
@@ -405,7 +361,7 @@ for nm = 1:length(exp_name)
     nexttile
     hold on 
     for i = 1:length(var_COBALT)
-        plot(time, eval([var_COBALT{i} '_tmean((end-365+1):end)']))
+        plot(time, eval([var_COBALT{i} '_tmean((end-366+1):end)']))
     end
     hold off
     legend(var_COBALT{:}, Interpreter = 'none', Location = "eastoutside", box = 'off')
@@ -415,7 +371,7 @@ for nm = 1:length(exp_name)
     nexttile
     hold on 
     for i = 1:length(var_COBALT)
-            plot(time, eval([var_COBALT{i} '_tmean((end-365+1):end)']) - eval([var_COBALT{i} '_offline_tmean']))
+            plot(time, eval([var_COBALT{i} '_tmean((end-366+1):end)']) - eval([var_COBALT{i} '_offline_tmean']))
     end 
     plot([time(1) time(end)], [0 0], 'k:', 'LineWidth', 1)
     hold off
@@ -432,7 +388,7 @@ for nm = 1:length(exp_name)
     axes_formating(gcf, "defaultAxesColorOrder", cm_mz_bio, "AxesYScale", "log");
     hold on 
     for i = 1:length(idx_mz_bio)
-        plot(eval([var_COBALT{idx_mz_bio(i)} '_spacemean(1,:)' ]), -topog.Layer_depth)
+        plot(eval([var_COBALT{idx_mz_bio(i)} '_spacemean(1,:)' ]), -topog.Layer)
     end 
     hold off
     title({[coupling '_' name_yr '_yr_' num2str(yr)], ...
@@ -448,12 +404,10 @@ for nm = 1:length(exp_name)
     % -------------------------------------------------------------------------
     
     %% plot average over time:-------------------------------------------------
-    load([dir_input 'Time_Depth_Means_Diagnostics' '.mat'])
     load([dir_input 'Time_Means_Diagnostics' '.mat'])
-    load([dir_input 'Depth_Means_Diagnostics' '.mat'])
     
-    dimension_average = {'_tmean', '_zmean', '_spacemean'};
-    dimensions = {'time_days', 'topog.Layer_depth'};
+    dimension_average = {'_tmean'};
+    dimensions = {'time_days'};
     var = {'SF', 'SP', 'SD', 'MF', 'MP', 'MD', 'LP', 'LD'}; % , 'BE'
     diag = {'_met', '_enc_Mz', '_enc_Lz', '_enc_f', '_enc_p', '_enc_d', '_enc_BE', ...
             '_cons_Mz', '_cons_Lz', '_cons_f', '_cons_p', '_cons_d', '_cons_BE', '_cons_tot', ...
@@ -495,8 +449,8 @@ for nm = 1:length(exp_name)
                 for v = 1:length(var) 
                     if d == 1
                         plot(ti, eval(dimensions{d}), eval([var{v} diag{grp(i).idx(j)} dimension_average{d}]))
-                        xticks(0:5*365:max(time_days))
-                        xticklabels(0:5:length(0:365:max(time_days)))
+                        xticks(0:5*366:max(time_days))
+                        xticklabels(0:5:length(0:366:max(time_days)))
                         xtickangle(0)
                     elseif d == 2
                         plot(ti, eval([var{v} diag{grp(i).idx(j)} dimension_average{d} '(end, :)']), -eval(dimensions{d}))
@@ -548,8 +502,8 @@ for nm = 1:length(exp_name)
                 for v = 1:length(var) 
                     if d == 1
                         plot(ti, eval(dimensions{d}), eval([var{v} diag{grp(i).idx(j)} dimension_average{d}]))
-                        xticks(0:5*365:max(time_days))
-                        xticklabels(0:5:length(0:365:max(time_days)))
+                        xticks(0:5*366:max(time_days))
+                        xticklabels(0:5:length(0:366:max(time_days)))
                         xtickangle(0)
                     elseif d == 2
                         plot(ti, eval([var{v} diag{grp(i).idx(j)} dimension_average{d} '(end, :)']), -eval(dimensions{d}))
@@ -583,130 +537,133 @@ for nm = 1:length(exp_name)
  
     
     %% Comparison Online Offline Fish biomass 
+    % Not working yet: need to get fish from the offline setup matching the time length of the one from the online setup ! 
 
-    %! get directory containing output
-    exp_offline = 'baseparam';
-    coupling = 'offline';
-    dir_input_offline_fish =['../output/Matlab_Average/', coupling, '/' loc, '/', exp_offline, '/', ...
-                            'FEISTY_' coupling '_' loc '_' exp_offline '_'];
-    var = {'Sf', 'Sp', 'Sd', 'Mf', 'Mp', 'Md', 'Lp', 'Ld', 'BE'}; % 
-    
-    %! Load data offline: 
-    load([dir_input_offline_fish 'Time_Means' '.mat']);
+    if false 
+        %! get directory containing output
+        exp_offline = 'baseparam';
+        coupling = 'offline';
+        dir_input_offline_fish =['../output/Matlab_Average/', coupling, '/' loc, '/', exp_offline, '/', ...
+                                'FEISTY_' coupling '_' loc '_' exp_offline '_'];
+        var = {'Sf', 'Sp', 'Sd', 'Mf', 'Mp', 'Md', 'Lp', 'Ld', 'BE'}; % 
+        
+        %! Load data offline: 
+        load([dir_input_offline_fish 'Time_Means' '.mat']);
 
-    % Sum per functional group: 
-    F_tmean_offline  = Sf_tmean + Mf_tmean;
-    P_tmean_offline  = Sp_tmean + Mp_tmean + Lp_tmean;
-    D_tmean_offline  = Sd_tmean + Md_tmean + Ld_tmean;
+        % Sum per functional group: 
+        F_tmean_offline  = Sf_tmean + Mf_tmean;
+        P_tmean_offline  = Sp_tmean + Mp_tmean + Lp_tmean;
+        D_tmean_offline  = Sd_tmean + Md_tmean + Ld_tmean;
 
-    % transform offline data to match online time series : So far offline
-    % is simply one unique run (consider spining the offline COBALT
-    % simulation): 
-    for i = 1:length(var)
-         eval([var{i} '_tmean_offline = repmat(' var{i} '_tmean, 1, yr);']);
-    end
-    F_tmean_offline  = repmat(F_tmean_offline, 1, yr);
-    P_tmean_offline  = repmat(P_tmean_offline, 1, yr);
-    D_tmean_offline  = repmat(D_tmean_offline, 1, yr);
-    time = 1:(yr*365);
+        % transform offline data to match online time series : So far offline
+        % is simply one unique run (consider spining the offline COBALT
+        % simulation): 
+        for i = 1:length(var)
+            eval([var{i} '_tmean_offline = repmat(' var{i} '_tmean, 1, yr);']);
+        end
+        F_tmean_offline  = repmat(F_tmean_offline, 1, yr);
+        P_tmean_offline  = repmat(P_tmean_offline, 1, yr);
+        D_tmean_offline  = repmat(D_tmean_offline, 1, yr);
+        time = 1:(yr*366);
 
-    %! plot Offline Simulation: ------------------------------------------- 
-    figure(1)
-    axes_formating(gcf)
-    t = tiledlayout(3, 2, "TileSpacing", "compact", "Padding", "compact");
-    
-    % offline all size: 
-    t1 = nexttile;
-    axes_formating(t1, "defaultAxesColorOrder", cm10)
-    set(t1, 'YScale', 'log')
-    title({'All sizes', 'Offline'})
-    hold on 
-    for i = 1:length(var)-1
-        plot(eval([var{i} '_tmean_offline']))
+        %! plot Offline Simulation: ------------------------------------------- 
+        figure(1)
+        axes_formating(gcf)
+        t = tiledlayout(3, 2, "TileSpacing", "compact", "Padding", "compact");
+        
+        % offline all size: 
+        t1 = nexttile;
+        axes_formating(t1, "defaultAxesColorOrder", cm10)
+        set(t1, 'YScale', 'log')
+        title({'All sizes', 'Offline'})
+        hold on 
+        for i = 1:length(var)-1
+            plot(eval([var{i} '_tmean_offline']))
+        end 
+        hold off
+        xticks(0:5*366:max(time_days))
+        xticklabels(0:5:length(0:366:max(time_days)))
+        xtickangle(0)
+
+        % offline functional group
+        t2 = nexttile;
+        axes_formating(t2, "defaultAxesColorOrder", cm4)
+        set(t2, 'YScale', 'log')
+        title({'Functional Grps', 'Offline'})
+        hold on
+        plot(time, F_tmean_offline, ...
+            time, P_tmean_offline, ...
+            time, D_tmean_offline)
+        plot([1, length(time)], [80 80])
+        hold off
+        xticks(0:5*366:max(time_days))
+        xticklabels(0:5:length(0:366:max(time_days)))
+        xtickangle(0)
+
+        %! plot Online Simulation: --------------------------------------------
+        t3 = nexttile; 
+        axes_formating(gca, "defaultAxesColorOrder", cm10)
+        set(t3, 'YScale', 'log')
+
+        % plot all size: ------------------------------------------------------
+        hold on
+        for i = 1:length(var)
+            plot(time_days, eval([var{i} '_B_tmean']))
+        end
+        set(gca, 'YLim', [10^(-6) 2*10^2])
+        hold off 
+        xticks(0:5*366:max(time_days))
+        xticklabels(0:5:length(0:366:max(time_days)))
+        xtickangle(0)
+        L = legend(var, 'Location', 'eastoutside'); L.Color = 'none'; L.Box = 'off';
+        title("Online")
+        
+        % plot functional groups: ---------------------------------------------
+        t4 = nexttile; 
+        axes_formating(t4, "defaultAxesColorOrder", cm4)
+        plot(time_days,    F_B_tmean, ...
+                time_days, P_B_tmean, ...
+                time_days, D_B_tmean, ...
+                time_days, BE_B_tmean)
+        xticks(0:5*366:max(time_days))
+        xticklabels(0:5:length(0:366:max(time_days)))
+        xtickangle(0)
+        L = legend('Forage', 'Pelagic', 'Demersal', 'Benthos', ...
+                'Location', 'eastoutside'); L.Color = 'none'; L.Box = 'off';
+            set(gca, 'YScale', 'log', 'YLim', [10^(-6) 2*10^2])
+        title("Online")
+
+        % plot difference: ----------------------------------------------------
+        t5 = nexttile; 
+        axes_formating(t5, "defaultAxesColorOrder", cm10)  
+        % plot all size: 
+        hold on
+        for i = 1:length(var)-1
+            plot(time_days, eval([var{i} '_B_tmean - ' var{i} '_tmean_offline']))
+        end
+        hold off 
+        xticks(0:5*366:max(time_days))
+        xticklabels(0:5:length(0:366:max(time_days)))
+        xtickangle(0)
+        title("Difference")
+
+        % plot functional groups: 
+        t6 = nexttile; 
+        axes_formating(t6, "defaultAxesColorOrder", cm4)
+        set(gca, 'YScale', 'linear')
+        plot(time_days, F_B_tmean - F_tmean_offline, ...
+            time_days, P_B_tmean - P_tmean_offline, ...
+            time_days, D_B_tmean - D_tmean_offline)
+        xticks(0:5*366:max(time_days))
+        xticklabels(0:5:length(0:366:max(time_days)))
+        xtickangle(0)
+        title("Difference")
+
+        xlabel(t, 'year spinup')
+        ylabel(t, 'Fish biomass g ww m-2')
+
+        save_graph(gcf, "png", [dir_output 'Fish_comparison_online_offline'], 32, 12)
     end 
-    hold off
-    xticks(0:5*365:max(time_days))
-    xticklabels(0:5:length(0:365:max(time_days)))
-    xtickangle(0)
-
-    % offline functional group
-    t2 = nexttile;
-    axes_formating(t2, "defaultAxesColorOrder", cm4)
-    set(t2, 'YScale', 'log')
-    title({'Functional Grps', 'Offline'})
-    hold on
-    plot(time, F_tmean_offline, ...
-         time, P_tmean_offline, ...
-         time, D_tmean_offline)
-    plot([1, length(time)], [80 80])
-    hold off
-    xticks(0:5*365:max(time_days))
-    xticklabels(0:5:length(0:365:max(time_days)))
-    xtickangle(0)
-
-    %! plot Online Simulation: --------------------------------------------
-    t3 = nexttile; 
-    axes_formating(gca, "defaultAxesColorOrder", cm10)
-    set(t3, 'YScale', 'log')
-
-    % plot all size: ------------------------------------------------------
-    hold on
-    for i = 1:length(var)
-        plot(time_days, eval([var{i} '_B_tmean']))
-    end
-    set(gca, 'YLim', [10^(-6) 2*10^2])
-    hold off 
-    xticks(0:5*365:max(time_days))
-    xticklabels(0:5:length(0:365:max(time_days)))
-    xtickangle(0)
-    L = legend(var, 'Location', 'eastoutside'); L.Color = 'none'; L.Box = 'off';
-    title("Online")
-    
-    % plot functional groups: ---------------------------------------------
-    t4 = nexttile; 
-    axes_formating(t4, "defaultAxesColorOrder", cm4)
-    plot(time_days, F_B_tmean, ...
-            time_days, P_B_tmean, ...
-            time_days, D_B_tmean, ...
-            time_days, BE_B_tmean)
-    xticks(0:5*365:max(time_days))
-    xticklabels(0:5:length(0:365:max(time_days)))
-    xtickangle(0)
-    L = legend('Forage', 'Pelagic', 'Demersal', 'Benthos', ...
-            'Location', 'eastoutside'); L.Color = 'none'; L.Box = 'off';
-        set(gca, 'YScale', 'log', 'YLim', [10^(-6) 2*10^2])
-    title("Online")
-
-    % plot difference: ----------------------------------------------------
-    t5 = nexttile; 
-    axes_formating(t5, "defaultAxesColorOrder", cm10)  
-    % plot all size: 
-    hold on
-    for i = 1:length(var)-1
-        plot(time_days, eval([var{i} '_B_tmean - ' var{i} '_tmean_offline']))
-    end
-    hold off 
-    xticks(0:5*365:max(time_days))
-    xticklabels(0:5:length(0:365:max(time_days)))
-    xtickangle(0)
-    title("Difference")
-
-    % plot functional groups: 
-    t6 = nexttile; 
-    axes_formating(t6, "defaultAxesColorOrder", cm4)
-    set(gca, 'YScale', 'linear')
-    plot(time_days, F_B_tmean - F_tmean_offline, ...
-         time_days, P_B_tmean - P_tmean_offline, ...
-         time_days, D_B_tmean - D_tmean_offline)
-    xticks(0:5*365:max(time_days))
-    xticklabels(0:5:length(0:365:max(time_days)))
-    xtickangle(0)
-    title("Difference")
-
-    xlabel(t, 'year spinup')
-    ylabel(t, 'Fish biomass g ww m-2')
-
-    save_graph(gcf, "png", [dir_output 'Fish_comparison_online_offline'], 32, 12)
 end
 
 %     %% ------------------------------------------------------------------------

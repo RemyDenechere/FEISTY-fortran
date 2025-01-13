@@ -280,7 +280,7 @@ if ~param.loc_test
         varid = netcdf.inqVarID(ncid, var{i});
         eval([ var{i} ' = netcdf.getVar(ncid, varid);']);
         eval([ var{i} '(' var{i} ' == 99999) = NaN;']);
-        eval([ var{i} '=' var{i} '(:,:,:,1:365);']);
+        eval([ var{i} '=' var{i} '(:,:,:,1:366);']);
         netcdf.close(ncid);
     
         if ismember(i, [1, 4]) % conversions biomass 
@@ -345,7 +345,7 @@ elseif param.loc_test
             varid = netcdf.inqVarID(ncid, var{i});
             eval([ var{i} ' = netcdf.getVar(ncid, varid);']);
             eval([ var{i} '(' var{i} ' == 99999) = NaN;']);
-            eval([ var{i} '=' var{i} '(:,:,:,1:365);']);
+            eval([ var{i} '=' var{i} '(:,:,:,1:366);']);
             netcdf.close(ncid);
         
             if ismember(i, [1, 3]) % conversions biomass 
