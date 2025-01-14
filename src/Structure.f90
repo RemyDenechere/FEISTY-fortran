@@ -102,7 +102,6 @@ module Structure
         integer :: ilath
         integer :: ilongh
         integer :: itime
-        integer :: ilayer
 
         real(dp), dimension(75) :: zt  
         real(dp), dimension(75) :: layer_thickness
@@ -116,7 +115,7 @@ module Structure
     ! Fish Diagnostic variable
     !------------------------------------------------------------------------------------
     type :: Diag_fish 
-        real(dp), dimension(:, :, :, :), allocatable :: & 
+        real(dp), dimension(:, :, :), allocatable :: & 
         ! Physiology: -----------------------------------------------------------------
         f,&               ! Total feeding level
         cmax,&            ! Maximum consumption rate 
@@ -149,7 +148,7 @@ module Structure
     ! MesoZooplankton Diagnostic variable
     !------------------------------------------------------------------------------------
     type :: Diag_mesozoo
-        real(dp), dimension(:,:,:,:), allocatable :: Zcon_VS_dZ
+        real(dp), dimension(:,:,:), allocatable :: Zcon_VS_dZ
     end type Diag_mesozoo
 
 
@@ -171,25 +170,19 @@ module Structure
     ! All tracers use in FEISTY module
     !------------------------------------------------------------------------------------
     type :: FEISTY_tracers
-        real(dp), dimension(:, :, :, :), allocatable :: Bio
+        real(dp), dimension(:, :, :), allocatable :: Bio
     end type FEISTY_tracers
 
-
-    ! type :: Save_structure1D
-    !     real(dp), dimension(:), allocatable :: Sf, Sp, Sd, Mf, Mp, Md, Lp, Ld, BE, Zcons_VS_dZm, Zcons_VS_dZl
-    ! end type
-
     type :: Initial_conditions
-        real(dp), dimension(:, :, :), allocatable :: IniBio
-        ! IniSf, IniSp, IniSd, IniMf, IniMp, IniMd , IniLp, IniLd, IniBE
+        real(dp), dimension(:, :), allocatable :: IniBio
     end type 
 
     contains 
 
     ! Define initial condition for a grid cell
-    subroutine initPhysiology(Spinup, ilayer, ilath, ilongh, IC_tracers_Bio, FEISTY)
+    subroutine initPhysiology(Spinup, ilath, ilongh, IC_tracers_Bio, FEISTY)
         logical, intent(in) :: Spinup
-        integer, intent(in) :: ilayer, ilath, ilongh
+        integer, intent(in) :: ilath, ilongh
         type(FEISTY_type), intent(inout) :: FEISTY
         type(Initial_conditions), intent(inout), dimension(nDeriv) :: IC_tracers_Bio
         integer :: i
@@ -208,23 +201,22 @@ module Structure
         else 
             ! Fish:
             do i = 1, nFishGroup
-                FEISTY%fish(i)%B = IC_tracers_Bio(i)%IniBio(ilayer, ilath, ilongh)
+                FEISTY%fish(i)%B = IC_tracers_Bio(i)%IniBio(ilath, ilongh)
             end do
             ! Benthic: 
             do i = 1, nBenthos  
-                FEISTY%benthos(i)%B = IC_tracers_Bio(i)%IniBio(ilayer, ilath, ilongh)
+                FEISTY%benthos(i)%B = IC_tracers_Bio(i)%IniBio(ilath, ilongh)
             end do
         end if 
-
     end subroutine initPhysiology
 
      ! Define initial condition for a grid cell
-    subroutine init_Biomass_Layer(Spinup, itime, ilayer, ilath, ilongh, IC_tracers_Bio, FEISTY, tracers)
+    subroutine init_Biomass_Layer(Spinup, itime, ilath, ilongh, IC_tracers_Bio, FEISTY, tracers)
         type(FEISTY_type)       , intent(inout)                    :: FEISTY
         type(Initial_conditions), intent(in)   , dimension(nDeriv) :: IC_tracers_Bio
         type(FEISTY_tracers)    , intent(in)   , dimension(nDeriv) :: tracers
         logical, intent(in) :: Spinup
-        integer, intent(in) :: itime, ilayer, ilath, ilongh
+        integer, intent(in) :: itime, ilath, ilongh
         integer :: i
     
         ! Gives initial condition for 1st time step if Spinup 
@@ -241,143 +233,135 @@ module Structure
         ! Gives initial condition for 1st time step from spinup 
         elseif ((Spinup .eqv. .false.) .and. (itime .eq. int(1))) then
             do i = 1, nFishGroup
-                FEISTY%fish(i)%B = IC_tracers_Bio(i)%IniBio(ilayer, ilath, ilongh)
+                FEISTY%fish(i)%B = IC_tracers_Bio(i)%IniBio(ilath, ilongh)
             end do
         
-        ! Gives uses biomass from previous time step for any time 
+        ! Gives biomass from previous time step for any time 
         elseif (itime .gt. int(1)) then 
             ! Allocate fish biomass 
             do i = 1, nFishGroup
-                FEISTY%fish(i)%B = tracers(i)%Bio(itime-1, ilayer, ilath, ilongh)
+                FEISTY%fish(i)%B = tracers(i)%Bio(itime-1, ilath, ilongh)
             end do 
             ! allocate Benthic biomass: 
             do i = 1, nBenthos  
-                FEISTY%benthos(i)%B = tracers(i + nFishGroup)%Bio(itime-1, ilayer, ilath, ilongh)
+                FEISTY%benthos(i)%B = tracers(i + nFishGroup)%Bio(itime-1, ilath, ilongh)
             end do
         end if 
 
     end subroutine init_Biomass_Layer
     
 
-    subroutine allocate_tracers(tracers, Ntime, Nlayer, Nlath, Nlongh)
+    subroutine allocate_tracers(tracers, Ntime, Nlath, Nlongh)
         type(FEISTY_tracers), dimension(nDeriv) :: tracers
-        integer :: Ntime, Nlayer, Nlath, Nlongh
+        integer :: Ntime, Nlath, Nlongh
         integer :: i
-
         do i = 1, nDeriv
-            allocate(tracers(i)%Bio(Ntime, Nlayer, Nlath, Nlongh))
+            allocate(tracers(i)%Bio(Ntime, Nlath, Nlongh))
         end do 
-
     end subroutine allocate_tracers
 
-    subroutine allocate_diags(diags, Ntime, Nlayer, Nlath, Nlongh)
+    subroutine allocate_diags(diags, Ntime, Nlath, Nlongh)
         type(FEISTY_diag) :: diags
-        integer, intent(in) :: Ntime, Nlayer, Nlath, Nlongh
+        integer, intent(in) :: Ntime, Nlath, Nlongh
         integer :: i
         Do i = 1, nFishGroup
-            allocate(diags%fish(i)%f(Ntime, Nlayer, Nlath, Nlongh))       ; diags%fish(i)%f = 0.0          ! Total feeding level
-            allocate(diags%fish(i)%cmax(Ntime, Nlayer, Nlath, Nlongh))    ; diags%fish(i)%cmax = 0.0           ! Maximum consumption rate 
-            allocate(diags%fish(i)%cons(Ntime, Nlayer, Nlath, Nlongh))    ; diags%fish(i)%cons = 0.0          ! Total consumption rate
-            allocate(diags%fish(i)%met(Ntime, Nlayer, Nlath, Nlongh))     ; diags%fish(i)%met = 0.0           ! metabolic cost 
-            allocate(diags%fish(i)%mu_p(Ntime, Nlayer, Nlath, Nlongh))    ; diags%fish(i)%mu_p = 0.0          ! Predation mortality 
-            allocate(diags%fish(i)%mu_f(Ntime, Nlayer, Nlath, Nlongh))    ; diags%fish(i)%mu_f = 0.0          ! Fishing mortality 
-            allocate(diags%fish(i)%mu_a(Ntime, Nlayer, Nlath, Nlongh))    ; diags%fish(i)%mu_a = 0.0          ! Natural mortality 
-            allocate(diags%fish(i)%mu(Ntime, Nlayer, Nlath, Nlongh))      ; diags%fish(i)%mu = 0.0          ! Total mortality
-            allocate(diags%fish(i)%E_A(Ntime, Nlayer, Nlath, Nlongh))     ; diags%fish(i)%E_A = 0.0          ! Available energy 
-            allocate(diags%fish(i)%Fout(Ntime, Nlayer, Nlath, Nlongh))    ; diags%fish(i)%Fout = 0.0          ! flux out of a size class 
-            allocate(diags%fish(i)%Repro(Ntime, Nlayer, Nlath, Nlongh))   ; diags%fish(i)%Repro = 0.0         ! Reproduction flux 
+            allocate(diags%fish(i)%f(Ntime, Nlath, Nlongh))       ; diags%fish(i)%f = 0.0          ! Total feeding level
+            allocate(diags%fish(i)%cmax(Ntime, Nlath, Nlongh))    ; diags%fish(i)%cmax = 0.0           ! Maximum consumption rate 
+            allocate(diags%fish(i)%cons(Ntime, Nlath, Nlongh))    ; diags%fish(i)%cons = 0.0          ! Total consumption rate
+            allocate(diags%fish(i)%met(Ntime, Nlath, Nlongh))     ; diags%fish(i)%met = 0.0           ! metabolic cost 
+            allocate(diags%fish(i)%mu_p(Ntime, Nlath, Nlongh))    ; diags%fish(i)%mu_p = 0.0          ! Predation mortality 
+            allocate(diags%fish(i)%mu_f(Ntime, Nlath, Nlongh))    ; diags%fish(i)%mu_f = 0.0          ! Fishing mortality 
+            allocate(diags%fish(i)%mu_a(Ntime, Nlath, Nlongh))    ; diags%fish(i)%mu_a = 0.0          ! Natural mortality 
+            allocate(diags%fish(i)%mu(Ntime, Nlath, Nlongh))      ; diags%fish(i)%mu = 0.0          ! Total mortality
+            allocate(diags%fish(i)%E_A(Ntime, Nlath, Nlongh))     ; diags%fish(i)%E_A = 0.0          ! Available energy 
+            allocate(diags%fish(i)%Fout(Ntime, Nlath, Nlongh))    ; diags%fish(i)%Fout = 0.0          ! flux out of a size class 
+            allocate(diags%fish(i)%Repro(Ntime, Nlath, Nlongh))   ; diags%fish(i)%Repro = 0.0         ! Reproduction flux 
     
             ! Feeding level for each prey : ------------------------------------------------
-            allocate(diags%fish(i)%f_Zm(Ntime, Nlayer, Nlath, Nlongh))    ; diags%fish(i)%f_Zm = 0.0         
-            allocate(diags%fish(i)%f_Zl(Ntime, Nlayer, Nlath, Nlongh))    ; diags%fish(i)%f_Zl = 0.0         ! --         
-            allocate(diags%fish(i)%f_Sf(Ntime, Nlayer, Nlath, Nlongh))    ; diags%fish(i)%f_Sf = 0.0         ! --
-            allocate(diags%fish(i)%f_Sp(Ntime, Nlayer, Nlath, Nlongh))    ; diags%fish(i)%f_Sp = 0.0         ! --
-            allocate(diags%fish(i)%f_Sd(Ntime, Nlayer, Nlath, Nlongh))    ; diags%fish(i)%f_Sd = 0.0         ! --
-            allocate(diags%fish(i)%f_Mf(Ntime, Nlayer, Nlath, Nlongh))    ; diags%fish(i)%f_Mf = 0.0         ! --
-            allocate(diags%fish(i)%f_Mp(Ntime, Nlayer, Nlath, Nlongh))    ; diags%fish(i)%f_Mp = 0.0         ! --
-            allocate(diags%fish(i)%f_Md(Ntime, Nlayer, Nlath, Nlongh))    ; diags%fish(i)%f_Md = 0.0        ! --
-            allocate(diags%fish(i)%f_Lp(Ntime, Nlayer, Nlath, Nlongh))    ; diags%fish(i)%f_Lp = 0.0        ! --
-            allocate(diags%fish(i)%f_Ld(Ntime, Nlayer, Nlath, Nlongh))    ; diags%fish(i)%f_Ld = 0.0         ! --
-            allocate(diags%fish(i)%f_BE(Ntime, Nlayer, Nlath, Nlongh))    ; diags%fish(i)%f_BE = 0.0  
+            allocate(diags%fish(i)%f_Zm(Ntime, Nlath, Nlongh))    ; diags%fish(i)%f_Zm = 0.0         
+            allocate(diags%fish(i)%f_Zl(Ntime, Nlath, Nlongh))    ; diags%fish(i)%f_Zl = 0.0         ! --         
+            allocate(diags%fish(i)%f_Sf(Ntime, Nlath, Nlongh))    ; diags%fish(i)%f_Sf = 0.0         ! --
+            allocate(diags%fish(i)%f_Sp(Ntime, Nlath, Nlongh))    ; diags%fish(i)%f_Sp = 0.0         ! --
+            allocate(diags%fish(i)%f_Sd(Ntime, Nlath, Nlongh))    ; diags%fish(i)%f_Sd = 0.0         ! --
+            allocate(diags%fish(i)%f_Mf(Ntime, Nlath, Nlongh))    ; diags%fish(i)%f_Mf = 0.0         ! --
+            allocate(diags%fish(i)%f_Mp(Ntime, Nlath, Nlongh))    ; diags%fish(i)%f_Mp = 0.0         ! --
+            allocate(diags%fish(i)%f_Md(Ntime, Nlath, Nlongh))    ; diags%fish(i)%f_Md = 0.0        ! --
+            allocate(diags%fish(i)%f_Lp(Ntime, Nlath, Nlongh))    ; diags%fish(i)%f_Lp = 0.0        ! --
+            allocate(diags%fish(i)%f_Ld(Ntime, Nlath, Nlongh))    ; diags%fish(i)%f_Ld = 0.0         ! --
+            allocate(diags%fish(i)%f_BE(Ntime, Nlath, Nlongh))    ; diags%fish(i)%f_BE = 0.0  
         end Do 
         
         ! Zooplankton oversonsumption
         do i = 1, nMesoZoo
-            allocate(diags%mesozoo(i)%Zcon_VS_dZ(Ntime, Nlayer, Nlath, Nlongh))
+            allocate(diags%mesozoo(i)%Zcon_VS_dZ(Ntime, Nlath, Nlongh))
         end do
-        ! Small Demersal growth to Medium dermersal
-        allocate(diags%Sd_Fout_B(Nlayer))
+        
     end subroutine allocate_diags
 
-    subroutine store_daily_biomass(FEISTY, tracers, itime, ilayer, ilath, ilongh)
+    subroutine store_daily_biomass(FEISTY, tracers, itime, ilath, ilongh)
         type(FEISTY_tracers), intent(inout), dimension(nDeriv) :: tracers
         type(FEISTY_type)   , intent(inout)  :: FEISTY      ! Daily data for the month 
-        integer, intent(in) :: itime, ilayer, ilath, ilongh
+        integer, intent(in) :: itime, ilath, ilongh
         integer :: i
 
         ! Store the daily biomass of each group (FEISTY tracers)
         do i = 1, nFishGroup
-            tracers(i)%Bio(itime, ilayer, ilath, ilongh) = FEISTY%fish(i)%B
+            tracers(i)%Bio(itime, ilath, ilongh) = FEISTY%fish(i)%B
         end do 
         do i = 1, nBenthos 
-            tracers(i+nFishGroup)%Bio(itime, ilayer, ilath, ilongh) = FEISTY%benthos(i)%B
+            tracers(i+nFishGroup)%Bio(itime, ilath, ilongh) = FEISTY%benthos(i)%B
         end do 
     end subroutine store_daily_biomass
 
-    subroutine store_daily_diag(diags, FEISTY, itime, ilayer, ilath, ilongh)
+    subroutine store_daily_diag(diags, FEISTY, itime, ilath, ilongh)
         type(FEISTY_diag)   , intent(inout)  :: diags
         type(FEISTY_type)   , intent(inout)  :: FEISTY      ! Daily data for the month 
-        integer, intent(in) :: itime, ilayer, ilath, ilongh
+        integer, intent(in) :: itime, ilath, ilongh
         integer :: i
 
         Do i = 1, nFishGroup
-            diags%fish(i)%f(itime, ilayer, ilath, ilongh)     =  FEISTY%fish(i)%f          ! Total feeding level
-            diags%fish(i)%cmax(itime, ilayer, ilath, ilongh)  =  FEISTY%fish(i)%cmax           ! Maximum consumption rate 
-            diags%fish(i)%cons(itime, ilayer, ilath, ilongh)  =  FEISTY%fish(i)%cons          ! Total consumption rate
-            diags%fish(i)%met(itime, ilayer, ilath, ilongh)   =  FEISTY%fish(i)%met           ! metabolic cost 
-            diags%fish(i)%mu_p(itime, ilayer, ilath, ilongh)  =  FEISTY%fish(i)%mu_p          ! Predation mortality 
-            diags%fish(i)%mu_f(itime, ilayer, ilath, ilongh)  =  FEISTY%fish(i)%mu_f          ! Fishing mortality 
-            diags%fish(i)%mu_a(itime, ilayer, ilath, ilongh)  =  FEISTY%fish(i)%mu_a          ! Natural mortality 
-            diags%fish(i)%mu(itime, ilayer, ilath, ilongh)    =  FEISTY%fish(i)%mu          ! Total mortality
-            diags%fish(i)%E_A(itime, ilayer, ilath, ilongh)   =  FEISTY%fish(i)%E_A          ! Available energy 
-            diags%fish(i)%Fout(itime, ilayer, ilath, ilongh)  =  FEISTY%fish(i)%Fout          ! flux out of a size class 
-            diags%fish(i)%Repro(itime, ilayer, ilath, ilongh) =  FEISTY%fish(i)%Repro         ! Reproduction flux 
+            diags%fish(i)%f(itime, ilath, ilongh)     =  FEISTY%fish(i)%f          ! Total feeding level
+            diags%fish(i)%cmax(itime, ilath, ilongh)  =  FEISTY%fish(i)%cmax           ! Maximum consumption rate 
+            diags%fish(i)%cons(itime, ilath, ilongh)  =  FEISTY%fish(i)%cons          ! Total consumption rate
+            diags%fish(i)%met(itime, ilath, ilongh)   =  FEISTY%fish(i)%met           ! metabolic cost 
+            diags%fish(i)%mu_p(itime, ilath, ilongh)  =  FEISTY%fish(i)%mu_p          ! Predation mortality 
+            diags%fish(i)%mu_f(itime, ilath, ilongh)  =  FEISTY%fish(i)%mu_f          ! Fishing mortality 
+            diags%fish(i)%mu_a(itime, ilath, ilongh)  =  FEISTY%fish(i)%mu_a          ! Natural mortality 
+            diags%fish(i)%mu(itime, ilath, ilongh)    =  FEISTY%fish(i)%mu          ! Total mortality
+            diags%fish(i)%E_A(itime, ilath, ilongh)   =  FEISTY%fish(i)%E_A          ! Available energy 
+            diags%fish(i)%Fout(itime, ilath, ilongh)  =  FEISTY%fish(i)%Fout          ! flux out of a size class 
+            diags%fish(i)%Repro(itime, ilath, ilongh) =  FEISTY%fish(i)%Repro         ! Reproduction flux 
     
             ! Feeding level for each prey : ------------------------------------------------
-            diags%fish(i)%f_Zm(itime, ilayer, ilath, ilongh)  =  FEISTY%fish(i)%f_Zm         
-            diags%fish(i)%f_Zl(itime, ilayer, ilath, ilongh)  =  FEISTY%fish(i)%f_Zl         ! --         
-            diags%fish(i)%f_Sf(itime, ilayer, ilath, ilongh)  =  FEISTY%fish(i)%f_Sf         ! --
-            diags%fish(i)%f_Sp(itime, ilayer, ilath, ilongh)  =  FEISTY%fish(i)%f_Sp         ! --
-            diags%fish(i)%f_Sd(itime, ilayer, ilath, ilongh)  =  FEISTY%fish(i)%f_Sd         ! --
-            diags%fish(i)%f_Mf(itime, ilayer, ilath, ilongh)  =  FEISTY%fish(i)%f_Mf         ! --
-            diags%fish(i)%f_Mp(itime, ilayer, ilath, ilongh)  =  FEISTY%fish(i)%f_Mp         ! --
-            diags%fish(i)%f_Md(itime, ilayer, ilath, ilongh)  =  FEISTY%fish(i)%f_Md        ! --
-            diags%fish(i)%f_Lp(itime, ilayer, ilath, ilongh)  =  FEISTY%fish(i)%f_Lp        ! --
-            diags%fish(i)%f_Ld(itime, ilayer, ilath, ilongh)  =  FEISTY%fish(i)%f_Ld         ! --
-            diags%fish(i)%f_BE(itime, ilayer, ilath, ilongh)  =  FEISTY%fish(i)%f_BE  
+            diags%fish(i)%f_Zm(itime, ilath, ilongh)  =  FEISTY%fish(i)%f_Zm         
+            diags%fish(i)%f_Zl(itime, ilath, ilongh)  =  FEISTY%fish(i)%f_Zl         ! --         
+            diags%fish(i)%f_Sf(itime, ilath, ilongh)  =  FEISTY%fish(i)%f_Sf         ! --
+            diags%fish(i)%f_Sp(itime, ilath, ilongh)  =  FEISTY%fish(i)%f_Sp         ! --
+            diags%fish(i)%f_Sd(itime, ilath, ilongh)  =  FEISTY%fish(i)%f_Sd         ! --
+            diags%fish(i)%f_Mf(itime, ilath, ilongh)  =  FEISTY%fish(i)%f_Mf         ! --
+            diags%fish(i)%f_Mp(itime, ilath, ilongh)  =  FEISTY%fish(i)%f_Mp         ! --
+            diags%fish(i)%f_Md(itime, ilath, ilongh)  =  FEISTY%fish(i)%f_Md        ! --
+            diags%fish(i)%f_Lp(itime, ilath, ilongh)  =  FEISTY%fish(i)%f_Lp        ! --
+            diags%fish(i)%f_Ld(itime, ilath, ilongh)  =  FEISTY%fish(i)%f_Ld         ! --
+            diags%fish(i)%f_BE(itime, ilath, ilongh)  =  FEISTY%fish(i)%f_BE  
         end Do 
         
         ! Zooplankton oversonsumption
         do i = 1, nMesoZoo
-            diags%mesozoo(i)%Zcon_VS_dZ(itime, ilayer, ilath, ilongh) =  FEISTY%mesozoo(i)%Zcons_VS_dZ 
+            diags%mesozoo(i)%Zcon_VS_dZ(itime, ilath, ilongh) =  FEISTY%mesozoo(i)%Zcons_VS_dZ 
         end do
-
-        ! Small Demersal growth to Medium dermersal:
-        diags%Sd_Fout_B(ilayer) = FEISTY%fish(Sd)%Fout * FEISTY%fish(Sd)%B      
-
     end subroutine store_daily_diag
 
-    subroutine Calc_trans_layer(diags, FEISTY)
-        ! If new grid cell it will take Fout from the last grid cell: it is therefore 
-        ! initialised at the begening of the lat and long with a value of 10-5
-        type(FEISTY_diag), intent(in)    :: diags         ! Storage (time layer, space)*
-        type(FEISTY_type), intent(inout) :: FEISTY        ! Daily data for the month 
+    ! subroutine Calc_trans_layer(diags, FEISTY)
+    !     ! If new grid cell it will take Fout from the last grid cell: it is therefore 
+    !     ! initialised at the begening of the lat and long with a value of 10-5
+    !     type(FEISTY_diag), intent(in)    :: diags         ! Storage (time layer, space)*
+    !     type(FEISTY_type), intent(inout) :: FEISTY        ! Daily data for the month 
 
-        FEISTY%Sd_Fout_B_int  = sum(diags%Sd_Fout_B * FEISTY%layer_thickness(1:75)) / FEISTY%layer_thickness(75)
-        FEISTY%Ld_Repro_end = FEISTY%fish(Ld)%Repro / FEISTY%layer_thickness(75)
-        FEISTY%Md_Fout_end  = FEISTY%fish(Md)%Fout
-
-    end subroutine Calc_trans_layer
+    !     FEISTY%Sd_Fout_B_int  = sum(diags%Sd_Fout_B * FEISTY%layer_thickness(1:75)) / FEISTY%layer_thickness(75)
+    !     FEISTY%Ld_Repro_end = FEISTY%fish(Ld)%Repro / FEISTY%layer_thickness(75)
+    !     FEISTY%Md_Fout_end  = FEISTY%fish(Md)%Fout
+    ! end subroutine Calc_trans_layer
 
     subroutine Print_FEISTY_diagnostic(FEISTY)
         type(FEISTY_type), intent(in) :: FEISTY
@@ -387,7 +371,6 @@ module Structure
         print *, "lath " , FEISTY%ilath
         print *, "longh",  FEISTY%ilongh
         print *, "time " , FEISTY%itime
-        print *, "layer",  FEISTY%ilayer
         
         print *, 
         print *, " ------------------- FEISTY inputs --------------------- "

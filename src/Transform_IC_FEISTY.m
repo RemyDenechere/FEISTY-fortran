@@ -30,7 +30,6 @@ try
 
         % Define dimensions in the output file
         for i = 1:length(dimids)
-            
             netcdf.defDim(outid, dimname, dimlen);
         end
 
