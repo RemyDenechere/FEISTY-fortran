@@ -11,6 +11,7 @@ module Structure
     type :: Fish
         real(dp) :: B                   ! Biomass
         real(dp) :: w                   ! weight
+        real(dp) :: Texp                ! Temperature experienced by the fish
         real(dp) :: Tcorr_e = 0         ! temperature correction for Encounter and Cmax
         real(dp) :: Tcorr_met = 0       ! temperature correction for metabolism
         real(dp) :: V = 0               ! Encounter rate 
@@ -27,8 +28,7 @@ module Structure
         real(dp) :: mu = 0              ! Total mortality
         real(dp) :: E_A = 0             ! Available energy 
         real(dp) :: Fout = 0            ! flux out of a size class 
-        real(dp) :: Repro = 0           ! Reproduction flux 
-        ! real(dp) :: Rec = 0             ! Recruitment 
+        real(dp) :: Repro = 0           ! Reproduction flux
   
         ! Feeding level for each prey : ------------------------------------------------
         real(dp) :: f_Zm = 0            
@@ -86,10 +86,10 @@ module Structure
         type(Fish)              , dimension(8) :: fish
         
         ! Global variable ()
-        real(dp) :: Temp = 0                 ! Pelagic temperature
+        real(dp) :: Tp = 0                   ! Pelagic temperature
+        real(dp) :: Tb = 0                   ! Benthic temperature
         real(dp) :: det = 0                  ! Detritus flux to benthic community
         real(dp), dimension(nDeriv) :: dBdt  ! variable containing the derivative
-        real(dp) :: tpel_Ld = 0              ! Time in pelagic of large demersal depending on depth and abundance of resource
         real(dp) :: Sd_Fout_B_int = 0
         real(dp) :: Ld_Repro_end = 0
         real(dp) :: Md_Fout_end = 0
@@ -103,11 +103,12 @@ module Structure
         integer :: ilongh
         integer :: itime
 
-        real(dp), dimension(75) :: zt  
-        real(dp), dimension(75) :: layer_thickness
-        real(dp), dimension(9, 9) :: lat 
-        real(dp), dimension(9, 9) :: lon
-        real(dp), dimension(4, 4) :: max_depth
+        real(dp), dimension(75) :: zt                   ! Depth of each layer
+        real(dp), dimension(75) :: layer_thickness      ! Thickness of each layer
+        real(dp), dimension(9, 9) :: lat                ! Latitude
+        real(dp), dimension(9, 9) :: lon                ! Longitude
+        real(dp), dimension(4, 4) :: max_depth          ! Sea floor depth
+        integer, dimension(:), allocatable :: idx_100m  ! Index of the 100m depth
     end type FEISTY_type
 
 
@@ -160,9 +161,6 @@ module Structure
 
         ! Zooplankton oversonsumption
         type(Diag_mesozoo), dimension(nMesoZoo) :: mesozoo
-
-        ! Small Demersal growth to Medium dermersal
-        real(dp), dimension(:), allocatable :: Sd_Fout_B
     end type FEISTY_diag
     
 
@@ -211,7 +209,7 @@ module Structure
     end subroutine initPhysiology
 
      ! Define initial condition for a grid cell
-    subroutine init_Biomass_Layer(Spinup, itime, ilath, ilongh, IC_tracers_Bio, FEISTY, tracers)
+    subroutine init_Biomass(Spinup, itime, ilath, ilongh, IC_tracers_Bio, FEISTY, tracers)
         type(FEISTY_type)       , intent(inout)                    :: FEISTY
         type(Initial_conditions), intent(in)   , dimension(nDeriv) :: IC_tracers_Bio
         type(FEISTY_tracers)    , intent(in)   , dimension(nDeriv) :: tracers
@@ -248,7 +246,7 @@ module Structure
             end do
         end if 
 
-    end subroutine init_Biomass_Layer
+    end subroutine init_Biomass
     
 
     subroutine allocate_tracers(tracers, Ntime, Nlath, Nlongh)
@@ -374,7 +372,8 @@ module Structure
         
         print *, 
         print *, " ------------------- FEISTY inputs --------------------- "
-        print *, "Temperature             " , FEISTY%Temp                ! Pelagic temperature
+        print *, "Temperature  Pelagic    " , FEISTY%Tp                  ! Pelagic temperature
+        print *, "Temperature  Benthic    " , FEISTY%Tb                  ! Benthic temperature
         print *, "Medium MesoZoo B        " , FEISTY%mesozoo(Mz)%B       ! Fraction of zooplankton mortality loss consumed
         print *, "Large MesoZoo B         " , FEISTY%mesozoo(Lz)%B       ! Fraction of zooplankton mortality loss consumed  
         print *, "mort Medium MesoZoo B   " , FEISTY%mesozoo(Mz)%dz      ! Biomass of medium zooplankton consumed by top predators 

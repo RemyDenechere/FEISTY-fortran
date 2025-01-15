@@ -7,12 +7,36 @@ module GetNetCDFinf
 
     contains 
 
+    !:======================================================================
+    ! Initialisation of the FEISTY model
+    !:======================================================================
+    ! Inputs:   
+    ! Spinup: logical, if true, the model will run for 100 years
+    ! FEISTY: type(FEISTY_type), the main structure of the model
+    ! diags: type(FEISTY_diag), the structure to store the diagnostics
+    ! IC_tracers_Bio: type(Initial_conditions), the structure to store the initial conditions
+    ! tracers: type(FEISTY_tracers), the structure to store the tracers
+    ! Ntime: integer, the number of time steps
+    ! Nlayer: integer, the number of layers
+    ! Nlath: integer, the number of latitude
+    ! Nlongh: integer, the number of longitude
+    ! DataTemp: real(dp), the temperature data
+    ! Datadet: real(dp), the detritus data
+    ! Datadzm: real(dp), the mesozoo data
+    ! DataZM: real(dp), the mesozoo data
+    ! Datadzl: real(dp), the mesozoo data
+    ! DataZL: real(dp), the mesozoo data
+    ! Datazt: real(dp), the pseudo layer depth
+    ! Datalat: real(dp), the latitude
+    ! Datalon: real(dp), the longitude
+    ! Datamax_depth: real(dp), the max depth
+    !:======================================================================
+    ! note: Some of  these variable do not have to be define before the function call
+    !       they can just be defined in the function.
+    !:======================================================================
     subroutine Init_FEISTY(Spinup, FEISTY, diags, IC_tracers_Bio, tracers, &
-                            Ntime, Nlayer, Nlath, Nlongh, &
-                            DataTemp, Datadet, Datadzm, DataZM, Datadzl, DataZL, &
-                            Datazt, Datalat, Datalon, Datamax_depth)
+                            DataTemp, Datadet, Datadzm, DataZM, Datadzl, DataZL)                 
         logical, intent(in) :: Spinup
-        integer, intent(inout)  :: Ntime, Nlayer, Nlath, Nlongh
         type(FEISTY_type)       , intent(inout) :: FEISTY
         type(FEISTY_diag)       , intent(inout) :: diags
         type(FEISTY_tracers)    , intent(inout), dimension(nDeriv)  :: tracers
@@ -21,49 +45,47 @@ module GetNetCDFinf
                                                                         Datadzm, DataZM, &
                                                                         Datadzl, DataZL, &
                                                                         Datadet
-        real(dp), dimension(9, 9), intent(inout)            :: Datalat, Datalon
-        real(dp), dimension(4, 4)                           :: Datamax_depth
-        real(dp), dimension(Nlayer), intent(inout)          :: Datazt ! pseudo layer depth
-        integer :: i
+        integer,                            :: Ntime, Nlayer, Nlath, Nlongh                                                                        
+        real(dp), dimension(9, 9)           :: Datalat, Datalon
+        real(dp), dimension(4, 4)           :: Datamax_depth
+        real(dp), dimension(:), allocatable :: Datazt ! pseudo layer depth
+        integer :: i, i_100m
 
-        CALL Get_dim(dir_Temp, Ntime, Nlayer, Nlath, Nlongh)   
+        CALL Get_dim(dir_Temp, Ntime, Nlayer, Nlath, Nlongh)  ! Get the dimension of the data used to force the model
+        allocate(Datazt(Nlayer))
         CALL load_forcing_data(Ntime, Nlayer, Nlath, Nlongh, DataTemp, Datadet, Datadzm, DataZM, Datadzl, DataZL, &
-                                Datazt, Datalat, Datalon, Datamax_depth)
-        Call load_IC_fish(Spinup, Nlayer, Nlath, Nlongh, IC_tracers_Bio)
-
+                                Datazt, Datalat, Datalon, Datamax_depth) ! Load the data used to force the model
+        Call load_IC_fish(Spinup, Nlayer, Nlath, Nlongh, IC_tracers_Bio) ! Load the initial condition of the model
+        ! 
         if (Spinup) then 
-            Ntime = (Ntime-1) * Year_2_Spinup
-        else 
-            Ntime = Ntime -1
+            Ntime = (Ntime) * Year_2_Spinup
         end if
 
-        ! Save lat long, and time in structure: 
+        ! Save the dimension of the forcing files in the FEISTY structure
         FEISTY%Ntime  = Ntime
         FEISTY%Nlayer = Nlayer
         FEISTY%Nlath  = Nlath
         FEISTY%Nlongh = Nlongh 
-
-        ! Save location information in FEISTY
-        FEISTY%zt  = Datazt ! pseudo layer depth 
+        FEISTY%zt  = Datazt  ! pseudo layer depth 
         FEISTY%lat = Datalat ! latitude 
         FEISTY%lon = Datalon ! longitude
-        FEISTY%max_depth = Datamax_depth ! max depth  
+        FEISTY%max_depth = Datamax_depth(1,1) ! max depth
 
-        ! Save location information in tracers
-        FEISTY%zt  = Datazt ! pseudo layer depth 
-        FEISTY%lat = Datalat ! latitude 
-        FEISTY%lon = Datalon ! longitude
-        FEISTY%max_depth = Datamax_depth ! max depth
+        ! Calculate the thickness of each layer 
         FEISTY%layer_thickness(1) =  FEISTY%zt(1)
         Do i = 2, 75
             FEISTY%layer_thickness(i) = FEISTY%zt(i) - FEISTY%zt(i-1) 
         end do 
-
-        ! print*, FEISTY%zt
-        ! print*, FEISTY%layer_thickness
-        ! print*, FEISTY%lat
-        ! print*, FEISTY%lon
-        ! print*, FEISTY%max_depth
+        
+        ! Calculate the index of the 100m layer: 
+        i_100m = 0
+        Do i = 1, 75
+            if (FEISTY%zt(i) .le. 100.0) then 
+                i_100m = i
+            end if
+        end do
+        allocate(FEISTY%idx_100m(i_100m))
+        FEISTY%idx_100m = 1:i_100m
 
         ! Allocate storage variables 
         CALL allocate_tracers(tracers, Ntime, Nlayer, Nlath, Nlongh)
@@ -80,7 +102,110 @@ module GetNetCDFinf
         FEISTY%fish(Ld)%w = 10.0**((log10(250.0)+log10(125000.0))/2)
 
     end subroutine Init_FEISTY
+
+    !:====================================================================== 
+    ! Get the dimension of the netCDF 4D gridfile
+    !:======================================================================  
+    subroutine Get_dim(dir, Ntime, Nlayer, Nlath, Nlongh)
+        character(LEN=280), intent(in) :: dir
+        integer, intent(inout) :: Ntime, Nlayer, Nlath, Nlongh
+        integer :: ncid
+        integer, dimension(4) :: dim
+        character(LEN=250) :: xname, yname, zname, hname
+        integer :: ierr
+        logical :: layer
         
+        ! Open NetCDF: --------------------------------------------
+        ierr = nf90_open(dir, NF90_NOWRITE, ncid)
+        if (ierr /= NF90_NOERR) then
+            print *, "Error opening file: ", trim(dir)
+            STOP
+        end if
+
+        dim(1) = 4
+        dim(2) = 3
+        dim(3) = 2
+        dim(4) = 1
+
+        ierr = nf90_inquire_dimension(ncid, dim(1), xname, Ntime)
+        ierr = nf90_inquire_dimension(ncid, dim(2), yname, Nlayer)
+        ierr = nf90_inquire_dimension(ncid, dim(3), zname, Nlath)
+        ierr = nf90_inquire_dimension(ncid, dim(4), hname, Nlongh)
+        
+        !Close netCDF file
+        ierr = nf90_close(ncid)
+        
+        ! print outputs: -------------------------------------------
+        print *, "------------------------------------"
+        print *, "1st dimension =", trim(xname), "; length = ", Ntime
+        print *, "2nd dimension =", trim(yname), "; length = ", Nlayer
+        print *, "3rd dimension =", trim(zname), "; length = ", Nlath
+        print *, "4th dimension =", trim(hname), "; length = ", Nlongh
+        print *, "------------------------------------"      
+    end subroutine Get_dim
+
+    !:====================================================================== 
+    ! Load all the imput values to force the model
+    !:======================================================================  
+    subroutine load_forcing_data(Ntime, Nlayer, Nlath, Nlongh, DataTemp, &
+                                 Datadet, Datadzm, DataZM, Datadzl, DataZL, &
+                                 Datazt, Datalat, Datalon, Datamax_depth)
+        ! Declare variables
+        real(dp), dimension(:, :, :, :), allocatable, intent(inout) ::  DataTemp, &
+                                                                        Datadzm, DataZM, &
+                                                                        Datadzl, DataZL, &
+                                                                        Datadet
+        integer, intent(in)                                         :: Ntime, Nlayer, Nlath, Nlongh
+        real(dp), dimension(9, 9), intent(inout)                    :: Datalat, Datalon
+        real(dp), dimension(4, 4), intent(inout)                    :: Datamax_depth
+        real(dp), dimension(Nlayer), intent(inout)                  :: Datazt ! pseudo layer depth
+
+        ! Get the input grid data to force the model: 
+        ! Get physiological data:
+        CALL readgrid4D(dir_Temp, var_Temp, Ntime, Nlayer, Nlath, Nlongh, DataTemp)
+        CALL readgrid4D(dir_zm, var_zm, Ntime, Nlayer, Nlath, Nlongh, DataZM)
+        CALL readgrid4D(dir_dzm, var_dzm, Ntime, Nlayer, Nlath, Nlongh, Datadzm)
+        CALL readgrid4D(dir_zl, var_zl, Ntime, Nlayer, Nlath, Nlongh, DataZL)
+        CALL readgrid4D(dir_dzl, var_dzl, Ntime, Nlayer, Nlath, Nlongh, Datadzl)
+        CALL readgrid4D(dir_det, var_det, Ntime, Nlayer, Nlath, Nlongh, Datadet)
+        
+        ! Get data about the location 
+        CALL readgrid1D(dir_zt, var_zt, Nlayer, Datazt)  ! pseudo layer depth 
+        CALL readgrid2D(dir_lat, var_lat, int(9), int(9), Datalat) ! latitude 
+        CALL readgrid2D(dir_lon, var_lon, int(9), int(9),  Datalon) ! longitude
+        CALL readgrid2D(dir_max_depth, var_max_depth, int(9), int(9),  Datamax_depth) ! max depth   
+
+        ! Convert depth grid into actual depth:
+        ! var_zt is constant for every location and goes from 1 to  6212.405 m depth,
+        ! we use maxdepth of the location 'var_max_depth' to rescale the depth. 
+        Datazt = Datazt * Datamax_depth(1,1) / 6212.405
+
+    end subroutine load_forcing_data
+
+    !:====================================================================== 
+    ! Load all the Spinup Initial condition to force the FEISTY
+    !:======================================================================  
+    subroutine load_IC_fish(Spinup, Nlath, Nlongh, IC_tracers_Bio)
+        type(Initial_conditions) , dimension(nDeriv) :: IC_tracers_Bio
+        logical, intent(in) :: Spinup
+        integer, intent(in) :: Nlayer, Nlath, Nlongh
+
+        if (Spinup .eqv. .false.) then 
+            CALL readgrid2D(dir_IniSf, 'Sf', Nlath, Nlongh, IC_tracers_Bio(1)%IniBio)
+            CALL readgrid2D(dir_IniSp, 'Sp', Nlath, Nlongh, IC_tracers_Bio(2)%IniBio)
+            CALL readgrid2D(dir_IniSd, 'Sd', Nlath, Nlongh, IC_tracers_Bio(3)%IniBio)
+            CALL readgrid2D(dir_IniMf, 'Mf', Nlath, Nlongh, IC_tracers_Bio(4)%IniBio)
+            CALL readgrid2D(dir_IniMp, 'Mp', Nlath, Nlongh, IC_tracers_Bio(5)%IniBio)
+            CALL readgrid2D(dir_IniMd, 'Md', Nlath, Nlongh, IC_tracers_Bio(6)%IniBio)
+            CALL readgrid2D(dir_IniLp, 'Lp', Nlath, Nlongh, IC_tracers_Bio(7)%IniBio)
+            CALL readgrid2D(dir_IniLd, 'Ld', Nlath, Nlongh, IC_tracers_Bio(8)%IniBio)
+            CALL readgrid2D(dir_IniBE, 'BE', Nlath, Nlongh, IC_tracers_Bio(9)%IniBio)
+        end if
+    end subroutine load_IC_fish
+
+    !:====================================================================== 
+    ! Write the output in netCDF files
+    !:======================================================================     
     subroutine write_output_netcdf(Spinup, tracers, diags, Ntime, Nlayer, Nlath, Nlongh, lat, lon, zt)
         type(FEISTY_tracers), intent(inout), dimension(nDeriv) :: tracers
         type(FEISTY_diag)   :: diags
@@ -201,136 +326,24 @@ module GetNetCDFinf
 
     !:====================================================================== 
     ! Get the input values for the given lat long and time 
+    ! integrate all over depth and store them in the FEISTY structure
     !:======================================================================  
-
     subroutine Get_Environental_data(FEISTY, DataTemp, Datadet, &
-                                     Datadzm, DataZM, Datadzl, DataZL, &
-                                     iDAY, ilayer, ilath, ilongh)
+                                     Datadzm, DataZM, Datadzl, DataZL)
         type(FEISTY_type), intent(inout) :: FEISTY
-        real(dp), dimension(:, :, :, :), allocatable, intent(inout) ::  DataTemp, &
-                                                                        Datadzm, DataZM, &
-                                                                        Datadzl, DataZL, &
-                                                                        Datadet
-        integer, intent(in) :: iDAY, ilayer, ilath, ilongh
-        
-        FEISTY%Temp = DataTemp(ilongh, ilath, ilayer, iDAY)
-        FEISTY%mesozoo(1)%dz  = Datadzm (ilongh, ilath, ilayer, iDAY) * convers_dZm 
-        FEISTY%mesozoo(1)%B = DataZM  (ilongh, ilath, ilayer, iDAY) * convers_zm
-        FEISTY%mesozoo(2)%B = DataZL  (ilongh, ilath, ilayer, iDAY) * convers_zm
-        FEISTY%mesozoo(2)%dz  = Datadzl (ilongh, ilath, ilayer, iDAY) * convers_dZm
-        FEISTY%det  = Datadet (ilongh, ilath, ilayer, iDAY)
-        
-        ! give idx to track in calculcation (needed for ilayer)
-        FEISTY%ilayer = ilayer
-        FEISTY%ilath  = ilath
-        FEISTY%ilongh = ilongh
-        FEISTY%itime  = iDAY
-        
-    end subroutine Get_Environental_data
+        real(dp), dimension(FEISTY%Nlayer), intent(inout) ::    DataTemp, &
+                                                                Datadzm, DataZM, &
+                                                                Datadzl, DataZL, &
+                                                                Datadet
 
+        FEISTY%Temp = mean(DataTemp(FEISTY%idx_100m))
+        FEISTY%mesozoo(1)%dz = sum(Datadzm(FEISTY%idx_100m) * FEISTY%layer_thickness(FEISTY%idx_100m)) * convers_dZm 
+        FEISTY%mesozoo(1)%B  = sum(DataZM(FEISTY%idx_100m)  * FEISTY%layer_thickness(FEISTY%idx_100m)) * convers_zm
+        FEISTY%mesozoo(2)%B  = sum(DataZL(FEISTY%idx_100m)  * FEISTY%layer_thickness(FEISTY%idx_100m)) * convers_zm
+        FEISTY%mesozoo(2)%dz = sum(Datadzl(FEISTY%idx_100m) * FEISTY%layer_thickness(FEISTY%idx_100m)) * convers_dZm
+        FEISTY%det  = Datadet(FEISTY%Nlayer)        
+    end subroutine Get_Environental_daita
 
-    !:====================================================================== 
-    ! Load all the imput values to force the model
-    !:======================================================================  
-    subroutine load_forcing_data(Ntime, Nlayer, Nlath, Nlongh, DataTemp, &
-                                 Datadet, Datadzm, DataZM, Datadzl, DataZL, &
-                                 Datazt, Datalat, Datalon, Datamax_depth)
-        ! Declare variables
-        real(dp), dimension(:, :, :, :), allocatable, intent(inout) ::  DataTemp, &
-                                                                        Datadzm, DataZM, &
-                                                                        Datadzl, DataZL, &
-                                                                        Datadet
-        integer :: Ntime, Nlayer, Nlath, Nlongh
-        real(dp), dimension(9, 9), intent(inout)                        :: Datalat, Datalon
-        real(dp), dimension(4, 4)                                       :: Datamax_depth
-        real(dp), dimension(Nlayer), intent(inout)                      :: Datazt ! pseudo layer depth
-
-        ! Get the input grid data to force the model: 
-        ! Get physiological data:
-        CALL readgrid4D(dir_Temp, var_Temp, Ntime, Nlayer, Nlath, Nlongh, DataTemp)
-        CALL readgrid4D(dir_zm, var_zm, Ntime, Nlayer, Nlath, Nlongh, DataZM)
-        CALL readgrid4D(dir_dzm, var_dzm, Ntime, Nlayer, Nlath, Nlongh, Datadzm)
-        CALL readgrid4D(dir_zl, var_zl, Ntime, Nlayer, Nlath, Nlongh, DataZL)
-        CALL readgrid4D(dir_dzl, var_dzl, Ntime, Nlayer, Nlath, Nlongh, Datadzl)
-        CALL readgrid4D(dir_det, var_det, Ntime, Nlayer, Nlath, Nlongh, Datadet)
-        
-        ! Get data about the location 
-        CALL readgrid1D(dir_zt, var_zt, Nlayer, Datazt)  ! pseudo layer depth 
-        CALL readgrid2D(dir_lat, var_lat, int(9), int(9), Datalat) ! latitude 
-        CALL readgrid2D(dir_lon, var_lon, int(9), int(9),  Datalon) ! longitude
-        CALL readgrid2D(dir_max_depth, var_max_depth, int(9), int(9),  Datamax_depth) ! max depth   
-
-        ! Convert depth grid into actual depth:
-        ! var_zt is constant for every location and goes from 1 to  6212.405 m depth,
-        ! we use maxdepth of the location 'var_max_depth' to rescale the depth. 
-        Datazt = Datazt * Datamax_depth(1,1) / 6212.405
-
-    end subroutine load_forcing_data
-
-
-    !:====================================================================== 
-    ! Load all the Spinup Initial condition to force the FEISTY
-    !:======================================================================  
-    subroutine load_IC_fish(Spinup, Nlayer, Nlath, Nlongh, IC_tracers_Bio)
-        
-        type(Initial_conditions) , dimension(nDeriv) :: IC_tracers_Bio
-        logical, intent(in) :: Spinup
-        integer, intent(in) :: Nlayer, Nlath, Nlongh
-
-        if (Spinup .eqv. .false.) then 
-            CALL readgrid3D(dir_IniSf, 'Sf', Nlayer, Nlath, Nlongh, IC_tracers_Bio(1)%IniBio)
-            CALL readgrid3D(dir_IniSp, 'Sp', Nlayer, Nlath, Nlongh, IC_tracers_Bio(2)%IniBio)
-            CALL readgrid3D(dir_IniSd, 'Sd', Nlayer, Nlath, Nlongh, IC_tracers_Bio(3)%IniBio)
-            CALL readgrid3D(dir_IniMf, 'Mf', Nlayer, Nlath, Nlongh, IC_tracers_Bio(4)%IniBio)
-            CALL readgrid3D(dir_IniMp, 'Mp', Nlayer, Nlath, Nlongh, IC_tracers_Bio(5)%IniBio)
-            CALL readgrid3D(dir_IniMd, 'Md', Nlayer, Nlath, Nlongh, IC_tracers_Bio(6)%IniBio)
-            CALL readgrid3D(dir_IniLp, 'Lp', Nlayer, Nlath, Nlongh, IC_tracers_Bio(7)%IniBio)
-            CALL readgrid3D(dir_IniLd, 'Ld', Nlayer, Nlath, Nlongh, IC_tracers_Bio(8)%IniBio)
-            CALL readgrid3D(dir_IniBE, 'BE', Nlayer, Nlath, Nlongh, IC_tracers_Bio(9)%IniBio)
-        end if
-    end subroutine load_IC_fish
-
-
-    !:====================================================================== 
-    ! Get the dimension of the netCDF 4D gridfile
-    !:======================================================================  
-    subroutine Get_dim(dir, Ntime, Nlayer, Nlath, Nlongh)
-        character(LEN=280), intent(in) :: dir
-        integer, intent(inout) :: Ntime, Nlayer, Nlath, Nlongh
-        integer :: ncid
-        integer, dimension(4) :: dim
-        character(LEN=250) :: xname, yname, zname, hname
-        integer :: ierr
-        logical :: layer
-        
-        ! Open NetCDF: --------------------------------------------
-        ierr = nf90_open(dir, NF90_NOWRITE, ncid)
-        if (ierr /= NF90_NOERR) then
-            print *, "Error opening file: ", trim(dir)
-            STOP
-        end if
-
-        dim(1) = 4
-        dim(2) = 3
-        dim(3) = 2
-        dim(4) = 1
-
-        ierr = nf90_inquire_dimension(ncid, dim(1), xname, Ntime)
-        ierr = nf90_inquire_dimension(ncid, dim(2), yname, Nlayer)
-        ierr = nf90_inquire_dimension(ncid, dim(3), zname, Nlath)
-        ierr = nf90_inquire_dimension(ncid, dim(4), hname, Nlongh)
-        
-        !Close netCDF file
-        ierr = nf90_close(ncid)
-        
-        ! print outputs: -------------------------------------------
-        print *, "------------------------------------"
-        print *, "1st dimension =", trim(xname), "; length = ", Ntime
-        print *, "2nd dimension =", trim(yname), "; length = ", Nlayer
-        print *, "3rd dimension =", trim(zname), "; length = ", Nlath
-        print *, "4th dimension =", trim(hname), "; length = ", Nlongh
-        print *, "------------------------------------"      
-    end subroutine Get_dim
 
     subroutine readgrid4D(dir, varname, Ntime, Nlayer, Nlath, Nlongh, values)
         character(LEN=280), intent(in) :: dir, varname

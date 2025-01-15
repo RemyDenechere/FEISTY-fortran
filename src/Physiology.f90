@@ -12,13 +12,17 @@ module Physiology
     subroutine Calc_FEISTY_Deriv(FEISTY)
         type(FEISTY_type), intent(inout) :: FEISTY
         real(dp), dimension(3) :: T_e = 0.0, T_met = 0.0
+        real(dp), dimension(nFishGroup) :: Tpel = 0.0
+        real(dp)                        :: biop, biob ! biomass experience in pelagic and benthic zones by demersals
         real(dp) :: Cons_Zm, Cons_Zl, frac_Sf, frac_Sp, frac_Sd, frac_Mf, frac_Mp, pred_pel
         real(dp) :: r       ! benthic growth rate ((g/m2/d) / (g/m2))
         real(dp) :: pred    ! predation from demersals (g/m2/d)
         integer :: i
 
-
-        if (diagnostic .and. FEISTY%ilayer .eq. 75) then 
+        !:======================================================================
+        ! Test the model with diagnostic values for checking the code
+        !:======================================================================
+        if ( diagnostic ) then 
             ! give the fish biomass value needed to compare online and offline codes: 
             FEISTY%fish(1)%B = 1.0000000000000001E-005
             FEISTY%fish(2)%B = 1.0000000000000001E-005
@@ -31,12 +35,9 @@ module Physiology
 
             FEISTY%benthos(1)%B = 5.3168360691316741
 
-            FEISTY%Ld_Repro_end = 1.4278688242884946E-003
-
-            FEISTY%Sd_Fout_B_int = 1.7599935322202969E-010
-
             ! give environemental parameters
-            FEISTY%Temp = 21.671012503201233
+            FEISTY%Tp = 21.671012503201233
+            FEISTY%Tb = 21.671012503201233
             FEISTY%det = 0.14023816301206588
             FEISTY%mesozoo(Mz)%B = 0.0000000000000000     ! Fraction of zooplankton mortality loss consumed
             FEISTY%mesozoo(Lz)%B = 0.0000000000000000     ! Fraction of zooplankton mortality loss consumed  
@@ -55,13 +56,23 @@ module Physiology
     ! kmet    : coeff on metabolic T-dep fn    [°c-1]
     ! Calculation are made for pelagic (i=1) and demersal (i=2)
     !:====================================================================== 
+        ! initialisation tpel (time spent in pelagic zone): 
+        tpel = (/1,1,1,1,1,0,1,0/)
 
-        T_e = dexp(ke * (FEISTY%Temp-10.0))      ! for encounter rate and Cmax
-        T_met = dexp(kmet * (FEISTY%Temp-10.0))  ! for metabolism
+        ! Calcul of biomass experienced in pelagic and benthic zones by demersals
+        biop = pref_Ld_Mf * FEISTY%fish(MF)%B + pref_Ld_Mp * FEISTY%fish(MD)%B
+        biob = pref_Ld_Md * FEISTY%fish(MD)%B  + pref_Ld_BE *FEISTY%benthos(1)%B
+        ! Calcul of time spent in pelagic zone for demersals 
+        if (FEISTY%max_depth < PI_be_cutoff) then  ! zt(nk) is the sea floor depth 
+            tpel(nFishGroup) = biop / (biop + biob)
+        else 
+            tpel(nFishGroup) = 0.0
+        end if 
         
         do i = 1, nFishGroup
-            FEISTY%fish(i)%Tcorr_e = T_e(1)         ! Save temperature correction for encounter and cmax 
-            FEISTY%fish(i)%Tcorr_met = T_met(1)     ! Save temperature correction for metabolism
+            FEISTY%fish(i)%Texp = (FEISTY%Tp * tpel(i)) + (FEISTY%Tb*(1.0-tpel(i))) ! temperature experienced by fish
+            FEISTY%fish(i)%Tcorr_e  = dexp(ke * (FEISTY%fish(i)%Texp-10.0))              ! temperature correction for encounter and cmax 
+            FEISTY%fish(i)%Tcorr_met = dexp(kmet * (FEISTY%fish(i)%Texp-10.0))           ! temperature correction for metabolism
         end do
 
     !:======================================================================
@@ -167,11 +178,11 @@ module Physiology
 
         ! Large Demersal: 
         ! If large demersal don't spend time in pelagic zone then predation on forage and pelagics = 0; 
-        ! if (FEISTY%tpel_Ld == 0.0) then 
-        !     pred_pel = 0.0
-        ! else 
+        if (tpel(nFishGroup) == 0.0) then 
+            pred_pel = 0.0
+        else 
             pred_pel = 1.0
-        ! end if  
+        end if  
 
         FEISTY%fish(8)%f_Mf = FEISTY%fish(8)%V * pred_pel * pref_Ld_Mf * FEISTY%fish(4)%B /(FEISTY%fish(8)%V * &
             (pred_pel * pref_Ld_Mf * FEISTY%fish(4)%B + pred_pel * pref_Ld_Mp * FEISTY%fish(5)%B + &
@@ -413,45 +424,24 @@ module Physiology
         !SM
         FEISTY%dBdt(2) = eps_R * FEISTY%fish(7)%Repro * FEISTY%fish(7)%B + & 
                         (FEISTY%fish(2)%E_A - FEISTY%fish(2)%Fout - FEISTY%fish(2)%mu) * FEISTY%fish(2)%B
-        ! Reproduction from Large demersal is equaly divided between the first 30 layers (about 100m depth): 
-        ! for mass conservation: Fout is integrated Fout/Nlayer and repro = Ld_Repro_end/FEISTY%Nlayer
-        !SD:
-        if (largDemPel) then  ! Puts the large Demersals in the Pelagic Layer
-            FEISTY%dBdt(3) = eps_R * FEISTY%fish(Ld)%Repro * &
-                 & FEISTY%fish(Ld)%B + (FEISTY%fish(3)%E_A - FEISTY%fish(3)%Fout - FEISTY%fish(3)%mu) * FEISTY%fish(3)%B  
-        else   ! Large Demersals inhabit only the bottom and reproduction comes from that layer
-            FEISTY%dBdt(3) = eps_R * (FEISTY%Ld_Repro_end/FEISTY%layer_thickness(FEISTY%ilayer)) * &
-                 & FEISTY%fish(8)%B + (FEISTY%fish(3)%E_A - FEISTY%fish(3)%Fout - FEISTY%fish(3)%mu) * FEISTY%fish(3)%B  
-        end if 
+        !SD
+        FEISTY%dBdt(3) = eps_R * FEISTY%fish(8)%Repro * FEISTY%fish(8)%B + & 
+                        (FEISTY%fish(3)%E_A - FEISTY%fish(3)%Fout - FEISTY%fish(3)%mu) * FEISTY%fish(3)%B
 
         ! Medium size (reproduction loss for Mf)
         FEISTY%dBdt(4) = FEISTY%fish(1)%Fout * FEISTY%fish(1)%B + (FEISTY%fish(4)%E_A - & 
                          FEISTY%fish(4)%Repro - FEISTY%fish(4)%mu) * FEISTY%fish(4)%B
         FEISTY%dBdt(5) = FEISTY%fish(2)%Fout * FEISTY%fish(2)%B + (FEISTY%fish(5)%E_A - & 
                          FEISTY%fish(5)%Fout  - FEISTY%fish(5)%mu) * FEISTY%fish(5)%B
-        if (FEISTY%ilayer .eq. FEISTY%Nlayer) then ! use Sd_Fout_B_int for last layer 
-            FEISTY%dBdt(6) = FEISTY%Sd_Fout_B_int + & 
-                            (FEISTY%fish(6)%E_A - FEISTY%fish(6)%Fout  - FEISTY%fish(6)%mu) * FEISTY%fish(6)%B 
-        else ! If not in last layer then demersal don't grow in water column (don't put Fout = 0.0 as we save the value later)
-            FEISTY%dBdt(6) = 0.0
-        endif 
+        FEISTY%dBdt(6) = FEISTY%fish(3)%Fout * FEISTY%fish(3)%B + (FEISTY%fish(6)%E_A - & 
+                         FEISTY%fish(6)%Fout  - FEISTY%fish(6)%mu) * FEISTY%fish(6)%B
         
         ! Large fish (reproduction Fout = 0) 
         FEISTY%dBdt(7) = FEISTY%fish(5)%Fout * FEISTY%fish(5)%B + & 
                          (FEISTY%fish(7)%E_A - FEISTY%fish(7)%Repro - FEISTY%fish(7)%mu) * FEISTY%fish(7)%B
-        
-        ! if (largDemPel) then 
-        !     FEISTY%dBdt(8) = FEISTY%Md_Fout_end * FEISTY%Nlayer**(-1) * FEISTY%fish(6)%B + & 
-        !         (FEISTY%fish(8)%E_A - FEISTY%fish(6)%Repro - FEISTY%fish(8)%mu) * FEISTY%fish(8)%B
-        ! else 
-            if (FEISTY%ilayer .eq. FEISTY%Nlayer) then
-                FEISTY%dBdt(8) = FEISTY%fish(6)%Fout * FEISTY%fish(6)%B + & 
-                    (FEISTY%fish(8)%E_A - FEISTY%fish(8)%Repro - FEISTY%fish(8)%mu) * FEISTY%fish(8)%B 
-            else 
-                FEISTY%dBdt(8) = 0.0
-            endif
-        ! endif
-        
+        FEISTY%dBdt(8) = FEISTY%fish(6)%Fout * FEISTY%fish(6)%B + & 
+                         (FEISTY%fish(8)%E_A - FEISTY%fish(8)%Repro - FEISTY%fish(8)%mu) * FEISTY%fish(8)%B 
+                
         !:======================================================================
         ! Calcul Benthic chemostat and derivative from detritus flux to benthic 
         !:======================================================================
@@ -464,13 +454,6 @@ module Physiology
             r = Bent_eff * FEISTY%det / FEISTY%benthos(i)%B 
             FEISTY%benthos(i)%B = FEISTY%benthos(i)%B + r * FEISTY%benthos(i)%B * (1 - FEISTY%benthos(i)%B/CC) - pred
         enddo
-
-        if (diagnostic .and. FEISTY%ilayer .eq. 75) then 
-            print*, 'detritus flux to floor: ', FEISTY%det
-            print*, 'Benthic growth rate   : ', r 
-            print*, 'pred on Benthic       : ', pred
-        endif
-
 
         ! New biomass : ------------------------------------------
         do i = 1, nFishGroup
@@ -488,7 +471,10 @@ module Physiology
         enddo
 
         ! Print all diagnostics used in FEISTY 
-        if (diagnostic .and. FEISTY%ilayer .eq. 75) then 
+        if (diagnostic) then 
+            print*, 'detritus flux to floor: ', FEISTY%det
+            print*, 'Benthic growth rate   : ', r 
+            print*, 'pred on Benthic       : ', pred
              CALL Print_FEISTY_diagnostic(FEISTY)
         end if 
 
