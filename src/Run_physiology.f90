@@ -59,9 +59,8 @@ program Run_physiology
                                                Datadzl(ilath, ilongh, :, itime), DataZL(ilath, ilongh, :, itime), &
                                                iDAY, ilath, ilongh) ! Get the environmental data and integrate them over depth                                                                                 
             CALL Calc_FEISTY_Deriv(FEISTY)                                        ! Calcul biomass at day+1
-            CALL store_daily_biomass(FEISTY, tracers, itime, ilath, ilongh)  ! Calcul and store the monthly average
-            CALL store_daily_diag(diags, FEISTY, itime, ilath, ilongh)
-            call Calc_trans_layer(diags, FEISTY)
+            CALL store_daily_biomass(FEISTY, tracers, itime, ilath, ilongh)  ! Save the daily biomass
+            CALL store_daily_diag(diags, FEISTY, itime, ilath, ilongh)       ! Save the daily diagnostic
         enddo; enddo ! End Loop Year and day
     enddo ; enddo; ! } longh; lat; layer
 

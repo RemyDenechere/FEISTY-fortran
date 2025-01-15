@@ -201,18 +201,8 @@ module Parameters
                                                           ! as predation on demersal does not change unit.
 
     ! Unit conversion for input data: ---------------------------------------------- 
-    ! real(dp), parameter :: convers_zm  = 10.0**(-3 -2)*12.01*9.0, &                  ! zooplankton biomass 
-    !                        convers_det = 10.0**(-9 +4)*12.01*9.0*24.0*3600.0, &      ! detritus 
-    !                        convers_dZm = 10.0**(-2 -3)*12.01*9.0*24.0*3600.0         ! zooplankton loss
-    ! No conversion for Colleen's data: 
     real(dp), parameter :: convers_zm  = 6.625* 12.01 * 9.0 * 1000.0, &            ! zooplankton biomass Mol N/kg --> gC WW m-3
-                           convers_det = 1, &                                      ! detritus 
+                           convers_det = 6.625*12.01*9.0*24.0*60.0*60.0, &         ! detritus from molN m-2 s-1 --> gC WW m-2 d-1 
                            convers_dZm = 6.625*12.01*9.0*24.0*3600.0               ! zooplankton loss Mol N/kg s-1 --> gC WW m-3 d-1
 
-    ! real(dp), parameter ::  long_min = -64.3667 ,&
-    !                         long_max = -63.965 ,&  ! -63.9667
-    !                         lat_min  = 31.4667  ,&
-    !                         lat_max  = 31.865 
-    
-    
 end module Parameters
