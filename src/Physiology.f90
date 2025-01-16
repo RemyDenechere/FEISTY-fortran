@@ -63,7 +63,7 @@ module Physiology
         biop = pref_Ld_Mf * FEISTY%fish(MF)%B + pref_Ld_Mp * FEISTY%fish(MD)%B
         biob = pref_Ld_Md * FEISTY%fish(MD)%B  + pref_Ld_BE *FEISTY%benthos(1)%B
         ! Calcul of time spent in pelagic zone for demersals 
-        if (FEISTY%max_depth < PI_be_cutoff) then  ! zt(nk) is the sea floor depth 
+        if (FEISTY%max_depth(1,1) .le. PI_be_cutoff) then  ! zt(nk) is the sea floor depth 
             tpel(nFishGroup) = biop / (biop + biob)
         else 
             tpel(nFishGroup) = 0.0

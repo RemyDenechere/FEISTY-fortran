@@ -16,7 +16,7 @@ program Run_physiology
                                                        DataZM, Datadzm, DataZL, Datadzl
     integer :: itime, iDAY, iYR, Year, ilayer, ilath, ilongh
     real(dp) :: T1, T2, T3, sim_time
-    logical :: Spinup = .true.
+    logical :: Spinup = .false.
 
     print *, "-------------------------------------"
     print *, " Simulation of FEISTY offline using COBALT 1D "
@@ -31,41 +31,41 @@ program Run_physiology
  
     ! Increasing the spinup time! 
     if (Spinup) then 
-        Year = Ntime/366
+        Year = FEISTY%Ntime/366
         sim_time = 1.73
     else 
-        Year = Ntime/366
+        Year = FEISTY%Ntime/366
         sim_time = 1.73/200.0 
     end if 
 
     print *, "-------------------------------------"
     print *, "     Simulation parameters    "
-    print *, '# Days              ', Ntime
+    print *, '# Days              ', FEISTY%Ntime
     print *, '# month             ', Year *12
     print *, '# Year              ', Year
-    print *, '# Layer             ', Nlayer
-    print *, '# Latitude          ', Nlath
-    print *, '# Longitude         ', Nlongh
+    print *, '# Layer             ', FEISTY%Nlayer
+    print *, '# Latitude          ', FEISTY%Nlath
+    print *, '# Longitude         ', FEISTY%Nlongh
     print *, "Initialisation time " , T2-T1, "sec"
     print *, "Start simulation, takes ~", sim_time, "min"
     print *, "-------------------------------------"
 
     ! Loops over latitude,  longitude, year and day  ----------------------------------------------------------
-    Do ilath = 1, Nlath; Do ilongh = 1, Nlongh; Do iYr = 1, Year; Do iDAY = 1, 366 
-            itime = (iYr -1) * 366 + iDAY 
+    Do ilath = 1, FEISTY%Nlath; Do ilongh = 1, FEISTY%Nlongh; Do iYr = 1, Year; Do iDAY = 1, 366 
+            itime = (iYr -1) * 366 + iDAY ! time of simulation used for saving data if spinup
             CALL init_Biomass(Spinup, itime, ilath, ilongh, IC_tracers_Bio, FEISTY, tracers) ! Initialisation of the biomass
-            CALL Get_Environental_data(FEISTY, DataTemp(ilath, ilongh, :, itime), Datadet(ilath, ilongh, :, itime), &
-                                               Datadzm(ilath, ilongh, :, itime), DataZM(ilath, ilongh, :, itime), &
-                                               Datadzl(ilath, ilongh, :, itime), DataZL(ilath, ilongh, :, itime), &
-                                               iDAY, ilath, ilongh) ! Get the environmental data and integrate them over depth                                                                                 
+            CALL Get_Environental_data(FEISTY, DataTemp(ilath, ilongh, :, iDay), Datadet(ilath, ilongh, :, iDay), &
+                                               Datadzm(ilath, ilongh, :, iDay), DataZM(ilath, ilongh, :, iDay), &
+                                               Datadzl(ilath, ilongh, :, iDay), DataZL(ilath, ilongh, :, iDay)) ! Get the environmental data and integrate them over depth
             CALL Calc_FEISTY_Deriv(FEISTY)                                        ! Calcul biomass at day+1
             CALL store_daily_biomass(FEISTY, tracers, itime, ilath, ilongh)  ! Save the daily biomass
             CALL store_daily_diag(diags, FEISTY, itime, ilath, ilongh)       ! Save the daily diagnostic
         enddo; enddo ! End Loop Year and day
     enddo ; enddo; ! } longh; lat; layer
 
-    CALL write_output_netcdf(Spinup, tracers, diags, Ntime, Nlayer, Nlath, Nlongh, FEISTY%lat, FEISTY%lon, FEISTY%zt)  ! Save Netcdf 
-
+    CALL write_output_netcdf(Spinup, tracers, diags, & 
+                             FEISTY%Ntime, FEISTY%Nlayer, FEISTY%Nlath, FEISTY%Nlongh, &
+                             FEISTY%lat, FEISTY%lon, FEISTY%zt)  ! Save Netcdf 
 
     CALL cpu_time(T3)
     print *, "-------------------------------------"

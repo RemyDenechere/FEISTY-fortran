@@ -45,7 +45,7 @@ module GetNetCDFinf
                                                                         Datadzm, DataZM, &
                                                                         Datadzl, DataZL, &
                                                                         Datadet
-        integer,                            :: Ntime, Nlayer, Nlath, Nlongh                                                                        
+        integer                             :: Ntime, Nlayer, Nlath, Nlongh                                                                        
         real(dp), dimension(9, 9)           :: Datalat, Datalon
         real(dp), dimension(4, 4)           :: Datamax_depth
         real(dp), dimension(:), allocatable :: Datazt ! pseudo layer depth
@@ -55,20 +55,24 @@ module GetNetCDFinf
         allocate(Datazt(Nlayer))
         CALL load_forcing_data(Ntime, Nlayer, Nlath, Nlongh, DataTemp, Datadet, Datadzm, DataZM, Datadzl, DataZL, &
                                 Datazt, Datalat, Datalon, Datamax_depth) ! Load the data used to force the model
-        Call load_IC_fish(Spinup, Nlayer, Nlath, Nlongh, IC_tracers_Bio) ! Load the initial condition of the model
+        Call load_IC_fish(Spinup, Nlath, Nlongh, IC_tracers_Bio) ! Load the initial condition of the model
         ! 
         if (Spinup) then 
-            Ntime = (Ntime) * Year_2_Spinup
+            Ntime = Ntime * Year_2_Spinup
         end if
 
         ! Save the dimension of the forcing files in the FEISTY structure
         FEISTY%Ntime  = Ntime
         FEISTY%Nlayer = Nlayer
         FEISTY%Nlath  = Nlath
-        FEISTY%Nlongh = Nlongh 
+        FEISTY%Nlongh  = Nlongh
+        ! FEISTY%time   = real(Ntime)
+        ! FEISTY%layer  = real(Nlayer)
+        ! FEISTY%lath   = real(Nlath)
+        ! FEISTY%longh  = real(Nlongh) 
         FEISTY%zt  = Datazt  ! pseudo layer depth 
-        FEISTY%lat = Datalat ! latitude 
-        FEISTY%lon = Datalon ! longitude
+        FEISTY%lat = Datalat(1,1) ! latitude 
+        FEISTY%lon = Datalon(1,1) ! longitude
         FEISTY%max_depth = Datamax_depth(1,1) ! max depth
 
         ! Calculate the thickness of each layer 
@@ -78,18 +82,18 @@ module GetNetCDFinf
         end do 
         
         ! Calculate the index of the 100m layer: 
-        i_100m = 0
+        i_100m = int(1)
         Do i = 1, 75
             if (FEISTY%zt(i) .le. 100.0) then 
                 i_100m = i
             end if
         end do
         allocate(FEISTY%idx_100m(i_100m))
-        FEISTY%idx_100m = 1:i_100m
+        FEISTY%idx_100m = (/(i, i=1, i_100m, 1)/)
 
         ! Allocate storage variables 
-        CALL allocate_tracers(tracers, Ntime, Nlayer, Nlath, Nlongh)
-        CALL allocate_diags(diags, Ntime, Nlayer, Nlath, Nlongh)
+        CALL allocate_tracers(tracers, Ntime, Nlath, Nlongh)
+        CALL allocate_diags(diags, Ntime, Nlath, Nlongh)
         
         ! Individual Mass (g) geometric mean for each group s
         FEISTY%fish(Sf)%w = 10.0**((log10(0.001)+log10(0.5))/2)
@@ -186,11 +190,12 @@ module GetNetCDFinf
     ! Load all the Spinup Initial condition to force the FEISTY
     !:======================================================================  
     subroutine load_IC_fish(Spinup, Nlath, Nlongh, IC_tracers_Bio)
-        type(Initial_conditions) , dimension(nDeriv) :: IC_tracers_Bio
         logical, intent(in) :: Spinup
         integer, intent(in) :: Nlath, Nlongh
+        type(Initial_conditions), intent(inout), dimension(nDeriv) :: IC_tracers_Bio
 
         if (Spinup .eqv. .false.) then 
+            call allocate_IC_tracers_Bio(IC_tracers_Bio, Nlath, Nlongh)
             CALL readgrid2D(dir_IniSf, 'Sf', Nlath, Nlongh, IC_tracers_Bio(1)%IniBio)
             CALL readgrid2D(dir_IniSp, 'Sp', Nlath, Nlongh, IC_tracers_Bio(2)%IniBio)
             CALL readgrid2D(dir_IniSd, 'Sd', Nlath, Nlongh, IC_tracers_Bio(3)%IniBio)
@@ -206,11 +211,11 @@ module GetNetCDFinf
     !:====================================================================== 
     ! Write the output in netCDF files
     !:======================================================================     
-    subroutine write_output_netcdf(Spinup, tracers, diags, Ntime, Nlath, Nlongh, lat, lon, zt)
+    subroutine write_output_netcdf(Spinup, tracers, diags, Ntime, Nlayer, Nlath, Nlongh, lat, lon, zt)
         type(FEISTY_tracers), intent(inout), dimension(nDeriv) :: tracers
         type(FEISTY_diag)   :: diags
         logical, intent(in) :: Spinup
-        integer, intent(in) :: Ntime, Nlath, Nlongh
+        integer, intent(in) :: Ntime, Nlayer, Nlath, Nlongh
         real(dp), dimension(9,9):: lat, lon
         real(dp), dimension(75) :: zt
         integer :: i
@@ -335,14 +340,24 @@ module GetNetCDFinf
                                                                 Datadzm, DataZM, &
                                                                 Datadzl, DataZL, &
                                                                 Datadet
-
-        FEISTY%Temp = mean(DataTemp(FEISTY%idx_100m))
+        
+        FEISTY%Tp = sum(DataTemp(FEISTY%idx_100m))/size(FEISTY%idx_100m)
+        FEISTY%Tb = DataTemp(FEISTY%Nlayer)
         FEISTY%mesozoo(1)%dz = sum(Datadzm(FEISTY%idx_100m) * FEISTY%layer_thickness(FEISTY%idx_100m)) * convers_dZm 
         FEISTY%mesozoo(1)%B  = sum(DataZM(FEISTY%idx_100m)  * FEISTY%layer_thickness(FEISTY%idx_100m)) * convers_zm
         FEISTY%mesozoo(2)%B  = sum(DataZL(FEISTY%idx_100m)  * FEISTY%layer_thickness(FEISTY%idx_100m)) * convers_zm
         FEISTY%mesozoo(2)%dz = sum(Datadzl(FEISTY%idx_100m) * FEISTY%layer_thickness(FEISTY%idx_100m)) * convers_dZm
         FEISTY%det  = Datadet(FEISTY%Nlayer) * convers_det        
-    end subroutine Get_Environental_daita
+
+        ! print *,  "FEISTY%Tp:", FEISTY%Tp
+        ! print *,  "FEISTY%Tb:", FEISTY%Tb
+        ! print *,  "FEISTY%mesozoo(1)%dz:", FEISTY%mesozoo(1)%dz
+        ! print *,  "FEISTY%mesozoo(1)%B:", FEISTY%mesozoo(1)%B
+        ! print *,  "FEISTY%mesozoo(2)%dz:", FEISTY%mesozoo(2)%dz
+        ! print *,  "FEISTY%mesozoo(2)%B:", FEISTY%mesozoo(2)%B
+        ! print *,  "FEISTY%det:", FEISTY%det
+
+    end subroutine Get_Environental_data
 
 
     subroutine readgrid4D(dir, varname, Ntime, Nlayer, Nlath, Nlongh, values)
@@ -520,13 +535,13 @@ module GetNetCDFinf
         integer :: status
         integer :: varid_time, varid_layer, varid_lath, varid_longh
         integer :: i
-        real(dp), dimension(1) :: time_dim_val
+        real(dp), dimension(Ntime) :: time_dim_val
         real(dp), dimension(Nlayer) :: layer_dim_val
         real(dp), dimension(Nlath)  :: lath_dim_val
         real(dp), dimension(Nlongh) :: longh_dim_val
         real(dp), dimension(8)  :: lath_temp_val, lonh_temp_val
 
-
+        print*, "Creating NetCDF file for tracers: ", filename
 
         ! Create the NetCDF file
         status = nf90_create(filename, NF90_CLOBBER, ncid)
@@ -596,13 +611,13 @@ module GetNetCDFinf
         status = nf90_enddef(ncid)
 
         ! Define valuse for each dimension : -----------------------------------------------------------
-        ! Time in days: 
+        ! Time in days:
         Time_dim_val = (/(i, i=1, Ntime, 1)/)
         ! Layer pseudo-depth: 
         layer_dim_val = zt
         ! lat and long 
         lath_temp_val = lat(1, 1) + (lat(1, 1:8) - lat(1, 2:9))/2
-        lonh_temp_val = lon(1, 1) + (lon(1, 1:8) - lon(1, 2:9))/2  
+        lonh_temp_val = lon(1, 1) + (lon(1, 1:8) - lon(1, 2:9))/2 
         lath_dim_val  = lath_temp_val([1, 3, 5, 7])
         longh_dim_val = lonh_temp_val([1, 3, 5, 7])
 
@@ -639,7 +654,7 @@ module GetNetCDFinf
         real(dp), dimension(Nlongh, Nlath, Ntime) ::  var_reshaped
         integer :: varid
         integer :: status
-
+        
         ! Reshaping variable before saving for COBALT ouput:
         var_reshaped = RESHAPE(var, SHAPE(var_reshaped), ORDER = (/3, 2, 1/))
 
@@ -692,53 +707,53 @@ module GetNetCDFinf
                         "/COBALT_" // trim(coupling) // "_" // trim(loc) // "_" //  trim(exp) // "_" //  &
                         trim(tracers_name(i)) // "_diag" // trim(String_Spinup) // "Time_Serie.nc"
 
-            call init_Diag_nc(Spinup, filename, ncid, Ntime, Nlayer, Nlath, Nlongh, dimids)
+            call init_Diag_nc(Spinup, filename, ncid, Ntime, Nlayer, Nlath, Nlongh, dimids, lat, lon, zt)
             
             call add_Diag_nc(ncid, dimids, "f",    trim(tracers_name(i)) // " Feeding level"            , &
-                                diags%fish(i)%f    , Ntime, Nlayer, Nlath, Nlongh, lat, lon, zt)
+                                diags%fish(i)%f    , Ntime, Nlayer, Nlath, Nlongh)
             call add_Diag_nc(ncid, dimids, "cmax", trim(tracers_name(i)) // " Maximum consumption rate ", &
-                                diags%fish(i)%cmax , Ntime, Nlayer, Nlath, Nlongh, lat, lon, zt)
+                                diags%fish(i)%cmax , Ntime, Nlayer, Nlath, Nlongh)
             call add_Diag_nc(ncid, dimids, "cons", trim(tracers_name(i)) // " Consumption"              , &
-                                diags%fish(i)%cons , Ntime, Nlayer, Nlath, Nlongh, lat, lon, zt)
+                                diags%fish(i)%cons , Ntime, Nlayer, Nlath, Nlongh)
             call add_Diag_nc(ncid, dimids, "met",  trim(tracers_name(i)) // " Metabolic loss"           , &
-                                diags%fish(i)%met  , Ntime, Nlayer, Nlath, Nlongh, lat, lon, zt)
+                                diags%fish(i)%met  , Ntime, Nlayer, Nlath, Nlongh)
             call add_Diag_nc(ncid, dimids, "mu_p", trim(tracers_name(i)) // " Predation Mortality"      , &
-                                diags%fish(i)%mu_p , Ntime, Nlayer, Nlath, Nlongh, lat, lon, zt)
+                                diags%fish(i)%mu_p , Ntime, Nlayer, Nlath, Nlongh)
             call add_Diag_nc(ncid, dimids, "mu_f", trim(tracers_name(i)) // " Fishing Mortality"        , &
-                                diags%fish(i)%mu_f , Ntime, Nlayer, Nlath, Nlongh, lat, lon, zt)
+                                diags%fish(i)%mu_f , Ntime, Nlayer, Nlath, Nlongh)
             call add_Diag_nc(ncid, dimids, "mu_a", trim(tracers_name(i)) // " Background Mortality"     , &
-                                diags%fish(i)%mu_a , Ntime, Nlayer, Nlath, Nlongh, lat, lon, zt)
+                                diags%fish(i)%mu_a , Ntime, Nlayer, Nlath, Nlongh)
             call add_Diag_nc(ncid, dimids, "mu",   trim(tracers_name(i)) // " Mortality "               , &
-                                diags%fish(i)%mu   , Ntime, Nlayer, Nlath, Nlongh, lat, lon, zt)
+                                diags%fish(i)%mu   , Ntime, Nlayer, Nlath, Nlongh)
             call add_Diag_nc(ncid, dimids, "E_A",  trim(tracers_name(i)) // " Energy Available"         , &
-                                diags%fish(i)%E_A  , Ntime, Nlayer, Nlath, Nlongh, lat, lon, zt)
+                                diags%fish(i)%E_A  , Ntime, Nlayer, Nlath, Nlongh)
             call add_Diag_nc(ncid, dimids, "Fout", trim(tracers_name(i)) // " Flux out size class"      , &
-                                diags%fish(i)%Fout , Ntime, Nlayer, Nlath, Nlongh, lat, lon, zt)
+                                diags%fish(i)%Fout , Ntime, Nlayer, Nlath, Nlongh)
             call add_Diag_nc(ncid, dimids, "Repro",trim(tracers_name(i)) // " Reproductive output"      , &
-                                diags%fish(i)%Repro, Ntime, Nlayer, Nlath, Nlongh, lat, lon, zt)
+                                diags%fish(i)%Repro, Ntime, Nlayer, Nlath, Nlongh)
 
             call add_Diag_nc(ncid, dimids, "f_Zm", trim(tracers_name(i)) // " Feeding level Medium Zoo     ", &
-                                diags%fish(i)%f_Zm, Ntime, Nlayer, Nlath, Nlongh, lat, lon, zt)
+                                diags%fish(i)%f_Zm, Ntime, Nlayer, Nlath, Nlongh)
             call add_Diag_nc(ncid, dimids, "f_Zl", trim(tracers_name(i)) // " Feeding level Large Zoo      ", &
-                                diags%fish(i)%f_Zl, Ntime, Nlayer, Nlath, Nlongh, lat, lon, zt)
+                                diags%fish(i)%f_Zl, Ntime, Nlayer, Nlath, Nlongh)
             call add_Diag_nc(ncid, dimids, "f_Sf", trim(tracers_name(i)) // " Feeding level Small Forage   ", &
-                                diags%fish(i)%f_Sf, Ntime, Nlayer, Nlath, Nlongh, lat, lon, zt)
+                                diags%fish(i)%f_Sf, Ntime, Nlayer, Nlath, Nlongh)
             call add_Diag_nc(ncid, dimids, "f_Sp", trim(tracers_name(i)) // " Feeding level Small Pelagic  ", &
-                                diags%fish(i)%f_Sp, Ntime, Nlayer, Nlath, Nlongh, lat, lon, zt)
+                                diags%fish(i)%f_Sp, Ntime, Nlayer, Nlath, Nlongh)
             call add_Diag_nc(ncid, dimids, "f_Sd", trim(tracers_name(i)) // " Feeding level Small Demersal ", &
-                                diags%fish(i)%f_Sd, Ntime, Nlayer, Nlath, Nlongh, lat, lon, zt)
+                                diags%fish(i)%f_Sd, Ntime, Nlayer, Nlath, Nlongh)
             call add_Diag_nc(ncid, dimids, "f_Mf", trim(tracers_name(i)) // " Feeding level Medium Forage  ", &
-                                diags%fish(i)%f_Mf, Ntime, Nlayer, Nlath, Nlongh, lat, lon, zt)
+                                diags%fish(i)%f_Mf, Ntime, Nlayer, Nlath, Nlongh)
             call add_Diag_nc(ncid, dimids, "f_Mp", trim(tracers_name(i)) // " Feeding level Medium Pelagic ", &
-                                diags%fish(i)%f_Mp, Ntime, Nlayer, Nlath, Nlongh, lat, lon, zt)
+                                diags%fish(i)%f_Mp, Ntime, Nlayer, Nlath, Nlongh)
             call add_Diag_nc(ncid, dimids, "f_Md", trim(tracers_name(i)) // " Feeding level Medium Demersal", &
-                                diags%fish(i)%f_Md, Ntime, Nlayer, Nlath, Nlongh, lat, lon, zt)
+                                diags%fish(i)%f_Md, Ntime, Nlayer, Nlath, Nlongh)
             call add_Diag_nc(ncid, dimids, "f_Lp", trim(tracers_name(i)) // " Feeding level Large Pelagic  ", &
-                                diags%fish(i)%f_Lp, Ntime, Nlayer, Nlath, Nlongh, lat, lon, zt)
+                                diags%fish(i)%f_Lp, Ntime, Nlayer, Nlath, Nlongh)
             call add_Diag_nc(ncid, dimids, "f_Ld", trim(tracers_name(i)) // " Feeding level Large Demersal ", &
-                                diags%fish(i)%f_Ld, Ntime, Nlayer, Nlath, Nlongh, lat, lon, zt)
+                                diags%fish(i)%f_Ld, Ntime, Nlayer, Nlath, Nlongh)
             call add_Diag_nc(ncid, dimids, "f_BE", trim(tracers_name(i)) // " Feeding level Benthos        ", &
-                                diags%fish(i)%f_BE, Ntime, Nlayer, Nlath, Nlongh, lat, lon, zt)
+                                diags%fish(i)%f_BE, Ntime, Nlayer, Nlath, Nlongh)
 
             call end_Diag_nc(ncid)
 
@@ -752,6 +767,8 @@ module GetNetCDFinf
         character(LEN = 280), intent(in) :: filename 
         integer, intent(inout) :: ncid, dimids(4)
         integer, intent(in) :: Ntime, Nlayer, Nlath, Nlongh
+        real(dp), dimension(9,9), intent(in)    :: lat, lon
+        real(dp), dimension(75), intent(in)     :: zt
         integer :: status
         integer :: Interface = 76, latq = 5, lonq = 5
         integer :: varid_time, varid_layer, varid_lath, varid_longh

@@ -29,7 +29,7 @@ module Parameters
     ! Simulation parameters: ------------------------------------------
     real(dp), parameter :: Delta_t          = 1.0             ! Time step [d]
     real(dp), parameter :: IC               = 1d-5            ! Fish Initial Condition
-    real(dp), parameter :: PI_be_cutoff     = 200             ! Benthic-pelagic coupling cutoff (depth, m)
+    real(dp), parameter :: PI_be_cutoff     = 200.00          ! Benthic-pelagic coupling cutoff (depth, m)
     real(dp), parameter :: conv_m2_to_m3    = 100.00          ! Conversion from per area simulation to per depth simulation 
 
     ! Experimentation parameters: ------------------------------------------

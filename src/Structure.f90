@@ -94,10 +94,15 @@ module Structure
         real(dp) :: Ld_Repro_end = 0
         real(dp) :: Md_Fout_end = 0
 
-        real(dp) :: Nlath
-        real(dp) :: Nlongh
-        real(dp) :: Ntime
-        real(dp) :: Nlayer
+        integer :: Nlath
+        integer :: Nlongh
+        integer :: Ntime
+        integer :: Nlayer
+
+        ! real(dp) :: lath
+        ! real(dp) :: longh
+        ! real(dp) :: time
+        ! real(dp) :: layer
 
         integer :: ilath
         integer :: ilongh
@@ -108,7 +113,7 @@ module Structure
         real(dp), dimension(9, 9) :: lat                ! Latitude
         real(dp), dimension(9, 9) :: lon                ! Longitude
         real(dp), dimension(4, 4) :: max_depth          ! Sea floor depth
-        integer, dimension(:), allocatable :: idx_100m  ! Index of the 100m depth
+        integer, allocatable :: idx_100m(:)  ! Index of the 100m depth
     end type FEISTY_type
 
 
@@ -245,7 +250,6 @@ module Structure
                 FEISTY%benthos(i)%B = tracers(i + nFishGroup)%Bio(itime-1, ilath, ilongh)
             end do
         end if 
-
     end subroutine init_Biomass
     
 
@@ -295,6 +299,15 @@ module Structure
         end do
         
     end subroutine allocate_diags
+
+    subroutine allocate_IC_tracers_Bio(IC_tracers_Bio, Nlath, Nlongh)
+        type(Initial_conditions), dimension(nDeriv) :: IC_tracers_Bio
+        integer :: Nlath, Nlongh
+        integer :: i
+        do i = 1, nDeriv
+            allocate(IC_tracers_Bio(i)%IniBio(Nlath, Nlongh))
+        end do 
+    end subroutine allocate_IC_tracers_Bio
 
     subroutine store_daily_biomass(FEISTY, tracers, itime, ilath, ilongh)
         type(FEISTY_tracers), intent(inout), dimension(nDeriv) :: tracers
