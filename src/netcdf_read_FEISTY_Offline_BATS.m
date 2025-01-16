@@ -1,27 +1,20 @@
 % FEISTY output at all locations
-function [] = netcdf_read_FEISTY_Offline_BATS(loc, Rockfish, loc_test, ...
-                                              start_loc, end_loc)
+function [] = netcdf_read_FEISTY_Offline_BATS(loc, Rockfish)
 
 arguments 
     loc                   char    = 'BATS'
     Rockfish              logical = true
-    loc_test              logical = false
-    start_loc              double = 1
-    end_loc                double = 11
 end 
 dbclear all 
-% dbstop in netcdf_read_FEISTY_Offline_BATS at 213
+% dbstop in netcdf_read_FEISTY_Offline_BATS at 204
 
 %% Root directory: 
-param.Rockfish = Rockfish; % true; % 
-param.loc_test = loc_test; % false; %   
+param.Rockfish = Rockfish; % true; %
 param = param_setup(param);
 
 exp = 'baseparam'; % (all baseparam)
 coupling = 'offline'; 
 Spinup = {'_Spinup_Time_Serie', ''};
-
-
 
 %! get directory containing output
 dir_input_offline_forcing = ['../../COBALT_output/COBALT_offline_forcing_files/' loc '/']; 
@@ -29,6 +22,7 @@ dir_input_offline_FEISTY = ['../output/netcdf/' coupling '/' loc '/', ...
                             'COBALT_' coupling '_' loc '_' exp '_'];
 dir_output =['../output/Matlab_Average/', coupling, '/' loc, '/', exp, '/', ...
                             'FEISTY_' coupling '_' loc '_' exp '_'];
+dir_topog = ['../output/Matlab_Average/', 'online', '/' loc, '/Topology.mat'];
  
 var = {'Sf', 'Sp', 'Sd', 'Mf', 'Mp', 'Md', 'Lp', 'Ld', 'BE', 'dZm', 'dZl'};
 var_diag = {'f', 'cmax', 'cons', 'met', 'mu_p', 'mu_f', 'mu_a', 'mu',...
@@ -40,364 +34,192 @@ if ~exist(['../output/Matlab_Average/', coupling, '/' loc, '/', exp, '/'])
 end
 
 %% Get information about the simulation 
-disp(['Get information about the ' loc ' system'])
-topog.dir = ['../../CEFI-regional-MOM6-FEISTY/exps/OM4.single_column.COBALT/' loc '/'];
-topog.var = {'x', 'y', 'depth', 'Layer'};
-topog.longname = {'geographic_longitude', 'geographic_latitude', 'depth', 'Layer pseudo-depth'};
-topog.unit = {'degree_east', 'degree_north', 'meters', 'meters'};
-topog.files = {'ocean_hgrid.nc', 'ocean_hgrid.nc', 'ocean_topog.nc', 'FEISTY_2023_10_spinup_subset.nc'}; 
-topog.Layer_thikness = zeros(75, 1);
 
-for i = 1:length(topog.var)
-    ncid = netcdf.open([topog.dir, topog.files{i}], 'NC_NOWRITE');
-    varid = netcdf.inqVarID(ncid, topog.var{i});
-    topog.(topog.var{i}) = netcdf.getVar(ncid, varid);
+if exist(dir_topog, 'file')
+    load(dir_topog, 'topog') 
+else 
+    disp("topological parameters for this location do not exit, run netcdf_read_FEISTY_Online.m first")
 end
 
-% Calculate the actual depth for each layer based on the layer pseuco-depth
-% and the max depth from the location: 
-topog.Layer_depth = mean(topog.depth, [1, 2]) .* (topog.Layer/4000);
+%% Get Spinup Time Series data:
+disp('Get Spinup Time Series data')
 
-topog.Layer_thikness(1) = topog.Layer_depth(1);
-topog.Layer_thikness(2:end) = topog.Layer_depth(2:end)' - topog.Layer_depth(1:(end-1))';
+for i = 1:(length(var)-2)
+    ncid = netcdf.open([dir_input_offline_FEISTY var{i} '_bio' Spinup{1} '.nc'],'NC_NOWRITE');
+    eval([ var{i} ' = netcdf.getVar(ncid, 0);']);
+    eval([ var{i} '(' var{i} ' == 99999) = NaN;']);
+    netcdf.close(ncid);
+end 
+dim = size(eval([var{1}]));
 
-% save in folder of the location as its the same for every experiment in a location
-save(['../output/Matlab_Average/', coupling, '/' loc, '/Topology.mat'], 'topog') 
+%! Take mean over latitude and longitude and sum over depth for visualization:
+time = 1:dim(1);
 
-if ~param.loc_test
-    %% Get Spinup Time Series data:
-    disp('Get Spinup Time Series data')
-    
-    for i = 1:(length(var)-2)
-        ncid = netcdf.open([dir_input_offline_FEISTY var{i} '_bio' Spinup{1} '.nc'],'NC_NOWRITE');
-        eval([ var{i} ' = netcdf.getVar(ncid, 0);']);
-        eval([ var{i} '(' var{i} ' == 99999) = NaN;']);
+for i = 1:(length(var)-2)
+    eval([var{i} '_tmean = nanmean(' var{i} ', [2, 3]);']);
+end 
+save([dir_output 'Time_Means' Spinup{1} '.mat'], 'time',...
+    'Sf_tmean','Sp_tmean','Sd_tmean',...
+    'Mf_tmean','Mp_tmean','Md_tmean',...
+    'Lp_tmean','Ld_tmean','BE_tmean')
+
+%% Get Time Series from offline simulations:
+disp('Get Time Series from offline simulations')
+
+%! Fish: 
+for i = 1:(length(var)-2)
+    ncid = netcdf.open([dir_input_offline_FEISTY var{i} '_bio' Spinup{2} '.nc'],'NC_NOWRITE');
+    eval([ var{i} ' = netcdf.getVar(ncid, 0 );']);
+    eval([ var{i} '(' var{i} ' == 99999) = NaN;']);
+    netcdf.close(ncid);
+end 
+
+%! zoo oversoncumption: 
+for i = (length(var)-1):length(var)
+    ncid = netcdf.open([dir_input_offline_FEISTY var{i} Spinup{2} '.nc'],'NC_NOWRITE');
+    eval([ var{i} ' = netcdf.getVar(ncid, 0 );']);
+    eval([ var{i} '(' var{i} ' == 99999) = NaN;']);
+    netcdf.close(ncid);
+end 
+dim = size(eval(var{1}));
+
+%! Take mean over latitude and longitude for visualization:
+time = 1:dim(1);
+
+% Calcul average over time: -----------------------------------------
+for i = 1:(length(var))
+    eval([var{i} '_tmean = nanmean(' var{i} ', [2, 3]);']);
+end
+
+%! Save data: -------------------------------------------------------------
+save([dir_output 'Time_Means' Spinup{2} '.mat'], 'time')
+for i = 1:length(var)
+    save([dir_output 'Time_Means' Spinup{2} '.mat'], ...
+        [var{i} '_tmean'] ,'-append')
+end
+
+
+
+%% Initial condition for Online Coupling: 
+disp('Get IC for Online COBALT')
+ncid = netcdf.open(['../output/netcdf/' coupling '/' loc '/', ...
+                    'FEISTY_2D_2023_10_spinup_subset.nc'],'NC_NOWRITE');
+for i = 1:(length(var)-2)
+    varid = netcdf.inqVarID(ncid, [var{i} '_B']);
+    eval([ var{i} ' = netcdf.getVar(ncid, varid);']);
+end
+
+%! Calculate average over lat and long: 
+for i = 1:(length(var)-2)
+    eval([var{i} '_IC = nanmean(' var{i} ', [1, 2]);']);
+end
+
+%! Save average over lat and long: 
+save([dir_output 'COBALT_IC_fish_' loc '_' coupling '_' exp '.mat'])
+for i = 1:(length(var)-2)
+    save([dir_output 'COBALT_IC_fish_' loc '_' coupling '_' exp '.mat'], ...
+        [var{i} '_IC'] ,'-append')
+end
+
+%% diagnotic variables
+disp(['Get Diagnostic variables from COBALT ', coupling, ' at ', loc])
+
+for sp = 2 
+    % get diagnostics:
+    for i = 1:(length(var)-3)
+        ncid = netcdf.open([dir_input_offline_FEISTY var{i} '_diag_' Spinup{sp} 'Time_Serie' '.nc'],'NC_NOWRITE');
+        for j = 1:length(var_diag)
+            varid = netcdf.inqVarID(ncid, var_diag{j});
+            eval([ var{i} '_' var_diag{j} ' = netcdf.getVar(ncid, varid );']);
+            eval([ var{i} '_' var_diag{j} '(' var{i} '_' var_diag{j} ' == -99999) = NaN;']);
+        end 
         netcdf.close(ncid);
     end 
-    dim = size(eval([var{1}]));
     
-    %! Take mean over latitude and longitude and sum over depth for visualization:
-    time = 1:dim(1);
-    
-    for i = 1:(length(var)-2)
-        mean_loc = eval(['transpose(squeeze(nanmean(' var{i} ', [3, 4])))']); 
-        eval([var{i} '_tmean = sum(mean_loc .* topog.Layer_thikness, 1);']);
-        eval([var{i} '_Spin_end = transpose(nanmean(' var{i} '(end, :, :, :), [3, 4]));']);
-    end 
-    clear sum_depth
-    save([dir_output 'Time_Means' Spinup{1} '.mat'], 'time',...
-        'Sf_tmean','Sp_tmean','Sd_tmean',...
-        'Mf_tmean','Mp_tmean','Md_tmean',...
-        'Lp_tmean','Ld_tmean','BE_tmean')
-    
-    save([dir_output 'Time_Depth_Means' Spinup{1} '.mat'], ...
-        'Sf_Spin_end','Sp_Spin_end','Sd_Spin_end',...
-        'Mf_Spin_end','Mp_Spin_end','Md_Spin_end',...
-        'Lp_Spin_end','Ld_Spin_end','BE_Spin_end')
-    
-    %% Get Time Series from offline simulations:
-    disp('Get Time Series from offline simulations')
-    %! Fish:
-    for i = 1:(length(var)-2)
-        ncid = netcdf.open([dir_input_offline_FEISTY var{i} '_bio' Spinup{2} '.nc'],'NC_NOWRITE');
-        eval([ var{i} ' = netcdf.getVar(ncid, 0 );']);
-        eval([ var{i} '(' var{i} ' == 99999) = NaN;']);
-        netcdf.close(ncid);
-    end 
-    
-    %! zoo oversoncumption: 
-    for i = (length(var)-1):length(var)
-        ncid = netcdf.open([dir_input_offline_FEISTY var{i} Spinup{2} '.nc'],'NC_NOWRITE');
-        eval([ var{i} ' = netcdf.getVar(ncid, 0 );']);
-        eval([ var{i} '(' var{i} ' == 99999) = NaN;']);
-        netcdf.close(ncid);
-    end 
-    dim = size(eval(var{1}));
-    
-    %! Take mean over latitude and longitude for visualization:
-    time = 1:dim(1);
-    depth = 1:dim(2);
+    dim = size(eval([ var{i} '_' var_diag{j}]));
+    time = 1:dim(3);
     
     % Calcul average over dimensions: -----------------------------------------
-    %! Calculate average over lat and long: 
-    for i = 1:(length(var))
-        eval([var{i} '_spacemean = transpose(squeeze(nanmean(' var{i} ', [3, 4])));']);
-    end
-    
-    %! Integrated biomass over depth: 
-    for i = 1:(length(var))
-        eval([var{i} '_tmean = squeeze(sum(' var{i} '_spacemean .* topog.Layer_thikness , 1));']);
-    end
-    
-    %! Average over time : 
-    for i = 1:(length(var))
-        eval([var{i} '_zmean = squeeze(nanmean(' var{i} '_spacemean, 2));']);
-    end
-    
-    %! Save data: -------------------------------------------------------------
-    %!! Average over lat and long: 
-    save([dir_output 'Time_Depth_Means' Spinup{2} '.mat'], 'time', 'depth')
-    for i = 1:length(var)
-        save([dir_output 'Time_Depth_Means' Spinup{2} '.mat'], ...
-            [var{i} '_spacemean'] ,'-append')
-    end
-    
-    %!! Integrated over depth
-    save([dir_output 'Time_Means' Spinup{2} '.mat'], 'time')
-    for i = 1:length(var)
-        save([dir_output 'Time_Means' Spinup{2} '.mat'], ...
-            [var{i} '_tmean'] ,'-append')
-    end
-    
-    %!! Average over time 
-    save([dir_output 'Depth_Means' Spinup{2} '.mat'], 'depth')
-    for i = 1:length(var)
-        save([dir_output 'Depth_Means' Spinup{2} '.mat'], ...
-            [var{i} '_zmean'] ,'-append')
-    end
-    
-    
-    %% Initial condition for Online Coupling: 
-    disp('Get IC for Online COBALT')
-    ncid = netcdf.open(['../output/netcdf/' coupling '/' loc '/', ...
-                        'FEISTY_2023_10_spinup_subset.nc'],'NC_NOWRITE');
-    for i = 1:(length(var)-2)
-        varid = netcdf.inqVarID(ncid, [var{i} '_B']);
-        eval([ var{i} '_B = netcdf.getVar(ncid, varid);']);
-    end 
-    dim = size(Sf_B);
-    depth = 1:dim(3);
-    
-    %! Calculate average over lat and long: 
-    for i = 1:(length(var)-2)
-        eval([var{i} '_spacemean = squeeze(nanmean(' var{i} '_B, [1, 2]));']);
-    end
-    
-    %! Save average over lat and long: 
-    save([dir_output 'COBALT_IC_fish_' loc '_' coupling '_' exp '.mat'], 'depth')
-    for i = 1:(length(var)-2)
-        save([dir_output 'COBALT_IC_fish_' loc '_' coupling '_' exp '.mat'], ...
-            [var{i} '_spacemean'] ,'-append')
-    end
-    
-    %% diagnotic variables
-    disp(['Get Diagnostic variables from COBALT ', coupling, ' at ', loc])
-    
-    for sp = 2 
-        % get diagnostics:
-        for i = 1:(length(var)-3)
-            ncid = netcdf.open([dir_input_offline_FEISTY var{i} '_diag_' Spinup{sp} 'Time_Serie' '.nc'],'NC_NOWRITE');
-            for j = 1:length(var_diag)
-                varid = netcdf.inqVarID(ncid, var_diag{j});
-                eval([ var{i} '_' var_diag{j} ' = netcdf.getVar(ncid, varid );']);
-                eval([ var{i} '_' var_diag{j} '(' var{i} '_' var_diag{j} ' == -99999) = NaN;']);
-            end 
-            netcdf.close(ncid);
+    % Calculate average over lat and long:
+    for i = 1:(length(var)-3)
+        for j = 1:length(var_diag)
+            eval([var{i} '_' var_diag{j} '_tmean = nanmean(' var{i} '_' var_diag{j} ', [1, 2]);']);
         end 
-        
-        dim = size(eval('Sf_f'));
-        time = 1:dim(4);
-        depth = 1:dim(3);
-        
-        % Calcul average over dimensions: -----------------------------------------
-        % Calculate average over lat and long: 
-        for i = 1:(length(var)-3)
-            for j = 1:length(var_diag)
-                eval([var{i} '_' var_diag{j} '_spacemean = transpose(squeeze(nanmean(' var{i} '_' var_diag{j} ', [1, 2])));']);
-            end 
-        end
-        
-        % Integrated biomass over depth: 
-        for i = 1:(length(var)-3)
-            for j = 1:length(var_diag)
-                eval([var{i} '_' var_diag{j} '_tmean = squeeze(sum(' var{i} '_' var_diag{j} '_spacemean  .* transpose(topog.Layer_thikness) , 2));']);
-            end 
-        end
-        
-        % Average over time : 
-        for i = 1:(length(var)-3)
-            for j = 1:length(var_diag)
-                eval([var{i} '_' var_diag{j} '_zmean = squeeze(nanmean(' var{i} '_' var_diag{j} '_spacemean, 1));']);
-            end 
-        end
-        
-        % Save data: -------------------------------------------------------------
-        % average over lat and long: 
-        
-        save([dir_output 'Time_Depth_Means_Diag' Spinup{sp} '.mat'], 'time', 'depth')
-        for i = 1:(length(var)-3)
-            for j = 1:length(var_diag)
-                save([dir_output 'Time_Depth_Means_Diag' Spinup{sp} '.mat'], ...
-                    [var{i} '_' var_diag{j} '_spacemean'] ,'-append')
-            end
-        end
-        
-        % integrated over depth
-        save([dir_output 'Time_Means_Diag' Spinup{sp} '.mat'], 'time')
-        for i = 1:(length(var)-3)
-            for j = 1:length(var_diag)
-                save([dir_output 'Time_Means_Diag' Spinup{sp} '.mat'], ...
-                    [var{i} '_' var_diag{j} '_tmean'] ,'-append')
-            end 
-        end
-        
-        % Average over time 
-        save([dir_output 'Depth_Means_Diag' Spinup{sp} '.mat'], 'depth')
-        for i = 1:(length(var)-3)
-            for j = 1:length(var_diag)
-                save([dir_output 'Depth_Means_Diag' Spinup{sp} '.mat'], ...
-                    [var{i} '_' var_diag{j} '_zmean'] ,'-append')
-            end 
-        end
     end
-    
-    %% get COBALT Zooplankton outputs from the COBALT offline simulations: 
-    
-    disp("Get Zooplankton outputs from COBALT offline simulations & process them for visualisation")
-    
-    var = {'nmdz', 'jhploss_n_Mdz', 'jprod_nmdz', 'nlgz', 'jhploss_n_Lgz', 'jprod_nlgz', 'Pop_btm'};
-    coupling = 'offline';
-    
-    %! get directory containing output
-    dir_input_offline_forcing = ['../../COBALT_output/COBALT_offline_forcing_files/' loc '/'];
-    dir_output =['../output/Matlab_Average/', coupling, '/' loc, '/', ];
-    
-    if ~exist(dir_output) 
-        mkdir(dir_output)
-    end 
-    
-    dir = {[dir_input_offline_forcing '20040101.ocean_feisty_forcing.nc'], ...
-           [dir_input_offline_forcing '20040101.ocean_feisty_forcing.nc'], ...
-           [dir_input_offline_forcing '20040101.ocean_feisty_forcing.nc'], ...
-           [dir_input_offline_forcing '20040101.ocean_feisty_forcing.nc'], ...
-           [dir_input_offline_forcing '20040101.ocean_feisty_forcing.nc'], ...
-           [dir_input_offline_forcing '20040101.ocean_feisty_forcing.nc'], ...
-           [dir_input_offline_forcing '20040101.ocean_feisty_forcing_detritus.nc']};
-    
-    % Getting data from netcdf
-    for i = 1:length(var) 
-        ncid = netcdf.open(dir{i},'NC_NOWRITE');
-        varid = netcdf.inqVarID(ncid, var{i});
-        eval([ var{i} ' = netcdf.getVar(ncid, varid);']);
-        eval([ var{i} '(' var{i} ' == 99999) = NaN;']);
-        eval([ var{i} '=' var{i} '(:,:,:,1:366);']);
-        netcdf.close(ncid);
-    
-        if ismember(i, [1, 4]) % conversions biomass 
-            eval([ var{i} ' = ' var{i} '*6.625* 12.01 * 9.0 * 1000.0;' ]);     % Conversion from Mol N/kg --> gC WW / m3
-        elseif ismember(i, [2, 3, 5, 6]) % conversion mortality
-            eval([ var{i} ' = ' var{i} '*6.625* 12.01 * 9.0 * 24.0*3600;' ]);  % Conversion from Mol mol N m-3 s-1 --> gC WW m-3 d-1
-        end
-    end 
-    
-    %! Take mean over dimensions: ---------------------------------------------
-    dim = size(eval([var{1}]));
-    time = 1:dim(4);
-    depth = 1:dim(3);
-    timerange = time;
-    
-    %! Calculate average over lat and long: 
-    for i = 1:(length(var))
-        eval([var{i} '_offline_spacemean(timerange, :) = transpose(squeeze(nanmean(' var{i} ', [1,2])));']);
-        eval([var{i} '_offline_tmean(timerange) = squeeze(sum(' var{i} '_offline_spacemean(timerange, :), 2));']);
-        eval([var{i} '_offline_zmean = transpose(squeeze(nanmean(' var{i} '_offline_spacemean(timerange, :), 1)));']);
-    end
-    
-    %! Save data: -------------------------------------------------------------
-    %!! average over lat and long: 
-    save([dir_output 'COBALT_offline_' loc '_Time_Depth_Means_forcing' '.mat'], 'time', 'depth')
-    save([dir_output 'COBALT_offline_' loc  '_Time_Means_forcing' '.mat'], 'time')
-    save([dir_output 'COBALT_offline_' loc '_Depth_Means_forcing' '.mat'], 'time', 'depth')
-    for i = 1:length(var)
-        save([dir_output 'COBALT_offline_' loc '_Time_Depth_Means_forcing' '.mat'], [var{i} '_offline_spacemean']   ,'-append')
-        save([dir_output 'COBALT_offline_' loc  '_Time_Means_forcing' '.mat'],      [var{i} '_offline_tmean']       ,'-append')
-        save([dir_output 'COBALT_offline_' loc '_Depth_Means_forcing' '.mat'],      [var{i} '_offline_zmean']       ,'-append')
-    end
-
-elseif param.loc_test
-     var = {'nmdz', 'jhploss_n_Mdz', 'nlgz', 'jhploss_n_Lgz', 'Pop_btm'};
-        coupling = 'offline';
-        
-
-    for locid = start_loc:end_loc
-
-        loc_name = [loc '_loc' num2str(locid)];
-
-        disp(['Get Zooplankton outputs from COBALT offline simulations at '  loc_name])
-       
-        %! get directory containing output
-        dir_input_offline_forcing = ['../../COBALT_output/COBALT_offline_forcing_files/' loc '/' loc_name '/'];
-        dir_output =['../output/Matlab_Average/', coupling, '/' loc, '/', loc_name '/'];
-        
-        if ~exist(dir_output) 
-            mkdir(dir_output)
+    % Save data: -------------------------------------------------------------
+    save([dir_output 'Time_Means_Diag' Spinup{sp} '.mat'], 'time')
+    for i = 1:(length(var)-3)
+        for j = 1:length(var_diag)
+            save([dir_output 'Time_Means_Diag' Spinup{sp} '.mat'], ...
+                [var{i} '_' var_diag{j} '_tmean'] ,'-append')
         end 
-        
-        dir = {[dir_input_offline_forcing '20040101.ocean_feisty_forcing.nc'], ...
-               [dir_input_offline_forcing '20040101.ocean_feisty_forcing.nc'], ...
-               [dir_input_offline_forcing '20040101.ocean_feisty_forcing.nc'], ...
-               [dir_input_offline_forcing '20040101.ocean_feisty_forcing.nc'], ...
-               [dir_input_offline_forcing '20040101.ocean_feisty_forcing_detritus.nc']};
-        
-        % Getting data from netcdf
-        for i = 1:length(var) 
-            ncid = netcdf.open(dir{i},'NC_NOWRITE');
-            varid = netcdf.inqVarID(ncid, var{i});
-            eval([ var{i} ' = netcdf.getVar(ncid, varid);']);
-            eval([ var{i} '(' var{i} ' == 99999) = NaN;']);
-            eval([ var{i} '=' var{i} '(:,:,:,1:366);']);
-            netcdf.close(ncid);
-        
-            if ismember(i, [1, 3]) % conversions biomass 
-                eval([ var{i} ' = ' var{i} '*6.625* 12.01 * 9.0 * 1000.0;' ]);     % Conversion from Mol N/kg --> gC WW / m3
-            elseif ismember(i, [2, 4]) % conversion mortality
-                eval([ var{i} ' = ' var{i} '*6.625* 12.01 * 9.0 * 24.0*3600;' ]);  % Conversion from Mol mol N m-3 s-1 --> gC WW m-3 d-1
-            end
-        end 
-        
-        %! Take mean over dimensions: ---------------------------------------------
-        dim = size(eval([var{1}]));
-        time = 1:dim(4);
-        depth = 1:dim(3);
-        timerange = time;
-        
-        %! Calculate average over lat and long: 
-        for i = 1:(length(var))
-            eval([var{i} '_offline_spacemean(timerange, :) = transpose(squeeze(nanmean(' var{i} ', [1,2])));']);
-        end
-        
-        %! Integrated biomass over depth: 
-        for i = 1:(length(var))
-            eval([var{i} '_offline_tmean(timerange) = squeeze(sum(' var{i} '_offline_spacemean(timerange, :), 2));']);
-        end
-        
-        %! Average over time : 
-        for i = 1:(length(var))
-            eval([var{i} '_offline_zmean = transpose(squeeze(nanmean(' var{i} '_offline_spacemean(timerange, :), 1)));']);
-        end
-        
-        %! Save data: -------------------------------------------------------------
-        %!! average over lat and long: 
-        save([dir_output 'COBALT_offline_' loc '_Time_Depth_Means_forcing' '.mat'], 'time', 'depth')
-        for i = 1:length(var)
-            save([dir_output 'COBALT_offline_' loc '_Time_Depth_Means_forcing' '.mat'], ...
-                [var{i} '_offline_spacemean'] ,'-append')
-        end
-        
-        %!! integrated over depth
-        save([dir_output 'COBALT_offline_' loc  '_Time_Means_forcing' '.mat'], 'time')
-        for i = 1:length(var)
-            save([dir_output 'COBALT_offline_' loc  '_Time_Means_forcing' '.mat'], ...
-                [var{i} '_offline_tmean'] ,'-append')
-        end
-        
-        %!! Average over time 
-        save([dir_output 'COBALT_offline_' loc '_Depth_Means_forcing' '.mat'], 'time', 'depth')
-        for i = 1:length(var)
-            save([dir_output 'COBALT_offline_' loc '_Depth_Means_forcing' '.mat'], ...
-                [var{i} '_offline_zmean'] ,'-append')
-        end
+    end
+end
+
+%% get COBALT Zooplankton outputs from the COBALT offline simulations: 
+disp("Get Zooplankton outputs from COBALT offline simulations & process them for visualisation")
+
+var = {'nmdz', 'jhploss_n_Mdz', 'jprod_nmdz', 'nlgz', 'jhploss_n_Lgz', 'jprod_nlgz', 'Pop_btm'};
+coupling = 'offline';
+
+%! get directory containing output
+dir_input_offline_forcing = ['../../COBALT_output/COBALT_offline_forcing_files/' loc '/'];
+dir_output =['../output/Matlab_Average/', coupling, '/' loc, '/', ];
+
+if ~exist(dir_output) 
+    mkdir(dir_output)
+end 
+
+dir = {[dir_input_offline_forcing '20040101.ocean_feisty_forcing.nc'], ...
+        [dir_input_offline_forcing '20040101.ocean_feisty_forcing.nc'], ...
+        [dir_input_offline_forcing '20040101.ocean_feisty_forcing.nc'], ...
+        [dir_input_offline_forcing '20040101.ocean_feisty_forcing.nc'], ...
+        [dir_input_offline_forcing '20040101.ocean_feisty_forcing.nc'], ...
+        [dir_input_offline_forcing '20040101.ocean_feisty_forcing.nc'], ...
+        [dir_input_offline_forcing '20040101.ocean_feisty_forcing_detritus.nc']};
+
+% Getting data from netcdf
+for i = 1:length(var) 
+    ncid = netcdf.open(dir{i},'NC_NOWRITE');
+    varid = netcdf.inqVarID(ncid, var{i});
+    eval([ var{i} ' = netcdf.getVar(ncid, varid);']);
+    eval([ var{i} '(' var{i} ' == 99999) = NaN;']);
+    eval([ var{i} '=' var{i} '(:,:,:,1:366);']);
+    netcdf.close(ncid);
+
+    if ismember(i, [1, 4]) % conversions biomass 
+        eval([ var{i} ' = ' var{i} '*6.625* 12.01 * 9.0 * 1000.0;' ]);     % Conversion from Mol N/kg --> gC WW / m3
+    elseif ismember(i, [2, 3, 5, 6]) % conversion mortality
+        eval([ var{i} ' = ' var{i} '*6.625* 12.01 * 9.0 * 24.0*3600;' ]);  % Conversion from Mol N m-3 s-1 --> gC WW m-3 d-1
+    elseif i == 7 % conversion mortality
+        eval([ var{i} ' = ' var{i} '*6.625* 12.01 * 9.0 * 24.0*3600;' ]);  % Conversion from Mol N m-3 s-1 --> gC WW m-3 d-1
     end
 end 
 
+%! Take mean over dimensions: ---------------------------------------------
+dim = size(eval([var{1}]));
+time = 1:dim(4);
+depth = 1:dim(3);
+
+%! Calculate average over lat and long: 
+for i = 1:(length(var))
+    eval([var{i} '_offline_spacemean(time, :) = transpose(squeeze(nanmean(' var{i} ', [1,2])));']);
+    eval([var{i} '_offline_tmean(time) = squeeze(sum(' var{i} '_offline_spacemean(time, :), 2));']);
+    eval([var{i} '_offline_tmean_100m(time) = squeeze(sum(' var{i},...
+         '_offline_spacemean(time, 1:topog.idx_100m).*topog.Layer_thikness(1:topog.idx_100m), 2));']);
+    eval([var{i} '_offline_zmean = transpose(squeeze(nanmean(' var{i} '_offline_spacemean(time, :), 1)));']);
+end
+
+%! Save data: -------------------------------------------------------------
+%!! average over lat and long: 
+save([dir_output 'COBALT_offline_' loc '_Time_Depth_Means_forcing' '.mat'], 'time', 'depth')
+save([dir_output 'COBALT_offline_' loc  '_Time_Means_forcing' '.mat'], 'time')
+save([dir_output 'COBALT_offline_100m_' loc  '_Time_Means_forcing' '.mat'], 'time')
+save([dir_output 'COBALT_offline_' loc '_Depth_Means_forcing' '.mat'], 'time', 'depth')
+for i = 1:length(var)
+    save([dir_output 'COBALT_offline_' loc '_Time_Depth_Means_forcing' '.mat'], [var{i} '_offline_spacemean']   ,'-append')
+    save([dir_output 'COBALT_offline_' loc  '_Time_Means_forcing' '.mat'],      [var{i} '_offline_tmean']       ,'-append')
+    save([dir_output 'COBALT_offline_100m_' loc  '_Time_Means_forcing' '.mat'], [var{i} '_offline_tmean_100m']  ,'-append')
+    save([dir_output 'COBALT_offline_' loc '_Depth_Means_forcing' '.mat'],      [var{i} '_offline_zmean']       ,'-append')
+end
 

@@ -322,7 +322,7 @@ module GetNetCDFinf
         status = nf90_put_var(ncid, varid, var)
 
         ! add a unit attribute 
-        status = nf90_put_att(ncid, varid, 'units', 'gWW m-3')
+        status = nf90_put_att(ncid, varid, 'units', 'gWW m-2')
         
         ! Close the file
         status = nf90_close(ncid)
@@ -515,7 +515,7 @@ module GetNetCDFinf
         integer :: i,j,k,l
         
 
-        filename = "../output/netcdf/" // trim(coupling) // "/" // trim(loc) // "/FEISTY_2023_10_spinup_subset.nc"
+        filename = "../output/netcdf/" // trim(coupling) // "/" // trim(loc) // "/FEISTY_2D_2023_10_spinup_subset.nc"
         call init_tracer_nc(filename, ncid, Ntime, Nlayer, Nlath, Nlongh, dimids, lat, lon, zt)
         do i = 1, nDeriv
             call add_tracer_nc(ncid, dimids, trim(tracers_name(i)) // "_B", tracers_long_name(i), &
@@ -662,7 +662,7 @@ module GetNetCDFinf
         status = nf90_redef(ncid)
 
         ! Define the variable
-        status = nf90_def_var(ncid, varname, NF90_DOUBLE, dimids([1,2,4]), varid)
+        status = nf90_def_var(ncid, varname, NF90_DOUBLE, dimids([1, 2]), varid)
         if (status /= NF90_NOERR) then
             print *, "Error Def FEISTY: ", trim(varname)
             print *, trim(nf90_strerror(status))
@@ -671,7 +671,7 @@ module GetNetCDFinf
         
         ! Add a attributes: 
         status = nf90_put_att(ncid, varid, "long_name", trim(long_name))
-        status = nf90_put_att(ncid, varid, 'units', 'gWW m-3')
+        status = nf90_put_att(ncid, varid, 'units', 'gWW m-2')
         status = nf90_put_att(ncid, varid, 'checksum', "               0")
         status = nf90_put_att(ncid, varid, '_FillValue', -9999.0_dp)
 
@@ -684,7 +684,7 @@ module GetNetCDFinf
             print *, "Error in nf90_put_var: " , trim(varname), " in add_tracer_nc "
             print *, trim(nf90_strerror(status))
             STOP
-        end if        
+        end if 
     end subroutine add_tracer_nc
 
     subroutine FEISTY_Save_diag(Spinup, diags, Ntime, Nlayer, Nlath, Nlongh, lat, lon, zt)
@@ -820,7 +820,7 @@ module GetNetCDFinf
             status = nf90_def_var(ncid, 'Layer', NF90_DOUBLE, dimids(3), varid_layer)
             ! Add a attributes: 
             status = nf90_put_att(ncid, varid_layer, 'long_name', 'Layer')
-            status = nf90_put_att(ncid, varid_layer, 'units', 'gWW m-3')
+            status = nf90_put_att(ncid, varid_layer, 'units', 'gWW m-2')
             status = nf90_put_att(ncid, varid_layer, 'positive', 'up')
             status = nf90_put_att(ncid, varid_layer, 'axis', 'Z')
             status = nf90_put_att(ncid, varid_layer, 'cartesian_axis', 'Z')
@@ -881,19 +881,19 @@ module GetNetCDFinf
         character(LEN=*), intent(in) :: long_name
         integer, intent(in) :: dimids(4)
         integer, intent(in) :: ncid, Ntime, Nlayer, Nlath, Nlongh
-        real(dp), dimension(Ntime, Nlayer, Nlath, Nlongh), intent(in) :: var
-        real(dp), dimension(Nlongh, Nlath, Nlayer, Ntime) ::  var_reshaped
+        real(dp), dimension(Ntime, Nlath, Nlongh), intent(in) :: var
+        real(dp), dimension(Nlongh, Nlath, Ntime) ::  var_reshaped
         integer :: varid
         integer :: status
 
         ! Reshaping variable before saving for COBALT ouput:
-        var_reshaped = RESHAPE(var, SHAPE(var_reshaped), ORDER = (/4, 3, 2, 1/))
+        var_reshaped = RESHAPE(var, SHAPE(var_reshaped), ORDER = (/3, 2, 1/))
 
         ! Put opened netcdf into definition mode: 
         status = nf90_redef(ncid)
 
         ! Define the variable
-        status = nf90_def_var(ncid, varname, NF90_DOUBLE, dimids, varid)
+        status = nf90_def_var(ncid, varname, NF90_DOUBLE, dimids([1,2,4]), varid)
         if (status /= NF90_NOERR) then
             print *, "Error Def FEISTY: ", trim(varname)
             print *, trim(nf90_strerror(status))
@@ -902,7 +902,7 @@ module GetNetCDFinf
         
         ! Add a attributes: 
         status = nf90_put_att(ncid, varid, "long_name", trim(long_name))
-        status = nf90_put_att(ncid, varid, 'units', 'gWW m-3')
+        status = nf90_put_att(ncid, varid, 'units', 'gWW m-2')
         status = nf90_put_att(ncid, varid, 'checksum', "               0")
         status = nf90_put_att(ncid, varid, '_FillValue', -9999.0_dp)
 
@@ -910,7 +910,7 @@ module GetNetCDFinf
         status = nf90_enddef(ncid)
 
         ! Write the variable data
-        status = nf90_put_var(ncid, varid, var_reshaped(1:Nlongh, 1:Nlath, 1:Nlayer, 1:Ntime)) !, &
+        status = nf90_put_var(ncid, varid, var_reshaped(1:Nlongh, 1:Nlath, 1:Ntime)) !, &
                             !   start = (/1,      1,     1    ,  (Ntime-1) /), &
                             !   count = (/Nlongh, Nlath, Nlayer, 1         /))
         if (status /= NF90_NOERR) then
