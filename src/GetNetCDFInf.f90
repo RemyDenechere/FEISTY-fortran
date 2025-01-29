@@ -612,8 +612,7 @@ module GetNetCDFinf
 
         ! Define valuse for each dimension : -----------------------------------------------------------
         ! Time in days:
-        ! Time_dim_val = (/(i, i=1, Ntime, 1)/)
-        Time_dim_val = 1.0_dp
+        Time_dim_val = (/(i, i=1, Ntime, 1)/)
         ! Layer pseudo-depth: 
         layer_dim_val = zt
         ! lat and long 
