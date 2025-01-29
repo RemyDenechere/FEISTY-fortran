@@ -236,7 +236,7 @@ module GetNetCDFinf
             end if 
 
             if(Initial_Condition_generic_FEISTY) then 
-                call FEISTY_Save_tracers(Spinup, tracers, Ntime, Nlayer, Nlath, Nlongh, lat, lon, zt) 
+                call FEISTY_Save_IC(Spinup, tracers, Ntime, Nlayer, Nlath, Nlongh, lat, lon, zt) 
             end if 
 
         else
@@ -504,7 +504,7 @@ module GetNetCDFinf
         ierr = nf90_close(ncid)
     end subroutine readgrid1D
 
-    subroutine FEISTY_Save_tracers(Spinup, tracers, Ntime, Nlayer, Nlath, Nlongh, lat, lon, zt)
+    subroutine FEISTY_Save_IC(Spinup, tracers, Ntime, Nlayer, Nlath, Nlongh, lat, lon, zt)
         logical, intent(in) :: Spinup
         type(FEISTY_tracers), intent(inout), dimension(nDeriv) :: tracers
         integer, intent(in)                     :: Ntime, Nlayer, Nlath, Nlongh
@@ -523,7 +523,7 @@ module GetNetCDFinf
         end do
         call end_tracer_nc(ncid)
         print*, "COBALT IC saved :", filename
-    end subroutine FEISTY_Save_tracers
+    end subroutine FEISTY_Save_IC
 
 
     subroutine init_tracer_nc(filename, ncid, Ntime, Nlayer, Nlath, Nlongh, dimids, lat, lon, zt)
@@ -612,7 +612,8 @@ module GetNetCDFinf
 
         ! Define valuse for each dimension : -----------------------------------------------------------
         ! Time in days:
-        Time_dim_val = (/(i, i=1, Ntime, 1)/)
+        ! Time_dim_val = (/(i, i=1, Ntime, 1)/)
+        Time_dim_val = 1.0_dp
         ! Layer pseudo-depth: 
         layer_dim_val = zt
         ! lat and long 
@@ -662,7 +663,7 @@ module GetNetCDFinf
         status = nf90_redef(ncid)
 
         ! Define the variable
-        status = nf90_def_var(ncid, varname, NF90_DOUBLE, dimids([1, 2]), varid)
+        status = nf90_def_var(ncid, varname, NF90_DOUBLE, dimids([1, 2, 4]), varid)
         if (status /= NF90_NOERR) then
             print *, "Error Def FEISTY: ", trim(varname)
             print *, trim(nf90_strerror(status))
@@ -783,7 +784,7 @@ module GetNetCDFinf
         ! Create the NetCDF file
         status = nf90_create(filename, NF90_CLOBBER, ncid)
         if (status /= NF90_NOERR) then
-            print *, "Error opening " , trim(filename), " in init_tracer_nc"
+            print *, "Error opening " , trim(filename), " in init_Diag_nc"
             print *, trim(nf90_strerror(status))
             STOP
         end if
