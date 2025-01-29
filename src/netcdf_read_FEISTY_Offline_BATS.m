@@ -1,18 +1,18 @@
 % FEISTY output at all locations
-function [] = netcdf_read_FEISTY_Offline_BATS(loc, Rockfish)
+function [] = netcdf_read_FEISTY_Offline_BATS(loc, exp, Rockfish)
 
 arguments 
     loc                   char    = 'BATS'
+    exp                   char    = '2D'
     Rockfish              logical = true
 end 
 dbclear all 
-% dbstop in netcdf_read_FEISTY_Offline_BATS at 204
+% dbstop in netcdf_read_FEISTY_Offline_BATS at 125
 
 %% Root directory: 
 param.Rockfish = Rockfish; % true; %
 param = param_setup(param);
 
-exp = 'baseparam'; % (all baseparam)
 coupling = 'offline'; 
 Spinup = {'_Spinup_Time_Serie', ''};
 
@@ -29,7 +29,7 @@ var_diag = {'f', 'cmax', 'cons', 'met', 'mu_p', 'mu_f', 'mu_a', 'mu',...
             'E_A', 'Fout', 'Repro', 'f_Zm', 'f_Zl', 'f_Sf', 'f_Sp', 'f_Sd',... 
             'f_Mf', 'f_Mp', 'f_Md', 'f_Lp', 'f_Ld', 'f_BE'};
 
-if ~exist(['../output/Matlab_Average/', coupling, '/' loc, '/', exp, '/'])
+if ~exist(['../output/Matlab_Average/', coupling, '/' loc, '/', exp, '/'], "dir")
     mkdir(['../output/Matlab_Average/', coupling, '/' loc, '/', exp, '/'])
 end
 
@@ -106,12 +106,12 @@ ncid = netcdf.open(['../output/netcdf/' coupling '/' loc '/', ...
                     'FEISTY_2D_2023_10_spinup_subset.nc'],'NC_NOWRITE');
 for i = 1:(length(var)-2)
     varid = netcdf.inqVarID(ncid, [var{i} '_B']);
-    eval([ var{i} ' = netcdf.getVar(ncid, varid);']);
+    eval([ var{i} '_IC = netcdf.getVar(ncid, varid);']);
 end
 
 %! Calculate average over lat and long: 
 for i = 1:(length(var)-2)
-    eval([var{i} '_IC = nanmean(' var{i} ', [1, 2]);']);
+    eval([var{i} '_IC = squeeze(nanmean(' var{i} '_IC, [1, 2]));']);
 end
 
 %! Save average over lat and long: 
@@ -124,36 +124,35 @@ end
 %% diagnotic variables
 disp(['Get Diagnostic variables from COBALT ', coupling, ' at ', loc])
 
-for sp = 2 
-    % get diagnostics:
-    for i = 1:(length(var)-3)
-        ncid = netcdf.open([dir_input_offline_FEISTY var{i} '_diag_' Spinup{sp} 'Time_Serie' '.nc'],'NC_NOWRITE');
-        for j = 1:length(var_diag)
-            varid = netcdf.inqVarID(ncid, var_diag{j});
-            eval([ var{i} '_' var_diag{j} ' = netcdf.getVar(ncid, varid );']);
-            eval([ var{i} '_' var_diag{j} '(' var{i} '_' var_diag{j} ' == -99999) = NaN;']);
-        end 
-        netcdf.close(ncid);
+sp = 2;
+% get diagnostics:
+for i = 1:(length(var)-3)
+    ncid = netcdf.open([dir_input_offline_FEISTY var{i} '_diag_' Spinup{sp} 'Time_Serie' '.nc'],'NC_NOWRITE');
+    for j = 1:length(var_diag)
+        varid = netcdf.inqVarID(ncid, var_diag{j});
+        eval([ var{i} '_' var_diag{j} ' = netcdf.getVar(ncid, varid );']);
+        eval([ var{i} '_' var_diag{j} '(' var{i} '_' var_diag{j} ' == -99999) = NaN;']);
     end 
-    
-    dim = size(eval([ var{i} '_' var_diag{j}]));
-    time = 1:dim(3);
-    
-    % Calcul average over dimensions: -----------------------------------------
-    % Calculate average over lat and long:
-    for i = 1:(length(var)-3)
-        for j = 1:length(var_diag)
-            eval([var{i} '_' var_diag{j} '_tmean = nanmean(' var{i} '_' var_diag{j} ', [1, 2]);']);
-        end 
-    end
-    % Save data: -------------------------------------------------------------
-    save([dir_output 'Time_Means_Diag' Spinup{sp} '.mat'], 'time')
-    for i = 1:(length(var)-3)
-        for j = 1:length(var_diag)
-            save([dir_output 'Time_Means_Diag' Spinup{sp} '.mat'], ...
-                [var{i} '_' var_diag{j} '_tmean'] ,'-append')
-        end 
-    end
+    netcdf.close(ncid);
+end 
+
+dim = size(eval([ var{i} '_' var_diag{j}]));
+time = 1:dim(3);
+
+% Calcul average over dimensions: -----------------------------------------
+% Calculate average over lat and long:
+for i = 1:(length(var)-3)
+    for j = 1:length(var_diag)
+        eval([var{i} '_' var_diag{j} '_tmean = transpose(squeeze(nanmean(' var{i} '_' var_diag{j} ', [1, 2])));']);
+    end 
+end
+% Save data: -------------------------------------------------------------
+save([dir_output 'Time_Means_Diag' Spinup{sp} '.mat'], 'time')
+for i = 1:(length(var)-3)
+    for j = 1:length(var_diag)
+        save([dir_output 'Time_Means_Diag' Spinup{sp} '.mat'], ...
+            [var{i} '_' var_diag{j} '_tmean'] ,'-append')
+    end 
 end
 
 %% get COBALT Zooplankton outputs from the COBALT offline simulations: 

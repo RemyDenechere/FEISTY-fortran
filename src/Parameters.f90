@@ -13,7 +13,7 @@ module Parameters
                                                     31, 31, 30, 31, 30, 31 /) ! Length of month (days)
 
     ! Environemental data for test: -----------------------------------
-    logical, parameter  :: diagnostic           = .false.
+    logical, parameter  :: diagnostic           = .false.   ! True to run diagonostic mode 
     logical, parameter  :: save_diagnostics     = .true.
     logical, parameter  :: prod_constrained     = .true.
     logical, parameter  :: Spinup_Time_Serie    = .true.
@@ -34,7 +34,7 @@ module Parameters
 
     ! Experimentation parameters: ------------------------------------------
     character(LEN=280), parameter :: loc = "BATS"
-    character(LEN=280), parameter :: exp = "baseparam" ! "COBALT_offline_BATS"
+    character(LEN=280), parameter :: exp = "2D" ! "COBALT_offline_BATS"
     character(LEN=280), parameter :: coupling = "offline"
 
     ! input files: ----------------------------------------------------

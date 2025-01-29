@@ -12,7 +12,6 @@ module Physiology
     subroutine Calc_FEISTY_Deriv(FEISTY)
         type(FEISTY_type), intent(inout) :: FEISTY
         real(dp), dimension(3) :: T_e = 0.0, T_met = 0.0
-        real(dp), dimension(nFishGroup) :: Tpel = 0.0
         real(dp)                        :: biop, biob ! biomass experience in pelagic and benthic zones by demersals
         real(dp) :: Cons_Zm, Cons_Zl, frac_Sf, frac_Sp, frac_Sd, frac_Mf, frac_Mp, pred_pel
         real(dp) :: r       ! benthic growth rate ((g/m2/d) / (g/m2))
@@ -24,25 +23,25 @@ module Physiology
         !:======================================================================
         if ( diagnostic ) then 
             ! give the fish biomass value needed to compare online and offline codes: 
-            FEISTY%fish(1)%B = 1.0000000000000001E-005
-            FEISTY%fish(2)%B = 1.0000000000000001E-005
-            FEISTY%fish(3)%B = 1.6412098492384683E-006
-            FEISTY%fish(4)%B = 1.0000000000000001E-005
-            FEISTY%fish(5)%B = 9.8166348525755042E-040
-            FEISTY%fish(6)%B = 1.5370985591160981E-007
-            FEISTY%fish(7)%B = 1.0000000000000001E-005
-            FEISTY%fish(8)%B = 0.50406323953996923
+            FEISTY%fish(1)%B = IC
+            FEISTY%fish(2)%B = IC
+            FEISTY%fish(3)%B = IC
+            FEISTY%fish(4)%B = IC
+            FEISTY%fish(5)%B = IC
+            FEISTY%fish(6)%B = IC
+            FEISTY%fish(7)%B = IC
+            FEISTY%fish(8)%B = IC
 
-            FEISTY%benthos(1)%B = 5.3168360691316741
+            FEISTY%benthos(1)%B = 1.0155
 
             ! give environemental parameters
-            FEISTY%Tp = 21.671012503201233
-            FEISTY%Tb = 21.671012503201233
-            FEISTY%det = 0.14023816301206588
-            FEISTY%mesozoo(Mz)%B = 0.0000000000000000     ! Fraction of zooplankton mortality loss consumed
-            FEISTY%mesozoo(Lz)%B = 0.0000000000000000     ! Fraction of zooplankton mortality loss consumed  
-            FEISTY%mesozoo(Mz)%dz = 0.0    ! Biomass of medium zooplankton consumed by top predators 
-            FEISTY%mesozoo(Lz)%dz = 0.0    ! Biomass of Large zooplankton consumed by top predators 
+            FEISTY%Tp = -1.518000000
+            FEISTY%Tb = -2.059600000
+            FEISTY%det = 0.000000
+            FEISTY%mesozoo(Mz)%B = 1.72560000     ! Fraction of zooplankton mortality loss consumed
+            FEISTY%mesozoo(Lz)%B = 1.725600000     ! Fraction of zooplankton mortality loss consumed  
+            FEISTY%mesozoo(Mz)%dz = 0.0000000    ! Biomass of medium zooplankton consumed by top predators 
+            FEISTY%mesozoo(Lz)%dz = 0.0000000    ! Biomass of Large zooplankton consumed by top predators 
 
         endif 
 
@@ -50,27 +49,26 @@ module Physiology
     ! Calcul temperature experience and then Q10
     ! Tb      : Temperature in Benthic         [°C]
     ! Tp      : Temperature in pelagic         [°C]
-    ! tpel(i) : time spent in pelagic zone     [Ø]
+    ! FEISTY%tpel(i) : time spent in pelagic zone     [Ø]
     ! texp(i) : temperature experienced        [Ø]
     ! ke      : coeff on encouter T-dep fn     [°c-1]
     ! kmet    : coeff on metabolic T-dep fn    [°c-1]
     ! Calculation are made for pelagic (i=1) and demersal (i=2)
     !:====================================================================== 
-        ! initialisation tpel (time spent in pelagic zone): 
-        tpel = (/1,1,1,1,1,0,1,0/)
+        ! initialisation FEISTY%tpel (time spent in pelagic zone): 
+        FEISTY%tpel = (/1,1,1,1,1,0,1,0/)
 
         ! Calcul of biomass experienced in pelagic and benthic zones by demersals
         biop = pref_Ld_Mf * FEISTY%fish(MF)%B + pref_Ld_Mp * FEISTY%fish(MD)%B
         biob = pref_Ld_Md * FEISTY%fish(MD)%B  + pref_Ld_BE *FEISTY%benthos(1)%B
         ! Calcul of time spent in pelagic zone for demersals 
         if (FEISTY%max_depth(1,1) .le. PI_be_cutoff) then  ! zt(nk) is the sea floor depth 
-            tpel(nFishGroup) = biop / (biop + biob)
+            FEISTY%tpel(nFishGroup) = biop / (biop + biob)
         else 
-            tpel(nFishGroup) = 0.0
+            FEISTY%tpel(nFishGroup) = 0.0
         end if 
-        
         do i = 1, nFishGroup
-            FEISTY%fish(i)%Texp = (FEISTY%Tp * tpel(i)) + (FEISTY%Tb*(1.0-tpel(i))) ! temperature experienced by fish
+            FEISTY%fish(i)%Texp = (FEISTY%Tp * FEISTY%tpel(i)) + (FEISTY%Tb*(1.0-FEISTY%tpel(i))) ! temperature experienced by fish
             FEISTY%fish(i)%Tcorr_e  = dexp(ke * (FEISTY%fish(i)%Texp-10.0))              ! temperature correction for encounter and cmax 
             FEISTY%fish(i)%Tcorr_met = dexp(kmet * (FEISTY%fish(i)%Texp-10.0))           ! temperature correction for metabolism
         end do
@@ -98,8 +96,8 @@ module Physiology
 
         ! Calcul clearance rate: -------------------------------------------------------
         do i = 1, nFishGroup
-            FEISTY%fish(i)%V = FEISTY%fish(i)%Tcorr_e * gamma * FEISTY%fish(i)%w **(-b_enc)/365.0    ! Calcul Clearance rate
-            FEISTY%fish(i)%cmax = FEISTY%fish(i)%Tcorr_e * h * FEISTY%fish(i)%w **(-b_cmax)/365.0    ! Calcul Maximum consumption rate
+            FEISTY%fish(i)%V = FEISTY%fish(i)%Tcorr_e * gamma * FEISTY%fish(i)%w **(-b_enc)/ 365.0    ! Calcul Clearance rate
+            FEISTY%fish(i)%cmax = FEISTY%fish(i)%Tcorr_e * h * FEISTY%fish(i)%w **(-b_cmax) /365.0    ! Calcul Maximum consumption rate
             FEISTY%fish(i)%mu_a = Nat_mrt                                                            ! Calcul Natural Mortality
         end do 
         
@@ -178,7 +176,7 @@ module Physiology
 
         ! Large Demersal: 
         ! If large demersal don't spend time in pelagic zone then predation on forage and pelagics = 0; 
-        if (tpel(nFishGroup) == 0.0) then 
+        if (FEISTY%tpel(nFishGroup) == 0.0) then 
             pred_pel = 0.0
         else 
             pred_pel = 1.0
@@ -254,7 +252,7 @@ module Physiology
         ! If calculated consumtiion is higher than estimated recalcul the fraction of Z consumed 
         ! depending on every group relative fraction of consumtion on Z. 
         ! Mz: 
-        if (Cons_Zm > FEISTY%mesozoo(1)%dz .and. prod_constrained) then
+        if (Cons_Zm .gt. FEISTY%mesozoo(1)%dz .and. prod_constrained) then
             ! Calcul fraction of consumption over total consumption of zoo
             frac_Sf = FEISTY%fish(1)%cons_Mz * FEISTY%fish(1)%B / (FEISTY%fish(1)%cons_Mz * FEISTY%fish(1)%B + &
                      FEISTY%fish(2)%cons_Mz * FEISTY%fish(2)%B + &
@@ -287,7 +285,7 @@ module Physiology
         end if  
         
         ! Lz:
-        if (Cons_Zl > FEISTY%mesozoo(2)%dz .and. prod_constrained) then
+        if (Cons_Zl .gt. FEISTY%mesozoo(2)%dz .and. prod_constrained) then
             ! Calcul fraction of consumption over total consumption of zoo
             frac_Mf = FEISTY%fish(4)%cons_Lz * FEISTY%fish(4)%B / & 
                      (FEISTY%fish(4)%cons_Lz * FEISTY%fish(4)%B + FEISTY%fish(5)%cons_Lz * FEISTY%fish(5)%B)

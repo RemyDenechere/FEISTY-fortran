@@ -8,7 +8,9 @@ CC = gcc
 FFLAGS = -O3
 
 # netCDF library flags
-NETCDF_FLAGS = `nf-config --fflags --flibs`
+NETCDF_FLAGS = `nf-config --fflags`
+NETCDF_LIBS = `nc-config --libs`
+NETCDF_LIBS += `nf-config --flibs`
 
 # OpenMP flag
 OPENMP_FLAGS = -fopenmp
@@ -26,7 +28,7 @@ OUTPUT_FEISTY_2D = FEISTY_IC_2D
 all: $(OUTPUT_FEISTY) # $(OUTPUT_FEISTY_2D)
 
 $(OUTPUT_FEISTY): $(SOURCE_FEISTY)
-	$(FC) $(FFLAGS) $(OPENMP_FLAGS) $(SOURCE_FEISTY) -o $(OUTPUT_FEISTY) $(NETCDF_FLAGS) 
+	$(FC) $(FFLAGS) $(OPENMP_FLAGS) $(SOURCE_FEISTY) $(NETCDF_FLAGS)  -o $(OUTPUT_FEISTY) $(NETCDF_LIBS)
 
 # $(OUTPUT_FEISTY_2D): $(SOURCE_FEISTY_2D)
 #	$(FC) $(FFLAGS) $(OPENMP_FLAGS) $(SOURCE_FEISTY_2D) -o $(OUTPUT_FEISTY_2D) $(NETCDF_FLAGS) 
@@ -36,4 +38,5 @@ $(OUTPUT_FEISTY): $(SOURCE_FEISTY)
 #	$(FC) $(FFLAGS) $(OPENMP_FLAGS) $(SOURCE_NETCDF) -o $(OUTPUT_NETCDF) $(NETCDF_FLAGS) 
 
 clean:
+	@echo "Cleaning up *.mod files..."
 	rm -rf *.mod

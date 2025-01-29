@@ -90,6 +90,7 @@ module Structure
         real(dp) :: Tb = 0                   ! Benthic temperature
         real(dp) :: det = 0                  ! Detritus flux to benthic community
         real(dp), dimension(nDeriv) :: dBdt  ! variable containing the derivative
+        real(dp), dimension(nFishGroup) :: tpel
         real(dp) :: Sd_Fout_B_int = 0
         real(dp) :: Ld_Repro_end = 0
         real(dp) :: Md_Fout_end = 0
@@ -383,7 +384,7 @@ module Structure
         print *, "longh",  FEISTY%ilongh
         print *, "time " , FEISTY%itime
         
-        print *, 
+        print *, " "
         print *, " ------------------- FEISTY inputs --------------------- "
         print *, "Temperature  Pelagic    " , FEISTY%Tp                  ! Pelagic temperature
         print *, "Temperature  Benthic    " , FEISTY%Tb                  ! Benthic temperature
@@ -393,26 +394,33 @@ module Structure
         print *, "mort Large MesoZoo B    " , FEISTY%mesozoo(Lz)%dz      ! Biomass of Large zooplankton consumed by top predators 
         print *, "Detritus fluxto sea bed " , FEISTY%det                 ! Detritus flux to benthic community
         
-        print *, 
+        print *,  " "
         print *, " ------------------- Biomass at t + 1  --------------------- "
         do i = 1, nFishGroup
             print *, "bio ", trim(tracers_name(i)), "= ", FEISTY%fish(i)%B
         end do
         print *, "bio BE= ", FEISTY%benthos(1)%B
 
-        print *, 
+        print *,  " "
         print *, " ------------------- all derivatives  --------------------- "
         do i = 1, nFishGroup
             print *, "d", trim(tracers_name(i)), "/dt = ", FEISTY%dBdt(i)
         end do 
 
-        print *, 
+        print *,  " "
         print *, " ------------------- all diagnostics  --------------------- "
         Do i = 1, nFishGroup
             print *, trim(tracers_name(i)), ' diagnostics:'
             print *, "Physiology"
+            print *, "tpel: ", FEISTY%tpel(i)          ! Biomass
+            print *, "Texp: ",  FEISTY%fish(i)%Texp     ! temperature experienced by fish
+            print *, "Tcorr_e: ", FEISTY%fish(i)%Tcorr_e  ! temperature correction for encounter and cmax 
+            print *, "Tcorr_met: ", FEISTY%fish(i)%Tcorr_met ! temperature correction for metabolism
             print *, 'f: ', FEISTY%fish(i)%f          ! Total feeding level
             print *, 'cmax: ', FEISTY%fish(i)%cmax           ! Maximum consumption rate 
+            print *, 'cmax_w: ', FEISTY%fish(i)%cmax /  FEISTY%fish(i)%Tcorr_e        ! Maximum consumption rate 
+            print *, 'v:      ', FEISTY%fish(i)%V          ! Encounter rate
+            print *, 'v_w:    ', FEISTY%fish(i)%V / FEISTY%fish(i)%Tcorr_e         ! Encounter rate
             print *, 'cons: ', FEISTY%fish(i)%cons          ! Total consumption rate
             print *, 'met: ',FEISTY%fish(i)%met           ! metabolic cost 
             print *, 'mu_p: ', FEISTY%fish(i)%mu_p          ! Predation mortality 
@@ -423,21 +431,35 @@ module Structure
             print *, 'Fout: ', FEISTY%fish(i)%Fout          ! flux out of a size class 
             print *, 'Repro: ', FEISTY%fish(i)%Repro         ! Reproduction flux 
 
-            print *, 
+            print *,   "----------------------------------- "
             print *, "Feeding level for each prey : "
-            print *, 'f_Zm: ', FEISTY%fish(i)%f_Zm         
-            print *, 'f_Zl: ', FEISTY%fish(i)%f_Zl         ! --         
-            print *, 'f_Sf: ', FEISTY%fish(i)%f_Sf         ! --
-            print *, 'f_Sp: ', FEISTY%fish(i)%f_Sp         ! --
-            print *, 'f_Sd: ', FEISTY%fish(i)%f_Sd         ! --
-            print *, 'f_Mf: ', FEISTY%fish(i)%f_Mf         ! --
-            print *, 'f_Mp: ', FEISTY%fish(i)%f_Mp         ! --
-            print *, 'f_Md: ', FEISTY%fish(i)%f_Md        ! --
-            print *, 'f_Lp: ', FEISTY%fish(i)%f_Lp        ! --
-            print *, 'f_Ld: ', FEISTY%fish(i)%f_Ld         ! --
-            print *, 'f_BE: ', FEISTY%fish(i)%f_BE  
+            print *, 'f_Zm: ', FEISTY%fish(i)%cons_Zm / FEISTY%fish(i)%cmax      
+            print *, 'f_Zl: ', FEISTY%fish(i)%cons_Zl / FEISTY%fish(i)%cmax         ! --         
+            print *, 'f_Sf: ', FEISTY%fish(i)%cons_Sf / FEISTY%fish(i)%cmax         ! --
+            print *, 'f_Sp: ', FEISTY%fish(i)%cons_Sp / FEISTY%fish(i)%cmax         ! --
+            print *, 'f_Sd: ', FEISTY%fish(i)%cons_Sd / FEISTY%fish(i)%cmax         ! --
+            print *, 'f_Mf: ', FEISTY%fish(i)%cons_Mf / FEISTY%fish(i)%cmax         ! --
+            print *, 'f_Mp: ', FEISTY%fish(i)%cons_Mp / FEISTY%fish(i)%cmax         ! --
+            print *, 'f_Md: ', FEISTY%fish(i)%cons_Md / FEISTY%fish(i)%cmax       ! --
+            print *, 'f_Lp: ', FEISTY%fish(i)%cons_Lp / FEISTY%fish(i)%cmax        ! --
+            print *, 'f_Ld: ', FEISTY%fish(i)%cons_Ld / FEISTY%fish(i)%cmax         ! --
+            print *, 'f_BE: ', FEISTY%fish(i)%cons_BE / FEISTY%fish(i)%cmax 
 
-            print *, 
+            print *,   "----------------------------------- "
+            print *, "Consumption for each prey : "
+            print *, 'cons_Zm: ', FEISTY%fish(i)%cons_Zm         
+            print *, 'cons_Zl: ', FEISTY%fish(i)%cons_Zl         ! --         
+            print *, 'cons_Sf: ', FEISTY%fish(i)%cons_Sf         ! --
+            print *, 'cons_Sp: ', FEISTY%fish(i)%cons_Sp         ! --
+            print *, 'cons_Sd: ', FEISTY%fish(i)%cons_Sd         ! --
+            print *, 'cons_Mf: ', FEISTY%fish(i)%cons_Mf         ! --
+            print *, 'cons_Mp: ', FEISTY%fish(i)%cons_Mp         ! --
+            print *, 'cons_Md: ', FEISTY%fish(i)%cons_Md        ! --
+            print *, 'cons_Lp: ', FEISTY%fish(i)%cons_Lp        ! --
+            print *, 'cons_Ld: ', FEISTY%fish(i)%cons_Ld         ! --
+            print *, 'cons_BE: ', FEISTY%fish(i)%cons_BE  
+
+            print *,  " "
         end Do 
 
         stop 

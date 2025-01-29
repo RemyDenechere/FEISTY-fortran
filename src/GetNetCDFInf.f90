@@ -557,7 +557,7 @@ module GetNetCDFinf
             print *, trim(nf90_strerror(status))
             STOP
         end if
-        status = nf90_def_dim(ncid, 'Layer', Nlayer, dimids(3))
+        status = nf90_def_dim(ncid, 'Layer', int(1), dimids(3))
         status = nf90_def_dim(ncid, 'lath' , Nlath , dimids(2))
         status = nf90_def_dim(ncid, 'lonh' , Nlongh, dimids(1))
 
@@ -622,7 +622,7 @@ module GetNetCDFinf
         longh_dim_val = lonh_temp_val([1, 3, 5, 7])
 
         status = nf90_put_var(ncid, varid_Time, Time_dim_val)
-        status = nf90_put_var(ncid, varid_layer, layer_dim_val)
+        status = nf90_put_var(ncid, varid_layer, 100)
         status = nf90_put_var(ncid, varid_lath,  lath_dim_val)
         status = nf90_put_var(ncid, varid_longh, longh_dim_val)
 
@@ -920,5 +920,5 @@ module GetNetCDFinf
         end if        
     end subroutine add_Diag_nc
 
-
+ 
 end module GetNetCDFinf

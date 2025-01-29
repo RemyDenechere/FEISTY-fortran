@@ -37,7 +37,7 @@ end
 % and the max depth from the location: 
 topog.Layer_thikness(1) = topog.Layer(1);
 topog.Layer_thikness(2:end) = topog.Layer(2:end) - topog.Layer(1:(end-1));
-topog.idx_100m = find(topog.Layer > 100, 1, 'first') % index of the 100m layer to integrate plankton over 100m
+topog.idx_100m = find(topog.Layer > 100, 1, 'first'); % index of the 100m layer to integrate plankton over 100m
 
 % save in folder of the location as its the same for every experiment in a location
 save(['../output/Matlab_Average/', coupling, '/' loc, '/Topology.mat'], 'topog') 

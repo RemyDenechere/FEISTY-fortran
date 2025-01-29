@@ -16,7 +16,7 @@ program Run_physiology
                                                        DataZM, Datadzm, DataZL, Datadzl
     integer :: itime, iDAY, iYR, Year, ilayer, ilath, ilongh
     real(dp) :: T1, T2, T3, sim_time
-    logical :: Spinup = .false.
+    logical :: Spinup = .true.
 
     print *, "-------------------------------------"
     print *, " Simulation of FEISTY offline using COBALT 1D "

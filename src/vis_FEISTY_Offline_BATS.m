@@ -1,26 +1,27 @@
 % Visualize output of FEISTY
 % CESM FOSI
 % Time series plots and maps
-close all
-clear all
-addpath('../../Programing-Tutorials/Matlab/Matlab_functions/')
 
-% dbstop in vis_FEISTY_Offline_BATS.m at 300
+function [] = vis_FEISTY_Offline_BATS(loc, exp, rockfish, loc_test)
+arguments
+    loc       char {mustBeMember(loc, {'BATS', 'CCE'})} = 'BATS'
+    exp       char                                      = '2D'
+    rockfish  logical                                   = true
+    loc_test  logical                                   = false
+end
+
+addpath('../../Programing-Tutorials/Matlab/Matlab_functions/') 
+
+dbclear all 
+% dbstop in vis_FEISTY_Offline_BATS.m at 214
 
 %% Root directory: 
-param.Rockfish = false; % true; %  
+param.Rockfish = rockfish; % true; %  
 param = param_setup(param);
-param.loc_test = false; % true;  % 
+param.loc_test = loc_test;
 
-loc = 'BATS';
-yr = 10;
-exp = 'baseparam'; % (all baseparam)
 coupling = 'offline'; 
 Spinup = {'_Spinup_Time_Serie', ''};
-
-numb_loc  = 11;
-start_loc = 1;
-end_loc   = 11;
 
 var = {'Sf', 'Sp', 'Sd', 'Mf', 'Mp', 'Md', 'Lp', 'Ld', 'BE', 'dZm', 'dZl'}; 
 
@@ -110,7 +111,7 @@ D_tmean = Sd_tmean + Md_tmean + Ld_tmean;
 
 % Set up time 
 start_date = datetime("2004-01-01");
-end_date   = datetime("2004-12-30");
+end_date   = datetime("2004-12-31");
 time = start_date:end_date;
 
 % plots 
@@ -143,45 +144,6 @@ ylabel(t, 'Integrated biomass over water column (g WW m-2)')
 xlabel(t, 'Time (days)')
 
 save_graph(gcf, "png", [dir_output 'Time_Means' Spinup{2} ], 22, 12)
-
-%% plot Depth average: 
-%! Time series: 
-figure(3);
-axes_formating(gcf, "defaultAxesColorOrder", cm10)
-
-load([dir_input 'Depth_Means' Spinup{2} '.mat']);
-
-% Sum per functional group: 
-F_zmean = Sf_zmean + Mf_zmean;
-P_zmean = Sp_zmean + Mp_zmean + Lp_zmean;
-D_zmean = Sd_zmean + Md_zmean + Ld_zmean;
-
-
-t = tiledlayout(1, 2, "TileSpacing", "compact", "Padding","compact");
-nexttile
-
-hold on 
-for i = 1:(length(var)-3)
-    plot(eval([var{i} '_zmean']), -depth, '-')
-end 
-hold off 
-set(gca, "XScale", 'log', 'XLim', [10^(-5) 10])
-legend(var{1:(end-3)})
-title("All size")
-
-nexttile
-hold on 
-plot(F_zmean, -depth, P_zmean, -depth, D_zmean, -depth)
-hold off 
-set(gca, "XScale", "log", 'XLim', [10^(-5) 10])
-legend('Forage', 'Pelagics', 'Demersals', 'Benthos')
-title("Functional group")
-
-title(t, {[loc '_'  coupling '_' exp], ['Depth_Means' Spinup{2}]}, Interpreter = 'none')
-xlabel(t, 'Time averaged biomass over depth (g WW m-2)')
-ylabel(t, 'Layers')
-
-save_graph(gcf, "png", [dir_output 'Depth_Means' Spinup{2}], 22, 12)
 
 %% plot diagnostic Time Seire 
 var = {'Sf', 'Sp', 'Sd', 'Mf', 'Mp', 'Md', 'Lp', 'Ld'};
@@ -241,9 +203,9 @@ end
 load([dir_input 'COBALT_IC_fish_' loc '_' coupling '_' exp '.mat'])
 
 % Per functional group: 
-F_spacemean = Sf_spacemean + Mf_spacemean;
-P_spacemean = Sp_spacemean + Mp_spacemean + Lp_spacemean;
-D_spacemean = Sd_spacemean + Md_spacemean + Ld_spacemean;
+F_IC = Sf_IC + Mf_IC;
+P_IC = Sp_IC + Mp_IC + Lp_IC;
+D_IC = Sd_IC + Md_IC + Ld_IC;
 
 figure(4)
 axes_formating(gcf, "defaultAxesColorOrder", cm10)
@@ -253,87 +215,39 @@ t = tiledlayout(1,2,"TileSpacing","compact","Padding","compact");
 nexttile
 hold on 
 for i = 1:(length(var)-2)
-    plot(eval([var{i} '_zmean']), -depth)
+    bar(i, eval([var{i} '_IC']))
 end
 hold off
-set(gca, "XScale", "log", ...
-         "Xlim", [10^(-5) 80])
-legend(var{1:(end-2)})
+set(gca, "YScale", "log", ...
+         "Ylim", [10^(-5) 80])
+xticks([1:(length(var)-2)])
+xticklabels({var{1:(end-2)}})
+xtickangle(25)
 title("All Sizes")
 
 % plot Functional group:
 nexttile
-hold on 
-plot(F_spacemean, -depth, ...
-     P_spacemean, -depth, ...
-     D_spacemean, -depth, ...
-     BE_spacemean, -depth)
-hold off
-set(gca, "XScale", "log", ...
-         "Xlim", [10^(-5) 80])
-legend('Forage', 'Pelagic', 'Demersal', 'Benthos')
+bar([1:4], [F_IC, P_IC, D_IC, BE_IC])
+set(gca, "YScale", "log", ...
+         "Ylim", [10^(-5) 80])
+xticks([1:4])
+xticklabels({'Forage', 'Pelagic', 'Demersal', 'Benthos'})
+xtickangle(25)
 title("Functional group")
 
-xlabel(t, "Biomass (g WW m-3)")
-ylabel(t, "Layer depth")
+ylabel(t, "Biomass (g WW m-3)")
+xlabel(t, "Functional groups")
 title(t, {[loc '_'  coupling '_' exp], 'Initial Conditions for COBALT Online'}, ...
     Interpreter = 'none')
 
 save_graph(gcf, "png", [dir_output,  'Initial_Conditions_for_COBALT_Online'], 16, 12)
-
-%% plot last time step of time series to compare with Initial conditions: 
-
-%! Spinup time series: 
-figure()
-axes_formating(gcf, "defaultAxesColorOrder", cm10)
-load([dir_input 'Time_Depth_Means' Spinup{1} '.mat']);
-
-% Sum per functional group: 
-F_Spin_end = Sf_Spin_end + Mf_Spin_end;
-P_Spin_end = Sp_Spin_end + Mp_Spin_end + Lp_Spin_end;
-D_Spin_end = Sd_Spin_end + Md_Spin_end + Ld_Spin_end;
-
-t = tiledlayout(1, 2, "TileSpacing", "compact", "Padding","compact");
-xtime = length(time);
-
-% plot all sizes: 
-nexttile
-hold on 
-for i = 1:(length(var)-2)
-    plot(eval([var{i} '_Spin_end']), -depth, '-')
-end 
-hold off 
-legend(var{1:(end-2)}, 'Location', 'best')
-set(gca, "XScale", "log", ...
-         "Xlim", [10^(-5) 80])
-title("All size")
-
-% Plot all functional groups:
-nexttile
-hold on 
-plot(F_Spin_end', -depth, ...
-     P_Spin_end', -depth,...
-     D_Spin_end', -depth,...
-     BE_Spin_end',-depth)
-hold off 
-legend('Forage', 'Pelagics', 'Demersals', 'Benthos', 'Location', 'east')
-set(gca, "XScale", "log")
-title("Functional group")
-set(gca, "XScale", "log", ...
-         "Xlim", [10^(-5) 80])
-
-title(t, {[loc '_'  coupling '_' exp], ['Time_Depth_Means' Spinup{1} ]}, Interpreter = 'none')
-ylabel(t, 'Integrated biomass over water column (g WW m-2)')
-xlabel(t, 'Spinup time (days)')
-
-save_graph(gcf, "png", [dir_output 'Time_Depth_Means' Spinup{1}], 22, 12)
-
 
 %% Plot forcing data: 
 
 %! Load data: 
 load([dir_input_forcing 'COBALT_offline_' loc '_Time_Depth_Means_forcing' '.mat'])
 load([dir_input_forcing 'COBALT_offline_' loc '_Time_Means_forcing' '.mat'])
+load([dir_input_forcing 'COBALT_offline_100m_' loc '_Time_Means_forcing' '.mat'])
 load([dir_input_forcing 'COBALT_offline_' loc '_Depth_Means_forcing' '.mat'])
 
 %! forcing variable names: 
@@ -347,7 +261,6 @@ end_date   = datetime("2004-12-31");
 %! Plot forcing data: ------------------------------------------------
 fig = figure(5);
 axes_formating()
-
 
 t = tiledlayout(1, 2, "TileSpacing","compact", "Padding","compact");
 
@@ -367,7 +280,7 @@ legend(t1, var{:}, Interpreter = 'none', EdgeColor = 'none', Color = 'none', ...
 t2 = nexttile(t); 
 hold(t2, 'all')
 for i = 2:length(var)
-    plot(t2, eval([var{i} '_offline_zmean']), -depth,  '-')
+    plot(t2, eval([var{i} '_offline_zmean']), -topog.Layer,  '-')
 end 
 hold(t2, 'off')
 t2.XLabel.String = 'gC WW m-3';
@@ -375,10 +288,9 @@ t2.XLim = [-0.00404600305473225, 0.245953996945268];
 t2.YLim = [-75.9854668425813, 4.01453315741872];
 title(t2, 'Depth average')
 
-
 % add axis:
 t3 = copyobj(t2, t);
-plot(t3, eval([var{1} '_offline_zmean']), -depth,  '-', 'Color',  [1.00,0.41,0.16])
+plot(t3, eval([var{1} '_offline_zmean']), -topog.Layer,  '-', 'Color',  [1.00,0.41,0.16])
 
 % Change axis properties: 
 t3.XAxisLocation = 'bottom';
@@ -405,7 +317,7 @@ title(t, {[loc '_'  coupling '_' exp], 'forcing_files'}, Interpreter = 'none')
 
 save_graph(gcf, "png", [dir_output 'forcing_files' Spinup{2}], 16, 12)
 
-%% plot for growth and biomass: 
+%% plot for growth and biomass integrated over the water column: 
 %! forcing variable names: 
 figure
 axes_formating(gcf, "defaultAxesColorOrder", cm10)
@@ -417,173 +329,30 @@ for i = 1:length(var)
 end 
 hold off
 % set(gca, 'YScale', 'log', 'Ylim', [1.74969307072006e-05 1749.69307072006]);
-title('Time average growth and biomass Mesozooplankton')
+title('Growth and biomass Mesozooplankton integrated over water column')
 legend(var{:}, Interpreter = 'none', EdgeColor = 'none', Color = 'none');
 xlabel("Day of year")
-ylabel("gC WW m-3 (d-1 for prod)")
+ylabel("gC WW m-2 (d-1 for prod)")
 
-save_graph(gcf, "png", [dir_output 'Growth_and_biomass_Zoop' Spinup{2}], 12, 12)
+save_graph(gcf, "png", [dir_output 'Growth_and_biomass_Zoop_int' Spinup{2}], 12, 12)
 
-%% plot forcing files in different locations: 
-if param.loc_test
-    dir_input_forcing =['../output/Matlab_Average/', coupling, '/' loc, '/', ];
-    for locid = start_loc:end_loc
-        loc_name = [loc '_loc' num2str(locid)];
-
-        disp(['plotting forcing files from COBALT at loc ', num2str(locid)])
-
-        %! Load data: 
-        load([dir_input_forcing '/' loc_name '/COBALT_offline_' loc '_Time_Depth_Means_forcing' '.mat'])
-        load([dir_input_forcing '/' loc_name '/COBALT_offline_' loc '_Time_Means_forcing' '.mat'])
-        load([dir_input_forcing '/' loc_name '/COBALT_offline_' loc '_Depth_Means_forcing' '.mat'])
-        
-        %! forcing variable names: 
-        var = {'nmdz', 'jhploss_n_Mdz', 'nlgz', 'jhploss_n_Lgz', 'Pop_btm'};
-        
-        %! Time periode: 
-        start_date = datetime("2004-01-01");
-        end_date   = datetime("2004-12-31");
-        % time = start_date:end_date;
-        
-        %! Plot forcing data: ------------------------------------------------
-        fig = figure(5);
-        axes_formating()
-        
-        t = tiledlayout(1, 2, "TileSpacing","compact", "Padding","compact");
-        
-        % Panel 1: time average: 
-        t1 = nexttile(t); 
-        hold(t1, 'all')
-        for i = 1:length(var)
-            plot(t1, time, eval([var{i} '_offline_tmean']), '-')
-        end 
-        hold(t1, 'off')
-        set(t1, 'YScale', 'log', 'Ylim',[1.74969307072006e-05 1749.69307072006]);
-        title(t1, 'Time average')
-        legend(t1, var{:}, Interpreter = 'none', EdgeColor = 'none', Color = 'none', ...
-            Position = [0.179283105674276 0.269803790877946 0.223263506063947 0.271164021164021]);
-        
-        % Panel 2: depth average
-        t2 = nexttile(t); 
-        hold(t2, 'all')
-        for i = 2:length(var)
-            plot(t2, eval([var{i} '_offline_zmean']), -depth,  '-')
-        end 
-        hold(t2, 'off')
-        t2.XLabel.String = 'gC WW m-3';
-        t2.XLim = [-0.00404600305473225, 0.245953996945268];
-        t2.YLim = [-75.9854668425813, 4.01453315741872];
-        title(t2, 'Depth average')
-        
-        
-        % add axis:
-        t3 = copyobj(t2, t);
-        plot(t3, eval([var{1} '_offline_zmean']), -depth,  '-', 'Color',  [1.00,0.41,0.16])
-        
-        % Change axis properties: 
-        t3.XAxisLocation = 'bottom';
-        t3.XAxis.Color = [1.00,0.41,0.16];
-        t3.Color = 'none';
-        %t3.XLabel.Position(3) = t2.XLabel.Position(3); 
-        %t3.XLabel.Position(2) = t3.XLabel.Position(2)+5;
-        t3.XRuler.TickLabelGapOffset = 35;
-        t3.XLabel.String = 'Temperature'; 
-        t3.XAxis.TickLabelColor = [1.00,0.41,0.16];
-        t3.XLim = [-3.23244336814286 21.7675566318571];
-        t3.YLim = [-75.9997853215371 4.00021467846288];
-        
-        legend(t2, var{2:end}, Interpreter = 'none', Color = 'none', EdgeColor = 'none', ...
-            Position = [0.703623414303576,0.455079749385228,0.223263506063947,0.189705882352941]);  
-        legend(t3, var{1}, Interpreter = 'none', Color = 'none', EdgeColor = 'none', ...
-            Position = [0.703623414303576,0.342804281561458,0.142778390297685,0.044117647058824]);
-        
-        
-        % Labels
-        ylabel(t, 'Unit to check!')
-        xlabel(t, 'Time (days)')
-        title(t, {[loc '_'  coupling '_' exp], 'forcing_files_' loc_name}, Interpreter = 'none')
-        
-        save_graph(gcf, "png", [dir_output 'forcing_files ' loc_name Spinup{2}], 16, 12)
-        
-
-        % plot the detritus flux to the bottom:
-        t = tiledlayout(1, 2, "TileSpacing", "compact", "Padding", "compact");
-        
-        nexttile
-        plot(time, eval([var{i} '_offline_tmean']), '-')
-        ylabel('Detritus (gC WW m-3 d-1)')
-        xlabel('time (day)')
-
-        nexttile
-        plot(eval([var{i} '_offline_zmean']),  - depth)
-        xlabel('Detritus (gC WW m-3 d-1)')
-        ylabel('Depth (layer)')
-
-        save_graph(gcf, "png", [dir_output 'forcing_files_Detritus_' loc_name Spinup{2}], 16, 12)
-    end
+%% plot for growth and biomass integrated over 100m: 
+%! forcing variable names: 
+figure
+axes_formating(gcf, "defaultAxesColorOrder", cm10)
+var = {'nmdz', 'jprod_nmdz', 'nlgz', 'jprod_nlgz'};
+% time average: 
+hold on 
+for i = 1:length(var)
+    plot(time, eval([var{i} '_offline_tmean_100m']), '-')
 end 
+hold off
+% set(gca, 'YScale', 'log', 'Ylim', [1.74969307072006e-05 1749.69307072006]);
+title('Growth and biomass Mesozooplankton integrated over 100m')
+legend(var{:}, Interpreter = 'none', EdgeColor = 'none', Color = 'none');
+xlabel("Day of year")
+ylabel("gC WW m-2 (d-1 for prod)")
 
-%% print Pop_btm only: 
-
-%%
-% %% Comparison Detritus flux to sea bed between COBALT output and FEISTY 2019
-% if char(loc) == "BATS" 
-%     % param.Rockfish = true; %  false; % 
-%     % param = param_setup(param);
-%     
-%     % data from COBALT reanalysis: --------------------------------------------
-%     load([param.rootdir '/Feisty/Fish-MIP/Phase3/QuarterDeg/gfdl-mom6-cobalt2_ctrlclim_expc-bot_15arcmin_global_monthly_1961_2010.mat']); 
-%     
-%     load_unit = "mol m-2 s-1";      % before conversion
-%     unit = 'gC WW m-2 d-1';         % after conversion 
-%     conversion = 6.625*12.01*9.0*24.0*60.0*60.0;
-%     %! BATS coordinate in file: 
-%     idx_lon = find(lon > -64.17);
-%     idx_lat = find(lat <  31.83);
-%     lon_BATS = lon(idx_lon(1):idx_lon(2));
-%     lat_BATS = lat(idx_lat(1)-1:idx_lat(1));
-%     disp(['BATS longitude : -64.17' ])
-%     disp(['BATS latitude  :  31.83' ])
-%     %! dimensions:
-%     dim = size(det_btm); 
-%     
-%     det_btm_BATS = det_btm(idx_lon(1):idx_lon(2), idx_lat(1)-1:idx_lat(1), :);
-%     det_btm_BATS = mean(det_btm_BATS, [1, 2]);
-%     det_btm_BATS = squeeze(det_btm_BATS * conversion);
-%     
-%     
-%     % Time line COBALT output: 
-%     start_date = datetime("2004-01-01");
-%     end_date   = datetime("2004-12-31");
-%     time_1 = start_date:end_date;
-%     
-%     %! Timeline CABOLAT reanalysis
-%     year = 1961:2010;
-%     years = [];
-%     for i = 1:length(year)
-%         years = [years, repmat(year(i), 1, 12)];
-%     end 
-%     months = repmat(1:12, 1, length(year));
-%     days = ones(1, length(months));
-%     time_2 = datenum([years', months', days']); 
-%     time_2_datetime = datetime([years', months', days']);
-%     time_2_str = datestr(time_2);
-%     
-%     %: plot the two metrics
-%     figure(6)
-%     axes_formating()
-%     hold on 
-%     plot(time_1, Pop_btm_tmean)
-%     plot(time_2_datetime, det_btm_BATS)
-%     hold off
-%     legend('COBALT-1D forcing files', 'COBALT reanalysis')
-%     xlabel('Time (days)')
-%     ylabel('Detritus flux to seafloor (gC WW m-2 d-1)')
-%     title([exp 'Comparison detritus flux'], 'Interpreter', "none")
-%     set(gca, 'Xlim', [start_date, end_date])
-%     save_graph(gcf, 'png', [save_dir exp ...
-%                 'Comparison detritus fluxflux forcing vs reanalysis'] , 14, 11)
-% end 
-
+save_graph(gcf, "png", [dir_output 'Growth_and_biomass_Zoop_int' Spinup{2}], 12, 12)
 
 

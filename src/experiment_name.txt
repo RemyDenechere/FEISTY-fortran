@@ -1,4 +1,1 @@
-BATS_nonFmort_.083_encounter_70_k_1_k50_1_yr_
-BATS_nonFmort_.166_encounter_70_k_1_k50_1_yr_
-BATS_nonFmort_0.25_encounter_70_k_1_k50_1_yr_
-BATS_nonFmort_0_encounter_70_k_1_k50_1_yr_
+BATS_nonFmort_0.1_encounter_70_k_1_k50_1_yr_
