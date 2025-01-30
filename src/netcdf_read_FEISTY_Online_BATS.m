@@ -24,7 +24,7 @@ topog.dir = ['../../CEFI-regional-MOM6-FEISTY/exps/OM4.single_column.COBALT/' lo
 topog.var = {'x', 'y', 'depth', 'Layer'};
 topog.longname = {'geographic_longitude', 'geographic_latitude', 'depth', 'Layer pseudo-depth'};
 topog.unit = {'degree_east', 'degree_north', 'meters', 'meters'};
-topog.files = {'ocean_hgrid.nc', 'ocean_hgrid.nc', 'ocean_topog.nc', 'FEISTY_2023_10_spinup_subset.nc'}; 
+topog.files = {'ocean_hgrid.nc', 'ocean_hgrid.nc', 'ocean_topog.nc', 'FEISTY_2D_2023_10_spinup_subset.nc'}; 
 topog.Layer_thikness = zeros(1, 75, "double"); 
 
 for i = 1:length(topog.var)
@@ -40,8 +40,10 @@ topog.Layer_thikness(2:end) = topog.Layer(2:end) - topog.Layer(1:(end-1));
 topog.idx_100m = find(topog.Layer > 100, 1, 'first'); % index of the 100m layer to integrate plankton over 100m
 
 % save in folder of the location as its the same for every experiment in a location
-save(['../output/Matlab_Average/', coupling, '/' loc, '/Topology.mat'], 'topog') 
-disp(['../output/Matlab_Average/', coupling, '/' loc, '/Topology.mat'])
+if ~exist(['../output/Matlab_Average/', coupling, '/' loc], "dir")
+    mkdir(['../output/Matlab_Average/', coupling, '/' loc])
+end
+save(['../output/Matlab_Average/', coupling, '/', loc, '/Topology.mat'], 'topog') 
 
 %% Get Fish tracers: ------------------------------------------------------
 disp("Get Fish tracer values & process them for visualisation")

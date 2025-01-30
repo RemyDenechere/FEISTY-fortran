@@ -557,12 +557,9 @@ module GetNetCDFinf
             print *, trim(nf90_strerror(status))
             STOP
         end if
-        status = nf90_def_dim(ncid, 'Layer', int(1), dimids(3))
+        status = nf90_def_dim(ncid, 'Layer', Nlayer, dimids(3))
         status = nf90_def_dim(ncid, 'lath' , Nlath , dimids(2))
         status = nf90_def_dim(ncid, 'lonh' , Nlongh, dimids(1))
-
-        ! Put opened netcdf into definition mode: 
-        status = nf90_redef(ncid)
 
         !! Define variables for each dimension: --------------------------------------------------------------
         ! Time: 
@@ -612,7 +609,7 @@ module GetNetCDFinf
 
         ! Define valuse for each dimension : -----------------------------------------------------------
         ! Time in days:
-        Time_dim_val = (/(i, i=1, Ntime, 1)/)
+        Time_dim_val = 1
         ! Layer pseudo-depth: 
         layer_dim_val = zt
         ! lat and long 
@@ -621,8 +618,8 @@ module GetNetCDFinf
         lath_dim_val  = lath_temp_val([1, 3, 5, 7])
         longh_dim_val = lonh_temp_val([1, 3, 5, 7])
 
-        status = nf90_put_var(ncid, varid_Time, Time_dim_val)
-        status = nf90_put_var(ncid, varid_layer, 100)
+        status = nf90_put_var(ncid, varid_Time, 1)
+        status = nf90_put_var(ncid, varid_layer, layer_dim_val)
         status = nf90_put_var(ncid, varid_lath,  lath_dim_val)
         status = nf90_put_var(ncid, varid_longh, longh_dim_val)
 

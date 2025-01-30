@@ -7,7 +7,7 @@ arguments
     Rockfish              logical = true
 end 
 dbclear all 
-% dbstop in netcdf_read_FEISTY_Offline_BATS at 125
+% dbstop in netcdf_read_FEISTY_Offline_BATS at 59
 
 %% Root directory: 
 param.Rockfish = Rockfish; % true; %
@@ -38,7 +38,30 @@ end
 if exist(dir_topog, 'file')
     load(dir_topog, 'topog') 
 else 
-    disp("topological parameters for this location do not exit, run netcdf_read_FEISTY_Online.m first")
+    %% Get information about the simulation 
+    disp(['Get information about the ' loc ' system'])
+    topog.dir = ['../../CEFI-regional-MOM6-FEISTY/exps/OM4.single_column.COBALT/' loc '/'];
+    topog.var = {'x', 'y', 'depth', 'Layer'};
+    topog.longname = {'geographic_longitude', 'geographic_latitude', 'depth', 'Layer'};
+    topog.unit = {'degree_east', 'degree_north', 'meters', 'meters'};
+    topog.files = {'ocean_hgrid.nc', 'ocean_hgrid.nc', 'ocean_topog.nc', 'FEISTY_2D_2023_10_spinup_subset.nc'}; 
+    topog.Layer_thikness = zeros(1, 75, "double"); 
+
+    for i = 1:length(topog.var)
+        ncid = netcdf.open([topog.dir, topog.files{i}], 'NC_NOWRITE');
+        varid = netcdf.inqVarID(ncid, topog.var{i});
+        topog.(topog.var{i}) = netcdf.getVar(ncid, varid);
+    end
+
+    % Calculate the actual depth for each layer based on the layer pseuco-depth
+    % and the max depth from the location: 
+    topog.Layer_thikness(1) = topog.Layer(1);
+    topog.Layer_thikness(2:end) = topog.Layer(2:end) - topog.Layer(1:(end-1));
+    topog.idx_100m = find(topog.Layer > 100, 1, 'first'); % index of the 100m layer to integrate plankton over 100m
+
+    % save in folder of the location as its the same for every experiment in a location
+    save(['../output/Matlab_Average/', coupling, '/' loc, '/Topology.mat'], 'topog') 
+    disp(['../output/Matlab_Average/', coupling, '/' loc, '/Topology.mat'])
 end
 
 %% Get Spinup Time Series data:

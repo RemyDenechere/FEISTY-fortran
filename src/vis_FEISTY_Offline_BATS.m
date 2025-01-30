@@ -4,7 +4,7 @@
 
 function [] = vis_FEISTY_Offline_BATS(loc, exp, rockfish, loc_test)
 arguments
-    loc       char {mustBeMember(loc, {'BATS', 'CCE'})} = 'BATS'
+    loc       char {mustBeMember(loc, {'BATS', 'CCE', 'GOF', 'NS'})} = 'BATS'
     exp       char                                      = '2D'
     rockfish  logical                                   = true
     loc_test  logical                                   = false

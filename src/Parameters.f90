@@ -13,7 +13,7 @@ module Parameters
                                                     31, 31, 30, 31, 30, 31 /) ! Length of month (days)
 
     ! Environemental data for test: -----------------------------------
-    logical, parameter  :: diagnostic           = .false.   ! True to run diagonostic mode 
+    logical, parameter  :: diagnostic           = .true.   ! True to run diagonostic mode 
     logical, parameter  :: save_diagnostics     = .true.
     logical, parameter  :: prod_constrained     = .true.
     logical, parameter  :: Spinup_Time_Serie    = .true.
@@ -22,7 +22,7 @@ module Parameters
 
     ! Group information: ---------------------------------------------
     integer, parameter :: nFishGroup = 8                     ! Number of fish functional group
-    integer, parameter :: nMesoZoo = 2
+    integer, parameter :: nMesoZoo = 2                       ! Number of MesoZooplankton group
     integer, parameter :: nBenthos = 1                       ! Benthic resource  
     integer, parameter :: nDeriv = nFishGroup +  nBenthos    ! Number of group for witch the derivative is calculated
 
@@ -33,7 +33,7 @@ module Parameters
     real(dp), parameter :: conv_m2_to_m3    = 100.00          ! Conversion from per area simulation to per depth simulation 
 
     ! Experimentation parameters: ------------------------------------------
-    character(LEN=280), parameter :: loc = "BATS"
+    character(LEN=280), parameter :: loc = "NS"
     character(LEN=280), parameter :: exp = "2D" ! "COBALT_offline_BATS"
     character(LEN=280), parameter :: coupling = "offline"
 
