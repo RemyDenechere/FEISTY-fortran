@@ -446,6 +446,21 @@ module Structure
             print *, 'f_BE: ', FEISTY%fish(i)%cons_BE / FEISTY%fish(i)%cmax 
 
             print *,   "----------------------------------- "
+            print *, "Encounter for each prey : "
+            print *, 'Enc_Zm: ', FEISTY%fish(i)%f_Zm / ((1-FEISTY%fish(i)%f_Zm) * FEISTY%fish(i)%cmax)      
+            print *, 'Enc_Zl: ', FEISTY%fish(i)%f_Zl / ((1-FEISTY%fish(i)%f_Zl) * FEISTY%fish(i)%cmax)         ! --         
+            print *, 'Enc_Sf: ', FEISTY%fish(i)%f_Sf / ((1-FEISTY%fish(i)%f_Sf) * FEISTY%fish(i)%cmax)         ! --
+            print *, 'Enc_Sp: ', FEISTY%fish(i)%f_Sp / ((1-FEISTY%fish(i)%f_Sp) * FEISTY%fish(i)%cmax)         ! --
+            print *, 'Enc_Sd: ', FEISTY%fish(i)%f_Sd / ((1-FEISTY%fish(i)%f_Sd) * FEISTY%fish(i)%cmax)         ! --
+            print *, 'Enc_Mf: ', FEISTY%fish(i)%f_Mf / ((1-FEISTY%fish(i)%f_Mf) * FEISTY%fish(i)%cmax)         ! --
+            print *, 'Enc_Mp: ', FEISTY%fish(i)%f_Mp / ((1-FEISTY%fish(i)%f_Mp) * FEISTY%fish(i)%cmax)         ! --
+            print *, 'Enc_Md: ', FEISTY%fish(i)%f_Md / ((1-FEISTY%fish(i)%f_Md) * FEISTY%fish(i)%cmax)       ! --
+            print *, 'Enc_Lp: ', FEISTY%fish(i)%f_Lp / ((1-FEISTY%fish(i)%f_Lp) * FEISTY%fish(i)%cmax)        ! --
+            print *, 'Enc_Ld: ', FEISTY%fish(i)%f_Ld / ((1-FEISTY%fish(i)%f_Ld) * FEISTY%fish(i)%cmax)         ! --
+            print *, 'Enc_BE: ', FEISTY%fish(i)%f_BE / ((1-FEISTY%fish(i)%f_BE) * FEISTY%fish(i)%cmax) 
+
+
+            print *,   "----------------------------------- "
             print *, "Consumption for each prey : "
             print *, 'cons_Zm: ', FEISTY%fish(i)%cons_Zm         
             print *, 'cons_Zl: ', FEISTY%fish(i)%cons_Zl         ! --         

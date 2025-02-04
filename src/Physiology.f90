@@ -32,16 +32,16 @@ module Physiology
             FEISTY%fish(7)%B = IC
             FEISTY%fish(8)%B = IC
 
-            FEISTY%benthos(1)%B = 1.0155
+            FEISTY%benthos(1)%B = 4.2661
 
             ! give environemental parameters
-            FEISTY%Tp = -1.518000000
-            FEISTY%Tb = -2.059600000
-            FEISTY%det = 0.000000
-            FEISTY%mesozoo(Mz)%B = 1.72560000     ! Fraction of zooplankton mortality loss consumed
-            FEISTY%mesozoo(Lz)%B = 1.725600000     ! Fraction of zooplankton mortality loss consumed  
-            FEISTY%mesozoo(Mz)%dz = 0.0000000    ! Biomass of medium zooplankton consumed by top predators 
-            FEISTY%mesozoo(Lz)%dz = 0.0000000    ! Biomass of Large zooplankton consumed by top predators 
+            FEISTY%Tp = -1.3788_dp
+            FEISTY%Tb = -1.6827
+            FEISTY%det = 0.18827
+            FEISTY%mesozoo(Mz)%B = 7.5796     ! Fraction of zooplankton mortality loss consumed
+            FEISTY%mesozoo(Lz)%B = 7.5796     ! Fraction of zooplankton mortality loss consumed  
+            FEISTY%mesozoo(Mz)%dz = 0.010774    ! Biomass of medium zooplankton consumed by top predators 
+            FEISTY%mesozoo(Lz)%dz = 0.003689    ! Biomass of Large zooplankton consumed by top predators 
 
         endif 
 
