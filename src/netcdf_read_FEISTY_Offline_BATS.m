@@ -6,7 +6,7 @@ arguments
     exp                   char    = '2D'
     Rockfish              logical = true
 end 
-dbclear all 
+% dbclear all 
 % dbstop in netcdf_read_FEISTY_Offline_BATS at 59
 
 %% Root directory: 
@@ -35,34 +35,30 @@ end
 
 %% Get information about the simulation 
 
-if exist(dir_topog, 'file')
-    load(dir_topog, 'topog') 
-else 
-    %% Get information about the simulation 
-    disp(['Get information about the ' loc ' system'])
-    topog.dir = ['../../CEFI-regional-MOM6-FEISTY/exps/OM4.single_column.COBALT/' loc '/'];
-    topog.var = {'x', 'y', 'depth', 'Layer'};
-    topog.longname = {'geographic_longitude', 'geographic_latitude', 'depth', 'Layer'};
-    topog.unit = {'degree_east', 'degree_north', 'meters', 'meters'};
-    topog.files = {'ocean_hgrid.nc', 'ocean_hgrid.nc', 'ocean_topog.nc', 'FEISTY_2D_2023_10_spinup_subset.nc'}; 
-    topog.Layer_thikness = zeros(1, 75, "double"); 
+%% Get information about the simulation 
+disp(['Get information about the ' loc ' system'])
+topog.dir = ['../../CEFI-regional-MOM6-FEISTY/exps/OM4.single_column.COBALT/' loc '/'];
+topog.var = {'x', 'y', 'depth', 'Layer'};
+topog.longname = {'geographic_longitude', 'geographic_latitude', 'depth', 'Layer'};
+topog.unit = {'degree_east', 'degree_north', 'meters', 'meters'};
+topog.files = {'ocean_hgrid.nc', 'ocean_hgrid.nc', 'ocean_topog.nc', 'FEISTY_2D_2023_10_spinup_subset.nc'}; 
+topog.Layer_thikness = zeros(1, 75, "double"); 
 
-    for i = 1:length(topog.var)
-        ncid = netcdf.open([topog.dir, topog.files{i}], 'NC_NOWRITE');
-        varid = netcdf.inqVarID(ncid, topog.var{i});
-        topog.(topog.var{i}) = netcdf.getVar(ncid, varid);
-    end
-
-    % Calculate the actual depth for each layer based on the layer pseuco-depth
-    % and the max depth from the location: 
-    topog.Layer_thikness(1) = topog.Layer(1);
-    topog.Layer_thikness(2:end) = topog.Layer(2:end) - topog.Layer(1:(end-1));
-    topog.idx_100m = find(topog.Layer > 100, 1, 'first'); % index of the 100m layer to integrate plankton over 100m
-
-    % save in folder of the location as its the same for every experiment in a location
-    save(['../output/Matlab_Average/', coupling, '/' loc, '/Topology.mat'], 'topog') 
-    disp(['../output/Matlab_Average/', coupling, '/' loc, '/Topology.mat'])
+for i = 1:length(topog.var)
+    ncid = netcdf.open([topog.dir, topog.files{i}], 'NC_NOWRITE');
+    varid = netcdf.inqVarID(ncid, topog.var{i});
+    topog.(topog.var{i}) = netcdf.getVar(ncid, varid);
 end
+
+% Calculate the actual depth for each layer based on the layer pseuco-depth
+% and the max depth from the location: 
+topog.Layer_thikness(1) = topog.Layer(1);
+topog.Layer_thikness(2:end) = topog.Layer(2:end) - topog.Layer(1:(end-1));
+topog.idx_100m = find(topog.Layer > 100, 1, 'first'); % index of the 100m layer to integrate plankton over 100m
+
+% save in folder of the location as its the same for every experiment in a location
+save(['../output/Matlab_Average/', coupling, '/' loc, '/Topology.mat'], 'topog') 
+disp(['../output/Matlab_Average/', coupling, '/' loc, '/Topology.mat'])
 
 %% Get Spinup Time Series data:
 disp('Get Spinup Time Series data')
@@ -138,9 +134,13 @@ for i = 1:(length(var)-2)
 end
 
 %! Save average over lat and long: 
-save([dir_output 'COBALT_IC_fish_' loc '_' coupling '_' exp '.mat'])
+x = 1:(length(var)-2); 
+if ~exist([dir_output 'COBALT_IC' '.mat'])
+    delete([dir_output 'COBALT_IC' '.mat'])
+end 
+save([dir_output 'COBALT_IC' '.mat'], 'x')
 for i = 1:(length(var)-2)
-    save([dir_output 'COBALT_IC_fish_' loc '_' coupling '_' exp '.mat'], ...
+    save([dir_output 'COBALT_IC' '.mat'], ...
         [var{i} '_IC'] ,'-append')
 end
 
@@ -212,9 +212,9 @@ for i = 1:length(var)
     if ismember(i, [1, 4]) % conversions biomass 
         eval([ var{i} ' = ' var{i} '*6.625* 12.01 * 9.0 * 1000.0;' ]);     % Conversion from Mol N/kg --> gC WW / m3
     elseif ismember(i, [2, 3, 5, 6]) % conversion mortality
-        eval([ var{i} ' = ' var{i} '*6.625* 12.01 * 9.0 * 24.0*3600;' ]);  % Conversion from Mol N m-3 s-1 --> gC WW m-3 d-1
-    elseif i == 7 % conversion mortality
-        eval([ var{i} ' = ' var{i} '*6.625* 12.01 * 9.0 * 24.0*3600;' ]);  % Conversion from Mol N m-3 s-1 --> gC WW m-3 d-1
+        eval([ var{i} ' = ' var{i} '*6.625* 12.01 * 9.0 * 24.0*3600;' ]);  % Conversion from Mol N m-2 s-1 --> gC WW m-2 d-1
+    elseif i == 7 % conversion detritus
+        eval([ var{i} ' = ' var{i} '*6.625* 12.01 * 9.0 * 24.0*3600;' ]);  % Conversion from Mol N m-2 s-1 --> gC WW m-2 d-1
     end
 end 
 
@@ -227,8 +227,13 @@ depth = 1:dim(3);
 for i = 1:(length(var))
     eval([var{i} '_offline_spacemean(time, :) = transpose(squeeze(nanmean(' var{i} ', [1,2])));']);
     eval([var{i} '_offline_tmean(time) = squeeze(sum(' var{i} '_offline_spacemean(time, :), 2));']);
-    eval([var{i} '_offline_tmean_100m(time) = squeeze(sum(' var{i},...
+    if ismember(i, [2,5])
+        eval([var{i} '_offline_tmean_100m(time) = squeeze(sum(' var{i},...
+         '_offline_spacemean(time, 1:topog.idx_100m), 2));']);
+    else 
+        eval([var{i} '_offline_tmean_100m(time) = squeeze(sum(' var{i},...
          '_offline_spacemean(time, 1:topog.idx_100m).*topog.Layer_thikness(1:topog.idx_100m), 2));']);
+    end 
     eval([var{i} '_offline_zmean = transpose(squeeze(nanmean(' var{i} '_offline_spacemean(time, :), 1)));']);
 end
 
@@ -244,4 +249,6 @@ for i = 1:length(var)
     save([dir_output 'COBALT_offline_100m_' loc  '_Time_Means_forcing' '.mat'], [var{i} '_offline_tmean_100m']  ,'-append')
     save([dir_output 'COBALT_offline_' loc '_Depth_Means_forcing' '.mat'],      [var{i} '_offline_zmean']       ,'-append')
 end
+
+clear all 
 

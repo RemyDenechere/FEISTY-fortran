@@ -43,3 +43,4 @@ for loc in "${locations[@]}"; do
     matlab -batch "vis_FEISTY_Offline_BATS('$loc')" -nodesktop -nodisplay -nosplash
 done
 
+make clean

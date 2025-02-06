@@ -12,8 +12,8 @@ end
 
 addpath('../../Programing-Tutorials/Matlab/Matlab_functions/') 
 
-dbclear all 
-% dbstop in vis_FEISTY_Offline_BATS.m at 214
+% dbclear all 
+% dbstop in vis_FEISTY_Offline_BATS.m at 206
 
 %% Root directory: 
 param.Rockfish = rockfish; % true; %  
@@ -131,7 +131,7 @@ title("All size")
 %! Functional group: 
 nexttile
 hold on 
-plot(time, F_tmean, time, P_tmean, time, D_tmean)
+plot(time, F_tmean, time, P_tmean, time, D_tmean, time, BE_tmean)
 hold off 
 set(gca, "YScale", "log", 'Ylim', [10^(-5) 10^(2)])
 legend('Forage', 'Pelagics', 'Demersals', 'Benthos')
@@ -143,9 +143,11 @@ title(t, {[loc '_'  coupling '_' exp], ['Time_Means' Spinup{2}]}, ...
 ylabel(t, 'Integrated biomass over water column (g WW m-2)')
 xlabel(t, 'Time (days)')
 
+
 save_graph(gcf, "png", [dir_output 'Time_Means' Spinup{2} ], 22, 12)
 
 %% plot diagnostic Time Seire 
+
 var = {'Sf', 'Sp', 'Sd', 'Mf', 'Mp', 'Md', 'Lp', 'Ld'};
 var_diag = {'f', 'cmax', 'cons', 'met', 'mu_p', 'mu_f', 'mu_a', 'mu',...
             'E_A', 'Fout', 'Repro', 'f_Zm', 'f_Zl', 'f_Sf', 'f_Sp', 'f_Sd',... 
@@ -168,12 +170,13 @@ end
 close all 
 grp(1).name = 'Mortality rates'     ; grp(1).idx = 5:8;                 grp(1).panel_grid = [2, 2];
 grp(2).name = 'Feeding levels'      ; grp(2).idx = 12:22;               grp(2).panel_grid = [3, 4];
-grp(3).name = 'Physiological rates' ; grp(3).idx = [1:4, 9:11];         grp(3).panel_grid = [3, 3];
+grp(3).name = 'Physiological_rates' ; grp(3).idx = [1:4, 9:11];         grp(3).panel_grid = [3, 3];
 grp(1).leg_loc = 'best'             ; grp(2).leg_loc = 'best';          grp(3).leg_loc = 'best'; 
 n=3;
 
 % Functional groups: ------------------------------------------------------
 for i = 1:3
+
     n = n+1;
     figure(n)
     axes_formating(gcf, "defaultAxesColorOrder", cm10)
@@ -192,15 +195,15 @@ for i = 1:3
         hold off 
         title(ti, var_diag{grp(i).idx(j)}, Interpreter='none')
     end
-    L = legend(FuncGrp, 'Location', grp(i).leg_loc);
+    legend(FuncGrp, 'Location', grp(i).leg_loc, Interpreter='none');
     title(t, {[loc '_'  coupling '_' exp], ...
         ['Diagnostic_' grp(i).name '_' dimension_average{1}(2:end) '_Functional_grp']}, ...
         Interpreter='none')
-    save_graph(gcf, "png", [dir_output , 'Diagnostic_' grp(i).name '_' dimension_average{1}(2:end) '_Functional_grp'], 16, 12)
+    save_graph(gcf, "png", [dir_output , 'Diagnostic_' grp(i).name '_' dimension_average{1}(2:end) '_Fct_grp'], 16, 12)
 end
 
 %% Check Initial condition for Online simulations: 
-load([dir_input 'COBALT_IC_fish_' loc '_' coupling '_' exp '.mat'])
+load([dir_input 'COBALT_IC' '.mat'])
 
 % Per functional group: 
 F_IC = Sf_IC + Mf_IC;
@@ -240,7 +243,8 @@ xlabel(t, "Functional groups")
 title(t, {[loc '_'  coupling '_' exp], 'Initial Conditions for COBALT Online'}, ...
     Interpreter = 'none')
 
-save_graph(gcf, "png", [dir_output,  'Initial_Conditions_for_COBALT_Online'], 16, 12)
+
+save_graph(gcf, "png", [dir_output,  'IC_COBALT_Online'], 16, 12)
 
 %% Plot forcing data: 
 
@@ -262,7 +266,7 @@ end_date   = datetime("2004-12-31");
 fig = figure(5);
 axes_formating()
 
-t = tiledlayout(1, 2, "TileSpacing","compact", "Padding","compact");
+t = tiledlayout(1, 1, "TileSpacing","compact", "Padding","compact");
 
 % Panel 1: time average: 
 t1 = nexttile(t); 
@@ -276,41 +280,6 @@ title(t1, 'Time average')
 legend(t1, var{:}, Interpreter = 'none', EdgeColor = 'none', Color = 'none', ...
     Position = [0.179283105674276 0.269803790877946 0.223263506063947 0.271164021164021]);
 
-% Panel 2: depth average
-t2 = nexttile(t); 
-hold(t2, 'all')
-for i = 2:length(var)
-    plot(t2, eval([var{i} '_offline_zmean']), -topog.Layer,  '-')
-end 
-hold(t2, 'off')
-t2.XLabel.String = 'gC WW m-3';
-t2.XLim = [-0.00404600305473225, 0.245953996945268];
-t2.YLim = [-75.9854668425813, 4.01453315741872];
-title(t2, 'Depth average')
-
-% add axis:
-t3 = copyobj(t2, t);
-plot(t3, eval([var{1} '_offline_zmean']), -topog.Layer,  '-', 'Color',  [1.00,0.41,0.16])
-
-% Change axis properties: 
-t3.XAxisLocation = 'bottom';
-t3.XAxis.Color = [1.00,0.41,0.16];
-t3.Color = 'none';
-%t3.XLabel.Position(3) = t2.XLabel.Position(3); 
-%t3.XLabel.Position(2) = t3.XLabel.Position(2)+5;
-t3.XRuler.TickLabelGapOffset = 35;
-t3.XLabel.String = 'Temperature'; 
-t3.XAxis.TickLabelColor = [1.00,0.41,0.16];
-t3.XLim = [-3.23244336814286 21.7675566318571];
-t3.YLim = [-75.9997853215371 4.00021467846288];
-
-legend(t2, var{2:end}, Interpreter = 'none', Color = 'none', EdgeColor = 'none', ...
-    Position = [0.703623414303576,0.455079749385228,0.223263506063947,0.189705882352941]);  
-legend(t3, var{1}, Interpreter = 'none', Color = 'none', EdgeColor = 'none', ...
-    Position = [0.703623414303576,0.342804281561458,0.142778390297685,0.044117647058824]);
-
-
-% Labels
 ylabel(t, 'Unit to check!')
 xlabel(t, 'Time (days)')
 title(t, {[loc '_'  coupling '_' exp], 'forcing_files'}, Interpreter = 'none')

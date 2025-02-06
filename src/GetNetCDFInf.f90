@@ -343,12 +343,12 @@ module GetNetCDFinf
         
         FEISTY%Tp = sum(DataTemp(FEISTY%idx_100m))/size(FEISTY%idx_100m)
         FEISTY%Tb = DataTemp(FEISTY%Nlayer)
-        FEISTY%mesozoo(1)%dz = sum(Datadzm(FEISTY%idx_100m) * FEISTY%layer_thickness(FEISTY%idx_100m)) * convers_dZm 
         FEISTY%mesozoo(1)%B  = sum(DataZM(FEISTY%idx_100m)  * FEISTY%layer_thickness(FEISTY%idx_100m)) * convers_zm
         FEISTY%mesozoo(2)%B  = sum(DataZL(FEISTY%idx_100m)  * FEISTY%layer_thickness(FEISTY%idx_100m)) * convers_zm
-        FEISTY%mesozoo(2)%dz = sum(Datadzl(FEISTY%idx_100m) * FEISTY%layer_thickness(FEISTY%idx_100m)) * convers_dZm
+        FEISTY%mesozoo(1)%dz = sum(Datadzm(FEISTY%idx_100m)) * convers_dZm ! do not multiply by layer thickness as the output values is a "layer integral" 
+        FEISTY%mesozoo(2)%dz = sum(Datadzl(FEISTY%idx_100m)) * convers_dZm
         FEISTY%det  = Datadet(FEISTY%Nlayer) * convers_det        
-
+        
         ! print *,  "FEISTY%Tp:", FEISTY%Tp
         ! print *,  "FEISTY%Tb:", FEISTY%Tb
         ! print *,  "FEISTY%mesozoo(1)%dz:", FEISTY%mesozoo(1)%dz

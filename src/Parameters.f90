@@ -13,7 +13,7 @@ module Parameters
                                                     31, 31, 30, 31, 30, 31 /) ! Length of month (days)
 
     ! Environemental data for test: -----------------------------------
-    logical, parameter  :: diagnostic           = .true.   ! True to run diagonostic mode 
+    logical, parameter  :: diagnostic           = .false.   ! True to run diagonostic mode 
     logical, parameter  :: save_diagnostics     = .true.
     logical, parameter  :: prod_constrained     = .true.
     logical, parameter  :: Spinup_Time_Serie    = .true.
@@ -30,7 +30,6 @@ module Parameters
     real(dp), parameter :: Delta_t          = 1.0             ! Time step [d]
     real(dp), parameter :: IC               = 1d-5            ! Fish Initial Condition
     real(dp), parameter :: PI_be_cutoff     = 200.00          ! Benthic-pelagic coupling cutoff (depth, m)
-    real(dp), parameter :: conv_m2_to_m3    = 100.00          ! Conversion from per area simulation to per depth simulation 
 
     ! Experimentation parameters: ------------------------------------------
     character(LEN=280), parameter :: loc = "NS"
@@ -51,11 +50,11 @@ module Parameters
         dir_dzl = trim(root_dir_output)  //  "20040101.ocean_feisty_forcing.nc", &
         dir_det = trim(root_dir_output)  //  "20040101.ocean_feisty_forcing_detritus.nc", &
         var_Temp =  "thetao" , &
-        var_zm =  "nmdz" , &
-        var_dzm =  "jhploss_n_Mdz", &
-        var_zl =  "nlgz" , &
-        var_dzl =  "jhploss_n_Lgz",& 
-        var_det = "Pop_btm",&
+        var_zm =  "nmdz" , &          ! mol/kg
+        var_dzm =  "jhploss_n_Mdz", & ! mol N m-2 s-1
+        var_zl =  "nlgz" , &          ! mol/kg
+        var_dzl =  "jhploss_n_Lgz",&  ! mol N m-2 s-1
+        var_det = "Pop_btm",&         ! mol m-2 s-1
         ! Information about the location: ---------------------------------
         dir_zt  = trim(root_dir_output) // "20040101.ocean_feisty_forcing_detritus.nc", &
         dir_lat  = trim(root_dir_loc) //'ocean_hgrid.nc',&
@@ -147,7 +146,7 @@ module Parameters
     ! Parameters physiology: ------------------------------------------
     real(dp), parameter :: ke = 0.0630             ! [°c-1]                Temperature correction for cmax and encounter
     real(dp), parameter :: kmet = 0.08550          ! [°c-1]                Temperature correction for Metabolic cost cost
-    real(dp), parameter :: gamma = 70.0 * conv_m2_to_m3 ! []                    Coeff for mass-specific Encounter rate             
+    real(dp), parameter :: gamma = 70.0            ! []                    Coeff for mass-specific Encounter rate             
     real(dp), parameter :: b_enc = 0.20            ! [m-2 g^(b_enc−1) d−1] Exponent for mass-specific Encounter rate 
     real(dp), parameter :: h = 20.0                ! [d g^(b_cmax)]        Coeff for Cmax 
     real(dp), parameter :: b_cmax = 0.250          ! []                    Exponent for Cmax 
@@ -189,20 +188,19 @@ module Parameters
     real(dp), parameter :: pref_Mp_Lz = 1.0             ! Preference for Large Mesozooplankton
     real(dp), parameter :: pref_Mp_S = 1.0              ! Preference for small fish
     ! Medium Demersal  
-    real(dp), parameter :: pref_Md_BE = 1.0/conv_m2_to_m3! Preference for Benthos
+    real(dp), parameter :: pref_Md_BE = 1.0             ! Preference for Benthos
     ! Large Pelagic
     real(dp), parameter :: pref_Lp_Mf = 1.0 * A         ! Preference for Medium forage
     real(dp), parameter :: pref_Lp_Mp = 1.0 
     ! Large Demersal
     real(dp), parameter :: pref_Ld_Mf = D * A           ! Preference for Medium forage
     real(dp), parameter :: pref_Ld_Mp = D               ! Preference for Medium pelagics
-    real(dp), parameter :: pref_Ld_Md =  1.0/conv_m2_to_m3! Preference for Medium Demersal
-    real(dp), parameter :: pref_Ld_BE = 1.0/conv_m2_to_m3 ! Preference for Benthos; divide conv_m2_to_m3 to unballance increase gamma 
-                                                          ! as predation on demersal does not change unit.
-
+    real(dp), parameter :: pref_Ld_Md =  1.0            ! Preference for Medium Demersal
+    real(dp), parameter :: pref_Ld_BE = 1.0             ! Preference for Benthos; 
+    
     ! Unit conversion for input data: ---------------------------------------------- 
-    real(dp), parameter :: convers_zm  = 6.625* 12.01 * 9.0 * 1000.0, &            ! zooplankton biomass Mol N/kg --> gC WW m-3
-                           convers_det = 6.625*12.01*9.0*24.0*60.0*60.0, &         ! detritus from molN m-2 s-1 --> gC WW m-2 d-1 
-                           convers_dZm = 6.625*12.01*9.0*24.0*3600.0               ! zooplankton loss Mol N/kg s-1 --> gC WW m-3 d-1
+    real(dp), parameter :: convers_zm  = 6.625 * 12.01 * 9.0 * 1000.0, &            ! zooplankton biomass Mol N/kg --> gC WW m-3
+                           convers_det = 6.625 * 12.01 * 9.0 * 24.0 * 3600.0, &     ! detritus from molN m-2 s-1 --> gC WW m-2 d-1 
+                           convers_dZm = 6.625 * 12.01 * 9.0 * 24.0 * 3600.0        ! zooplankton loss Mol N/kg s-1 --> gC WW m-3 d-1
 
 end module Parameters
