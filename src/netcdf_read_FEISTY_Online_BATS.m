@@ -3,13 +3,13 @@ function [] =  netcdf_read_FEISTY_Online_BATS(name, loc, yr, exp)
 % TO DO: 
 % use get 
 arguments 
-    name      char    = 'BATS_nonFmort_0_encounter_70.000_k_1_k50_1_yr_'      % Default experiment
-    loc       char    = 'BATS'
+    name      char    = 'BATS_nonFmort_0.1_encounter_70_k_1_k50_1_yr_'      % Default experiment
+    loc       char {mustBeMember(loc, {'BATS', 'CCE', 'GOM', 'NS'})} = 'BATS'
     yr        char    = '1'      
-    exp       char    = 'FEISTY--non-vertical_1'
+    exp       char    = 'FEISTY--non-vertical-flux_per_mass'
 end 
 dbclear all 
-% dbstop in netcdf_read_FEISTY_Online_BATS at 211
+dbstop in netcdf_read_FEISTY_Online_BATS at 68
 
 %! set up variable names
 coupling = 'online';
@@ -70,7 +70,7 @@ for yr_i = 1:yr
             varid = netcdf.inqVarID(ncid, [var{i} '_B']);
             eval([ var{i} '_B = netcdf.getVar(ncid, varid);']);
             eval([ var{i} '_B(' var{i} '_B < 0) = 0;']);
-            eval([ var{i} '_B =' var{i} '_B(:,:,75,1:366) ;']);
+            eval([ var{i} '_B =' var{i} '_B(:,:,1,1:366) ;']);
     end
     netcdf.close(ncid);
     dim = size(eval([var{1} '_B']));
@@ -171,6 +171,7 @@ end
 disp("Get Zooplankton outputs from COBALT-FEISTY online  & process them for visualisation")
 
 var = {'nmdz', 'jhploss_n_Mdz', 'jprod_nmdz', 'nlgz', 'jhploss_n_Lgz', 'jprod_nlgz', 'Pop_btm'};
+% consider taking nmdz_100 instead of nmdz
 for yr_i = 1:yr
     %! get directory containing output   
     name_yr = [name num2str(yr_i)]; 
@@ -204,8 +205,8 @@ for yr_i = 1:yr
     
         if ismember(i, [1, 4]) % conversions biomass 
             eval([ var{i} ' = ' var{i} '*6.625* 12.01 * 9.0 * 1000.0;' ]);     % Conversion from Mol N/kg --> gC WW m-3
-        elseif ismember(i, [2, 3, 5, 6]) % conversion mortality
-            eval([ var{i} ' = ' var{i} '*6.625* 12.01 * 9.0 * 24.0*3600;' ]);  % Conversion from Mol mol N m-3 s-1 --> gC WW m-3 d-1
+        elseif ismember(i, [2, 3, 5, 6, 7]) % conversion mortality
+            eval([ var{i} ' = ' var{i} '*6.625* 12.01 * 9.0 * 24.0*3600;' ]);  % Conversion from Mol mol N m-2 s-1 (Layer integrated) --> gC WW m-3 d-1
         end
     end 
     
@@ -215,13 +216,20 @@ for yr_i = 1:yr
     depth = 1:dim(3);
     timerange = ((yr_i - 1) * dim(4) + 1):(yr_i * dim(4)); 
     
-    %! Calculate average over lat and long: 
-    for i = 1:(length(var)-1)
+    %! Calculate average over lat and long for zooplanton biomass (integrate over 100m depth): 
+    for i = [1, 4] 
         eval([var{i} '_spacemean(timerange, :) = transpose(squeeze(nanmean(' var{i} ', [1,2])));']);
         eval([var{i} '_tmean(timerange) = squeeze(sum(' var{i} '_spacemean(timerange, :) .* topog.Layer_thikness, 2));']); % integrated biomass over depth
         eval([var{i} '_tmean_100m(timerange) = squeeze(sum(' var{i} '_spacemean(timerange, 1:topog.idx_100m) .* topog.Layer_thikness(1:topog.idx_100m), 2));']); % integrated biomass over 100m
         eval([var{i} '_zmean(yr_i, :) = transpose(squeeze(nanmean(' var{i} '_spacemean(timerange, :), 1)));']); % concentration at every depth
     end
+    % Calculate average over lat and long for zooplanton mortality and production: these comes as layer integrated no need to multiply by layer thickness: 
+    for i = [2, 3, 5, 6] 
+        eval([var{i} '_spacemean(timerange, :) = transpose(squeeze(nanmean(' var{i} ', [1,2])));']);
+        eval([var{i} '_tmean(timerange) = squeeze(sum(' var{i} '_spacemean(timerange, :), 2));']); % integrated biomass over depth
+        eval([var{i} '_tmean_100m(timerange) = squeeze(sum(' var{i} '_spacemean(timerange, 1:topog.idx_100m), 2));']); % integrated biomass over 100m
+        eval([var{i} '_zmean(yr_i, :) = transpose(squeeze(nanmean(' var{i} '_spacemean(timerange, :), 1)));']); % concentration at every depth
+    end 
     for i = length(var) % pop_flux does not have vertical dimension
         eval([var{i} '_tmean(timerange) = nanmean(' var{i} ', [1,2]);']);
     end 

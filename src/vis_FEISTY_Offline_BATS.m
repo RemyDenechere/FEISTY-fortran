@@ -4,7 +4,7 @@
 
 function [] = vis_FEISTY_Offline_BATS(loc, exp, rockfish, loc_test)
 arguments
-    loc       char {mustBeMember(loc, {'BATS', 'CCE', 'GOF', 'NS'})} = 'BATS'
+    loc       char {mustBeMember(loc, {'BATS', 'CCE', 'GOM', 'NS'})} = 'BATS'
     exp       char                                      = '2D'
     rockfish  logical                                   = true
     loc_test  logical                                   = false
@@ -52,6 +52,10 @@ cm10=[0.5 0.5 0;... %tan/army
 
 % set(groot,'defaultAxesColorOrder', cm10);
 
+%! thickness of the lines:
+thickness.grp = [1.25, 1.25, 2.5, 1.25];
+thickness.size = [1.25 1.25 2.5 2.5 2.5 2.5 2.5 2.5 1.25];
+
 %% plot Spinup 
 % Load Data: -------------------------------------------------------------- 
 %! Spinup time series: 
@@ -72,9 +76,11 @@ xtime = length(time);
 nexttile
 hold on 
 for i = 1:(length(var)-2)
-    plot(time(1:xtime), eval([var{i} '_tmean(1:xtime)']), '-')
-end 
-hold off 
+   h(i) = plot(time(1:xtime), eval([var{i} '_tmean(1:xtime)']), '-', ...
+        'LineWidth', thickness.size(i));
+end  
+hold off
+%set(h, {'LineWidth'}, {thickness.size(1:(end-2))'})
 legend(var{1:(end-2)}, 'Location', 'best')
 set(gca, "YScale", "log", "XLim", [0, xtime*1.2], "Ylim", [10^(-7) 10^(2)])
 title("All size")
@@ -82,13 +88,19 @@ title("All size")
 % Plot all functional groups:
 nexttile
 hold on 
-plot(time(1:xtime), F_tmean(1:xtime), ...
+h = plot(time(1:xtime), F_tmean(1:xtime), ...
      time(1:xtime), P_tmean(1:xtime), ...
      time(1:xtime), D_tmean(1:xtime), ...
-     time(1:xtime), BE_tmean(1:xtime))
+     time(1:xtime), BE_tmean(1:xtime));
 hold off 
 legend('Forage', 'Pelagics', 'Demersals', 'Benthos', 'Location', 'east')
-set(gca, "YScale", "log", "XLim", [0, xtime*1.2], "Ylim", [10^(-3) 10^(2)])
+set(gca, "YScale", "log", ...
+    "XLim", [0, xtime*1.2], ...
+    "Ylim", [10^(-3) 10^(2)])
+for i = 1:4
+    h(i).LineWidth = thickness.grp(i);
+end 
+
 title("Functional group")
 set(gca, "YScale", "log")
 
@@ -121,20 +133,24 @@ t = tiledlayout(1, 2, "TileSpacing", "compact", "Padding","compact");
 nexttile
 hold on 
 for i = 1:(length(var)-3)
-    plot(time, eval([var{i} '_tmean']), '-')
+    plot(time, eval([var{i} '_tmean']), '-', ...
+        'LineWidth', thickness.size(i))
 end 
 hold off 
-legend(var{1:(end-3)})
+legend(var{1:(end-3)}, 'best')
 set(gca, "YScale", "log", 'Ylim', [10^(-5) 5])
 title("All size")
 
 %! Functional group: 
 nexttile
 hold on 
-plot(time, F_tmean, time, P_tmean, time, D_tmean, time, BE_tmean)
+h = plot(time, F_tmean, time, P_tmean, time, D_tmean, time, BE_tmean);
 hold off 
+for i = 1:4
+    set(h(i), 'LineWidth', thickness.grp(i))
+end
 set(gca, "YScale", "log", 'Ylim', [10^(-5) 10^(2)])
-legend('Forage', 'Pelagics', 'Demersals', 'Benthos')
+legend('Forage', 'Pelagics', 'Demersals', 'Benthos', 'best')
 title("Functional group")
 
 % Fig axes labels :
@@ -147,7 +163,6 @@ xlabel(t, 'Time (days)')
 save_graph(gcf, "png", [dir_output 'Time_Means' Spinup{2} ], 22, 12)
 
 %% plot diagnostic Time Seire 
-
 var = {'Sf', 'Sp', 'Sd', 'Mf', 'Mp', 'Md', 'Lp', 'Ld'};
 var_diag = {'f', 'cmax', 'cons', 'met', 'mu_p', 'mu_f', 'mu_a', 'mu',...
             'E_A', 'Fout', 'Repro', 'f_Zm', 'f_Zl', 'f_Sf', 'f_Sp', 'f_Sd',... 
@@ -190,7 +205,8 @@ for i = 1:3
         hold on
         % Loop over all fish for each diagnostic: 
         for v = 1:length(FuncGrp) 
-            plot(ti, eval(dimensions{1}), eval([FuncGrp{v} var_diag{grp(i).idx(j)} dimension_average{1}]))
+            plot(ti, eval(dimensions{1}), eval([FuncGrp{v} var_diag{grp(i).idx(j)} dimension_average{1}]), ...
+                'LineWidth', thickness.grp(v))
         end 
         hold off 
         title(ti, var_diag{grp(i).idx(j)}, Interpreter='none')
@@ -203,6 +219,7 @@ for i = 1:3
 end
 
 %% Check Initial condition for Online simulations: 
+
 load([dir_input 'COBALT_IC' '.mat'])
 
 % Per functional group: 
@@ -280,9 +297,9 @@ title(t1, 'Time average')
 legend(t1, var{:}, Interpreter = 'none', EdgeColor = 'none', Color = 'none', ...
     Position = [0.179283105674276 0.269803790877946 0.223263506063947 0.271164021164021]);
 
-ylabel(t, 'Unit to check!')
+ylabel(t, 'Forcing data int (d-1 for prod)')
 xlabel(t, 'Time (days)')
-title(t, {[loc '_'  coupling '_' exp], 'forcing_files'}, Interpreter = 'none')
+title(t, {[loc '_'  coupling '_' exp], 'forcing files Integrated over water column'}, Interpreter = 'none')
 
 save_graph(gcf, "png", [dir_output 'forcing_files' Spinup{2}], 16, 12)
 
@@ -298,7 +315,7 @@ for i = 1:length(var)
 end 
 hold off
 % set(gca, 'YScale', 'log', 'Ylim', [1.74969307072006e-05 1749.69307072006]);
-title('Growth and biomass Mesozooplankton integrated over water column')
+title({'Growth and biomass of Mesozooplankton', 'integrated over water column'})
 legend(var{:}, Interpreter = 'none', EdgeColor = 'none', Color = 'none');
 xlabel("Day of year")
 ylabel("gC WW m-2 (d-1 for prod)")
@@ -317,11 +334,9 @@ for i = 1:length(var)
 end 
 hold off
 % set(gca, 'YScale', 'log', 'Ylim', [1.74969307072006e-05 1749.69307072006]);
-title('Growth and biomass Mesozooplankton integrated over 100m')
+title({'Growth and biomass of Mesozooplankton', 'integrated over 100m'})
 legend(var{:}, Interpreter = 'none', EdgeColor = 'none', Color = 'none');
 xlabel("Day of year")
 ylabel("gC WW m-2 (d-1 for prod)")
 
-save_graph(gcf, "png", [dir_output 'Growth_and_biomass_Zoop_int' Spinup{2}], 12, 12)
-
-
+save_graph(gcf, "png", [dir_output 'Growth_and_biomass_Zoop_int100m' Spinup{2}], 12, 12)

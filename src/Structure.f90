@@ -111,6 +111,7 @@ module Structure
 
         real(dp), dimension(75) :: zt                   ! Depth of each layer
         real(dp), dimension(75) :: layer_thickness      ! Thickness of each layer
+        real(dp), dimension(75) :: layer_mid            ! Mid depth of each layer
         real(dp), dimension(9, 9) :: lat                ! Latitude
         real(dp), dimension(9, 9) :: lon                ! Longitude
         real(dp), dimension(4, 4) :: max_depth          ! Sea floor depth
@@ -454,25 +455,25 @@ module Structure
             print *, 'Enc_Sd: ', FEISTY%fish(i)%f_Sd / ((1-FEISTY%fish(i)%f_Sd) * FEISTY%fish(i)%cmax)         ! --
             print *, 'Enc_Mf: ', FEISTY%fish(i)%f_Mf / ((1-FEISTY%fish(i)%f_Mf) * FEISTY%fish(i)%cmax)         ! --
             print *, 'Enc_Mp: ', FEISTY%fish(i)%f_Mp / ((1-FEISTY%fish(i)%f_Mp) * FEISTY%fish(i)%cmax)         ! --
-            print *, 'Enc_Md: ', FEISTY%fish(i)%f_Md / ((1-FEISTY%fish(i)%f_Md) * FEISTY%fish(i)%cmax)       ! --
-            print *, 'Enc_Lp: ', FEISTY%fish(i)%f_Lp / ((1-FEISTY%fish(i)%f_Lp) * FEISTY%fish(i)%cmax)        ! --
+            print *, 'Enc_Md: ', FEISTY%fish(i)%f_Md / ((1-FEISTY%fish(i)%f_Md) * FEISTY%fish(i)%cmax)         ! --
+            print *, 'Enc_Lp: ', FEISTY%fish(i)%f_Lp / ((1-FEISTY%fish(i)%f_Lp) * FEISTY%fish(i)%cmax)         ! --
             print *, 'Enc_Ld: ', FEISTY%fish(i)%f_Ld / ((1-FEISTY%fish(i)%f_Ld) * FEISTY%fish(i)%cmax)         ! --
             print *, 'Enc_BE: ', FEISTY%fish(i)%f_BE / ((1-FEISTY%fish(i)%f_BE) * FEISTY%fish(i)%cmax) 
 
 
             print *,   "----------------------------------- "
             print *, "Consumption for each prey : "
-            print *, 'cons_Zm: ', FEISTY%fish(i)%cons_Zm         
+            print *, 'cons_Zm: ', FEISTY%fish(i)%cons_Zm         !
             print *, 'cons_Zl: ', FEISTY%fish(i)%cons_Zl         ! --         
             print *, 'cons_Sf: ', FEISTY%fish(i)%cons_Sf         ! --
             print *, 'cons_Sp: ', FEISTY%fish(i)%cons_Sp         ! --
             print *, 'cons_Sd: ', FEISTY%fish(i)%cons_Sd         ! --
             print *, 'cons_Mf: ', FEISTY%fish(i)%cons_Mf         ! --
             print *, 'cons_Mp: ', FEISTY%fish(i)%cons_Mp         ! --
-            print *, 'cons_Md: ', FEISTY%fish(i)%cons_Md        ! --
-            print *, 'cons_Lp: ', FEISTY%fish(i)%cons_Lp        ! --
+            print *, 'cons_Md: ', FEISTY%fish(i)%cons_Md         ! --
+            print *, 'cons_Lp: ', FEISTY%fish(i)%cons_Lp         ! --
             print *, 'cons_Ld: ', FEISTY%fish(i)%cons_Ld         ! --
-            print *, 'cons_BE: ', FEISTY%fish(i)%cons_BE  
+            print *, 'cons_BE: ', FEISTY%fish(i)%cons_BE         ! --
 
             print *,  " "
         end Do 

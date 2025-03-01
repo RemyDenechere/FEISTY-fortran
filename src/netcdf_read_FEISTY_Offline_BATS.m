@@ -2,7 +2,7 @@
 function [] = netcdf_read_FEISTY_Offline_BATS(loc, exp, Rockfish)
 
 arguments 
-    loc                   char    = 'BATS'
+    loc                   char {mustBeMember(loc, {'BATS', 'CCE', 'GOM', 'NS'})} = 'BATS'
     exp                   char    = '2D'
     Rockfish              logical = true
 end 
@@ -201,20 +201,22 @@ dir = {[dir_input_offline_forcing '20040101.ocean_feisty_forcing.nc'], ...
         [dir_input_offline_forcing '20040101.ocean_feisty_forcing_detritus.nc']};
 
 % Getting data from netcdf
-for i = 1:length(var) 
+for i = 1:length(var)
     ncid = netcdf.open(dir{i},'NC_NOWRITE');
     varid = netcdf.inqVarID(ncid, var{i});
     eval([ var{i} ' = netcdf.getVar(ncid, varid);']);
     eval([ var{i} '(' var{i} ' == 99999) = NaN;']);
-    eval([ var{i} '=' var{i} '(:,:,:,1:366);']);
+    if i == 7
+        eval([ var{i} ' = ' var{i} '(:,:,1:366);']);
+    else
+        eval([ var{i} ' = ' var{i} '(:,:,:,1:366);']);
+    end
     netcdf.close(ncid);
 
     if ismember(i, [1, 4]) % conversions biomass 
-        eval([ var{i} ' = ' var{i} '*6.625* 12.01 * 9.0 * 1000.0;' ]);     % Conversion from Mol N/kg --> gC WW / m3
-    elseif ismember(i, [2, 3, 5, 6]) % conversion mortality
-        eval([ var{i} ' = ' var{i} '*6.625* 12.01 * 9.0 * 24.0*3600;' ]);  % Conversion from Mol N m-2 s-1 --> gC WW m-2 d-1
-    elseif i == 7 % conversion detritus
-        eval([ var{i} ' = ' var{i} '*6.625* 12.01 * 9.0 * 24.0*3600;' ]);  % Conversion from Mol N m-2 s-1 --> gC WW m-2 d-1
+        eval([ var{i} ' = ' var{i} '*6.625* 12.01 * 9.0 * 1000.0;' ]);     % Conversion from Mol N/kg --> gC WW m-3
+    elseif ismember(i, [2, 3, 5, 6, 7]) % conversion mortality
+        eval([ var{i} ' = ' var{i} '*6.625* 12.01 * 9.0 * 24.0*3600;' ]);  % Conversion from Mol mol N m-2 s-1 (Layer integrated) --> gC WW m-3 d-1
     end
 end 
 
@@ -222,20 +224,24 @@ end
 dim = size(eval([var{1}]));
 time = 1:dim(4);
 depth = 1:dim(3);
-
-%! Calculate average over lat and long: 
-for i = 1:(length(var))
+   
+%! Calculate average over lat and long for zooplanton biomass (integrate over 100m depth): 
+for i = [1, 4] 
     eval([var{i} '_offline_spacemean(time, :) = transpose(squeeze(nanmean(' var{i} ', [1,2])));']);
-    eval([var{i} '_offline_tmean(time) = squeeze(sum(' var{i} '_offline_spacemean(time, :), 2));']);
-    if ismember(i, [2,5])
-        eval([var{i} '_offline_tmean_100m(time) = squeeze(sum(' var{i},...
-         '_offline_spacemean(time, 1:topog.idx_100m), 2));']);
-    else 
-        eval([var{i} '_offline_tmean_100m(time) = squeeze(sum(' var{i},...
-         '_offline_spacemean(time, 1:topog.idx_100m).*topog.Layer_thikness(1:topog.idx_100m), 2));']);
-    end 
-    eval([var{i} '_offline_zmean = transpose(squeeze(nanmean(' var{i} '_offline_spacemean(time, :), 1)));']);
+    eval([var{i} '_offline_tmean(time) = squeeze(sum(' var{i} '_offline_spacemean(time, :) .* topog.Layer_thikness, 2));']); % integrated biomass over depth
+    eval([var{i} '_offline_tmean_100m(time) = squeeze(sum(' var{i} '_offline_spacemean(time, 1:topog.idx_100m) .* topog.Layer_thikness(1:topog.idx_100m), 2));']); % integrated biomass over 100m
+    eval([var{i} '_offline_zmean = transpose(squeeze(nanmean(' var{i} '_offline_spacemean(time, :), 1)));']); % concentration at every depth
 end
+% Calculate average over lat and long for zooplanton mortality and production: these comes as layer integrated no need to multiply by layer thickness: 
+for i = [2, 3, 5, 6] 
+    eval([var{i} '_offline_spacemean(time, :) = transpose(squeeze(nanmean(' var{i} ', [1,2])));']);
+    eval([var{i} '_offline_tmean(time) = squeeze(sum(' var{i} '_offline_spacemean(time, :), 2));']); % integrated biomass over depth
+    eval([var{i} '_offline_tmean_100m(time) = squeeze(sum(' var{i} '_offline_spacemean(time, 1:topog.idx_100m), 2));']); % integrated biomass over 100m
+    eval([var{i} '_offline_zmean = transpose(squeeze(nanmean(' var{i} '_offline_spacemean(time, :), 1)));']); % concentration at every depth
+end 
+for i = length(var) % pop_flux does not have vertical dimension
+    eval([var{i} '_offline_tmean(time) = nanmean(' var{i} ', [1,2]);']);
+end  
 
 %! Save data: -------------------------------------------------------------
 %!! average over lat and long: 
@@ -243,12 +249,13 @@ save([dir_output 'COBALT_offline_' loc '_Time_Depth_Means_forcing' '.mat'], 'tim
 save([dir_output 'COBALT_offline_' loc  '_Time_Means_forcing' '.mat'], 'time')
 save([dir_output 'COBALT_offline_100m_' loc  '_Time_Means_forcing' '.mat'], 'time')
 save([dir_output 'COBALT_offline_' loc '_Depth_Means_forcing' '.mat'], 'time', 'depth')
-for i = 1:length(var)
+for i = 1:(length(var)-1)
     save([dir_output 'COBALT_offline_' loc '_Time_Depth_Means_forcing' '.mat'], [var{i} '_offline_spacemean']   ,'-append')
     save([dir_output 'COBALT_offline_' loc  '_Time_Means_forcing' '.mat'],      [var{i} '_offline_tmean']       ,'-append')
     save([dir_output 'COBALT_offline_100m_' loc  '_Time_Means_forcing' '.mat'], [var{i} '_offline_tmean_100m']  ,'-append')
     save([dir_output 'COBALT_offline_' loc '_Depth_Means_forcing' '.mat'],      [var{i} '_offline_zmean']       ,'-append')
 end
+save([dir_output 'COBALT_offline_' loc  '_Time_Means_forcing' '.mat'], [var{end} '_offline_tmean'], '-append')
 
 clear all 
 

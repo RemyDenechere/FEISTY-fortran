@@ -16,6 +16,7 @@ module Physiology
         real(dp) :: Cons_Zm, Cons_Zl, frac_Sf, frac_Sp, frac_Sd, frac_Mf, frac_Mp, pred_pel
         real(dp) :: r       ! benthic growth rate ((g/m2/d) / (g/m2))
         real(dp) :: pred    ! predation from demersals (g/m2/d)
+        real(dp) :: dBEdt   
         integer :: i
 
         !:======================================================================
@@ -32,16 +33,18 @@ module Physiology
             FEISTY%fish(7)%B = IC
             FEISTY%fish(8)%B = IC
 
-            FEISTY%benthos(1)%B = 4.2661
+            FEISTY%benthos(1)%B = IC
 
             ! give environemental parameters
-            FEISTY%Tp = -1.3788_dp
-            FEISTY%Tb = -1.6827
-            FEISTY%det = 0.18827
-            FEISTY%mesozoo(Mz)%B = 7.5796     ! Fraction of zooplankton mortality loss consumed
-            FEISTY%mesozoo(Lz)%B = 7.5796     ! Fraction of zooplankton mortality loss consumed  
+            FEISTY%Tp = 20.588572332253598
+            FEISTY%Tb = 1.9175080004584881
+            FEISTY%det = 0.15336633646563830
+            FEISTY%mesozoo(Mz)%B = 1.9091294828025678     ! Fraction of zooplankton mortality loss consumed
+            FEISTY%mesozoo(Lz)%B = 1.1454778615375121     ! Fraction of zooplankton mortality loss consumed  
             FEISTY%mesozoo(Mz)%dz = 0.010774    ! Biomass of medium zooplankton consumed by top predators 
             FEISTY%mesozoo(Lz)%dz = 0.003689    ! Biomass of Large zooplankton consumed by top predators 
+
+            FEISTY%max_depth=4000.0
 
         endif 
 
@@ -450,7 +453,8 @@ module Physiology
         do i = 1, nBenthos
             pred = FEISTY%fish(Md)%cons_BE * FEISTY%fish(Md)%B + FEISTY%fish(Ld)%cons_BE * FEISTY%fish(Ld)%B
             r = Bent_eff * FEISTY%det / FEISTY%benthos(i)%B 
-            FEISTY%benthos(i)%B = FEISTY%benthos(i)%B + r * FEISTY%benthos(i)%B * (1 - FEISTY%benthos(i)%B/CC) - pred
+            dBEdt = r * FEISTY%benthos(i)%B * (1 - FEISTY%benthos(i)%B/CC) - pred
+            FEISTY%benthos(i)%B = FEISTY%benthos(i)%B + Delta_t * r * FEISTY%benthos(i)%B * (1 - FEISTY%benthos(i)%B/CC) - pred
         enddo
 
         ! New biomass : ------------------------------------------
@@ -473,7 +477,8 @@ module Physiology
             print*, 'detritus flux to floor: ', FEISTY%det
             print*, 'Benthic growth rate   : ', r 
             print*, 'pred on Benthic       : ', pred
-             CALL Print_FEISTY_diagnostic(FEISTY)
+            print*, 'dBEdt                 : ', dBEdt
+            CALL Print_FEISTY_diagnostic(FEISTY)
         end if 
 
     end subroutine Calc_FEISTY_Deriv

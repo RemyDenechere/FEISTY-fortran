@@ -71,8 +71,8 @@ module GetNetCDFinf
         ! FEISTY%lath   = real(Nlath)
         ! FEISTY%longh  = real(Nlongh) 
         FEISTY%zt  = Datazt  ! pseudo layer depth 
-        FEISTY%lat = Datalat(1,1) ! latitude 
-        FEISTY%lon = Datalon(1,1) ! longitude
+        FEISTY%lat = Datalat ! latitude 
+        FEISTY%lon = Datalon ! longitude
         FEISTY%max_depth = Datamax_depth(1,1) ! max depth
 
         ! Calculate the thickness of each layer 
@@ -613,10 +613,16 @@ module GetNetCDFinf
         ! Layer pseudo-depth: 
         layer_dim_val = zt
         ! lat and long 
-        lath_temp_val = lat(1, 1) + (lat(1, 1:8) - lat(1, 2:9))/2
-        lonh_temp_val = lon(1, 1) + (lon(1, 1:8) - lon(1, 2:9))/2 
-        lath_dim_val  = lath_temp_val([1, 3, 5, 7])
-        longh_dim_val = lonh_temp_val([1, 3, 5, 7])
+        ! lath_temp_val = lat(1, 1) + (lat(1:8, 1) - lat(2:9, 1))/2
+        ! lonh_temp_val = lon(1, 1) + (lon(1, 1:8) - lon(1, 2:9))/2 
+        lath_dim_val  = lat(1, [2, 4, 6, 8])
+        longh_dim_val = lon([2,4,6,8], 1)
+        ! print*, "dim lat", size(lat, 1), size(lat, 2)
+        ! print*, "dim lon", size(lon, 1), size(lon, 2)
+        ! print *, "lat", lat(1, [1,2])
+        ! print *, "lon", lat(1, 1), lat(1, 2)
+        ! print *, 'lath_dim_val', lath_dim_val
+        ! print *,  'longh_dim_val', longh_dim_val
 
         status = nf90_put_var(ncid, varid_Time, 1)
         status = nf90_put_var(ncid, varid_layer, layer_dim_val)
@@ -649,8 +655,9 @@ module GetNetCDFinf
         integer, intent(in) :: ncid, Ntime, Nlayer, Nlath, Nlongh
         real(dp), dimension(Ntime, Nlath, Nlongh), intent(in) :: var
         real(dp), dimension(Nlongh, Nlath, Ntime) ::  var_reshaped
-        integer :: varid
-        integer :: status
+        real(dp), dimension(Nlongh, Nlath, Nlayer, Ntime) ::  var_4D
+        integer :: varid, status
+        integer :: j, k, l
         
         ! Reshaping variable before saving for COBALT ouput:
         var_reshaped = RESHAPE(var, SHAPE(var_reshaped), ORDER = (/3, 2, 1/))
@@ -658,8 +665,28 @@ module GetNetCDFinf
         ! Put opened netcdf into definition mode: 
         status = nf90_redef(ncid)
 
-        ! Define the variable
-        status = nf90_def_var(ncid, varname, NF90_DOUBLE, dimids([1, 2, 4]), varid)
+        ! Initialize var_4D with zeros
+        var_4D = 0.0_dp
+
+        ! Assign var_reshaped to the first layer of var_4D
+        do l = 1, Ntime
+            do k = 1, Nlath
+                do j = 1, Nlongh
+                    var_4D(j, k, 1, l) = var_reshaped(j, k, l)
+                end do
+            end do
+        end do
+
+
+        ! ! Define the variable
+        ! status = nf90_def_var(ncid, varname, NF90_DOUBLE, dimids([1, 2, 4]), varid)
+        ! if (status /= NF90_NOERR) then
+        !     print *, "Error Def FEISTY: ", trim(varname)
+        !     print *, trim(nf90_strerror(status))
+        !     STOP
+        ! end if
+        ! Save a 4D variables 
+        status = nf90_def_var(ncid, varname, NF90_DOUBLE, dimids([1, 2, 3, 4]), varid)
         if (status /= NF90_NOERR) then
             print *, "Error Def FEISTY: ", trim(varname)
             print *, trim(nf90_strerror(status))

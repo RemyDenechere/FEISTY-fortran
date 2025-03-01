@@ -24,7 +24,7 @@ else
     exit 1
 fi
 
-locations=(BATS GOF NS) # list of locations CCE
+locations=(BATS) # list of locations BATS CCE GOM NS 
 
 echo " Running for the current location list: ${locations[@]} "
 

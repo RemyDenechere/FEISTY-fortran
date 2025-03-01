@@ -17,7 +17,7 @@ function [EXP_LIST, YR_RUN] = getExpList(EXP_NAME, LOC)
     DIR_EXP = ['../../COBALT_output/parallel/' LOC '/' EXP_NAME];
 
     % Check if the input is a valid directory
-    if ~isfolder(DIR_EXP)
+    if ~exist(DIR_EXP)
         error('The specified path is not a valid directory. Check DIR_EXP');
     end
     LIST_SUBDIR = dir(DIR_EXP);
