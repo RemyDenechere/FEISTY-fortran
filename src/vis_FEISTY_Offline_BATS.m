@@ -6,14 +6,14 @@ function [] = vis_FEISTY_Offline_BATS(loc, exp, rockfish, loc_test)
 arguments
     loc       char {mustBeMember(loc, {'BATS', 'CCE', 'GOM', 'NS'})} = 'BATS'
     exp       char                                      = '2D'
-    rockfish  logical                                   = true
+    rockfish  logical                                   = false
     loc_test  logical                                   = false
 end
 
 addpath('../../Programing-Tutorials/Matlab/Matlab_functions/') 
 
-% dbclear all 
-% dbstop in vis_FEISTY_Offline_BATS.m at 206
+dbclear all 
+% dbstop in vis_FEISTY_Offline_BATS.m at 228
 
 %% Root directory: 
 param.Rockfish = rockfish; % true; %  
@@ -80,7 +80,6 @@ for i = 1:(length(var)-2)
         'LineWidth', thickness.size(i));
 end  
 hold off
-%set(h, {'LineWidth'}, {thickness.size(1:(end-2))'})
 legend(var{1:(end-2)}, 'Location', 'best')
 set(gca, "YScale", "log", "XLim", [0, xtime*1.2], "Ylim", [10^(-7) 10^(2)])
 title("All size")
@@ -172,6 +171,11 @@ dimension_average = {'_tmean'};
 dimensions = {'time'};
 load([dir_input 'Time_Means_Diag' Spinup{2} '.mat'])
 
+% Set up time 
+start_date = datetime("2004-01-01");
+end_date   = datetime("2004-12-31");
+time = start_date:end_date;
+
 %!! Calcul mean per functional group:
 for j = 1:length(dimension_average)
     for i = 1:length(var_diag)
@@ -183,10 +187,10 @@ end
 
 % ! Plot per group of diagnostic variable
 close all 
-grp(1).name = 'Mortality rates'     ; grp(1).idx = 5:8;                 grp(1).panel_grid = [2, 2];
-grp(2).name = 'Feeding levels'      ; grp(2).idx = 12:22;               grp(2).panel_grid = [3, 4];
-grp(3).name = 'Physiological_rates' ; grp(3).idx = [1:4, 9:11];         grp(3).panel_grid = [3, 3];
-grp(1).leg_loc = 'best'             ; grp(2).leg_loc = 'best';          grp(3).leg_loc = 'best'; 
+grp(1).name = 'Mortality_rates'     ; grp(1).idx = 5:8;          grp(1).panel_grid = [2, 2];  grp(1).xlab = 'mortalities (d-1)';
+grp(2).name = 'Feeding_levels'      ; grp(2).idx = 12:22;        grp(2).panel_grid = [3, 4];  grp(2).xlab = 'Physiological rates (g WW C m-2 d-1)';
+grp(3).name = 'Physiological_rates' ; grp(3).idx = [1:4, 9:11];  grp(3).panel_grid = [3, 3];  grp(3).xlab = 'Feeding level [ø]';
+grp(1).leg_loc = 'best'             ; grp(2).leg_loc = 'best';   grp(3).leg_loc = 'best'; 
 n=3;
 
 % Functional groups: ------------------------------------------------------
@@ -198,7 +202,6 @@ for i = 1:3
 
     t = tiledlayout(grp(i).panel_grid(1), grp(i).panel_grid(2), ...
                     "TileSpacing", "compact", "Padding", "compact");
-  
     % loop over diagnostic for each group:
     for j = 1:length(grp(i).idx)
         ti = nexttile;
@@ -215,6 +218,8 @@ for i = 1:3
     title(t, {[loc '_'  coupling '_' exp], ...
         ['Diagnostic_' grp(i).name '_' dimension_average{1}(2:end) '_Functional_grp']}, ...
         Interpreter='none')
+    xlabel(t, 'time')
+    ylabel(t, grp(i).xlab)
     save_graph(gcf, "png", [dir_output , 'Diagnostic_' grp(i).name '_' dimension_average{1}(2:end) '_Fct_grp'], 16, 12)
 end
 
@@ -232,15 +237,18 @@ axes_formating(gcf, "defaultAxesColorOrder", cm10)
 t = tiledlayout(1,2,"TileSpacing","compact","Padding","compact");
 
 % plot all sizes: 
-nexttile
+ax = nexttile; 
 hold on 
 for i = 1:(length(var)-2)
-    bar(i, eval([var{i} '_IC']))
+    bar(ax, eval([var{i} '_IC']))
 end
 hold off
-set(gca, "YScale", "log", ...
-         "Ylim", [10^(-5) 80])
-xticks([1:(length(var)-2)])
+set(ax, "YScale", "log", ...
+         "Ylim", [10^(-5) 80], ...
+         "Xlim", [0 (length(var)-2)])
+
+% assert(numel(ax.XTick)==numel(1:(length(var)-2)))
+xticks([1:(length(var)-2)]-0.5)
 xticklabels({var{1:(end-2)}})
 xtickangle(25)
 title("All Sizes")
@@ -249,8 +257,9 @@ title("All Sizes")
 nexttile
 bar([1:4], [F_IC, P_IC, D_IC, BE_IC])
 set(gca, "YScale", "log", ...
-         "Ylim", [10^(-5) 80])
-xticks([1:4])
+         "Ylim", [10^(-5) 80], ...
+         "Xlim", [0 (length(var)-2)])
+xticks(1:4)
 xticklabels({'Forage', 'Pelagic', 'Demersal', 'Benthos'})
 xtickangle(25)
 title("Functional group")

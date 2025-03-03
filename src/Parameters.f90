@@ -32,7 +32,7 @@ module Parameters
     real(dp), parameter :: PI_be_cutoff     = 200.00          ! Benthic-pelagic coupling cutoff (depth, m)
 
     ! Experimentation parameters: ------------------------------------------
-    character(LEN=280), parameter :: loc = "BATS"
+    character(LEN=280), parameter :: loc = "GOM"
     character(LEN=280), parameter :: exp = "2D" ! "COBALT_offline_BATS"
     character(LEN=280), parameter :: coupling = "offline"
 

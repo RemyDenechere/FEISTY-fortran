@@ -507,9 +507,10 @@ module GetNetCDFinf
     subroutine FEISTY_Save_IC(Spinup, tracers, Ntime, Nlayer, Nlath, Nlongh, lat, lon, zt)
         logical, intent(in) :: Spinup
         type(FEISTY_tracers), intent(inout), dimension(nDeriv) :: tracers
-        integer, intent(in)                     :: Ntime, Nlayer, Nlath, Nlongh
-        real(dp), dimension(9,9), intent(in)    :: lat, lon
-        real(dp), dimension(75), intent(in)     :: zt
+        integer, intent(in)                         :: Ntime, Nlayer, Nlath, Nlongh
+        real(dp), dimension(9,9), intent(in)        :: lat, lon
+        real(dp), dimension(75), intent(in)         :: zt
+        real(dp), dimension(Ntime, Nlath, Nlongh)   :: hp_ingest_nmdz
         character(LEN=280) :: filename 
         integer(4) :: ncid, dimids(4)
         integer :: i,j,k,l
@@ -521,6 +522,12 @@ module GetNetCDFinf
             call add_tracer_nc(ncid, dimids, trim(tracers_name(i)) // "_B", tracers_long_name(i), &
                                         tracers(i)%Bio, Ntime, Nlayer, Nlath, Nlongh)
         end do
+        ! add hp_ingest_nmdz and hp_ingest_nmdz for COBALT initialisation:
+        hp_ingest_nmdz(:,:,:) = 0.0_dp
+        call add_tracer_nc(ncid, dimids, "hp_ingest_nmdz", "fish ingestion of medium zooplankton", &
+                            hp_ingest_nmdz, Ntime, Nlayer, Nlath, Nlongh)
+        call add_tracer_nc(ncid, dimids, "hp_ingest_nlgz", "fish ingestion of large zooplankton", &
+                            hp_ingest_nmdz, Ntime, Nlayer, Nlath, Nlongh)
         call end_tracer_nc(ncid)
         print*, "COBALT IC saved :", filename
     end subroutine FEISTY_Save_IC

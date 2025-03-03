@@ -9,7 +9,7 @@ arguments
     exp       char    = 'FEISTY--non-vertical-flux_per_mass'
 end 
 dbclear all 
-dbstop in netcdf_read_FEISTY_Online_BATS at 68
+% dbstop in netcdf_read_FEISTY_Online_BATS at 68
 
 %! set up variable names
 coupling = 'online';
