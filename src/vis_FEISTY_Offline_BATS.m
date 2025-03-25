@@ -1,6 +1,5 @@
 % Visualize output of FEISTY
-% CESM FOSI
-% Time series plots and maps
+% Time series plots
 
 function [] = vis_FEISTY_Offline_BATS(loc, exp, rockfish, loc_test)
 arguments

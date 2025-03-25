@@ -2,22 +2,23 @@
 function [] =  vis_FEISTY_Online_BATS(list, name, loc, yr, exp)
 arguments 
     list      logical = false
-    name      string  = 'BATS_nonFmort_0_encounter_70.000_k_1_k50_1_yr_'      % Default experiment
+    name      string  = 'BATS_nonFmort_0.1_encounter_70.000_k_1_k50_1_yr_'      % Default experiment
     loc       char {mustBeMember(loc, {'BATS', 'CCE', 'GOM', 'NS'})} = 'BATS' % Default location
-    yr        char    = '1'
-    exp       char    = 'FEISTY--non-vertical_1'
+    yr        char    = '10'
+    exp       char    = 'FEISTY--non-vertical'
 end 
+%%
 yr = str2num(yr);
 
 %! set up variable names
-var = {'Sf', 'Sp', 'Sd', 'Mf', 'Mp', 'Md', 'Lp', 'Ld', 'BE'};
-var_COBALT = {'nmdz', 'jhploss_n_Mdz', 'jprod_nmdz', 'nlgz', 'jhploss_n_Lgz', 'jprod_nlgz', 'Pop_btm'};
+var              = {'Sf', 'Sp', 'Sd', 'Mf', 'Mp', 'Md', 'Lp', 'Ld', 'BE'};
+var_COBALT       = {'nmdz', 'jhploss_n_Mdz', 'jprod_nmdz', 'nlgz', 'jhploss_n_Lgz', 'jprod_nlgz', 'Pop_btm'};
 functional_group = {'Forage', 'Pelagic', 'Demersal'};
 
 % indexes for plotting: 
-idx_mz_bio = [1, 4]; % indexes biomass zooplankton 
-idx_mz_rate_loss = [2, 5, 7]; % indexes mortality rates and detritus flux 
-idx_mz_rate_growth = [3, 6]; % indexes growth rates 
+idx_mz_bio          = [1, 4]; % indexes biomass zooplankton 
+idx_mz_rate_loss    = [2, 5, 7]; % indexes mortality rates and detritus flux 
+idx_mz_rate_growth  = [3, 6]; % indexes growth rates 
     
 coupling = 'online'; 
 addpath('../../Programing-Tutorials/Matlab/Matlab_functions/')
@@ -34,7 +35,7 @@ cm_mz_rate_growth   = cm7(idx_mz_rate_growth, :);
 thickness.grp = [1.5 1.5 2 1.5];
 thickness.size = [1.5 1.5 2 2 2 2 2 2 1.5];
 
-%! get experiment folder names: 
+%! get experiment folder names: b
 if list
     [exp_name, yr] = getExpList(exp, loc);
 else 
@@ -50,6 +51,7 @@ load(['../output/Matlab_Average/', coupling, '/' loc, '/Topology.mat'], 'topog')
 
 %% Loop over all experiments:
 for nm = 1:length(exp_name)
+    %% 
     n = 0; 
     name = exp_name{nm}; 
     name_yr = [name num2str(yr)]; 
@@ -386,7 +388,7 @@ for nm = 1:length(exp_name)
     ylabel(t, "Biomass (g WW m-2 d-1)")
     save_graph(gcf, "png", [dir_output 'Comparison_online_offline_zooplanktons_last_year'], 20, 14)
 
-     %% ------------------------------------------------------------------------
+    %% ------------------------------------------------------------------------
     %                Zooplankton Biomass TIME SERIES 
     %                   integrated over 100m
     % -------------------------------------------------------------------------
@@ -566,7 +568,7 @@ for nm = 1:length(exp_name)
     
     %% ------------------------------------------------------------------------
     %                         Zooplankton Biomass
-    %                              last year 
+    %                              last year int_100m
     % -------------------------------------------------------------------------
     % plot the last year of spinup all rates in the same plot 
     n= n+1;
@@ -589,9 +591,11 @@ for nm = 1:length(exp_name)
     % Online zooplankton Biomass
     nexttile
     hold on 
-    for i = 1:length(var_COBALT)
-        plot(time, eval([var_COBALT{i} '_tmean((end-366+1):end)']))
+    for i = 1:(length(var_COBALT)-1)
+        plot(time, eval([var_COBALT{i} '_tmean_100m((end-366+1):end)']))
     end
+    i = length(var_COBALT);
+    plot(time, eval([var_COBALT{i} '_tmean((end-366+1):end)']))
     hold off
     legend(var_COBALT{:}, Interpreter = 'none', Location = "eastoutside", box = 'off')
     title("Online")
@@ -599,9 +603,11 @@ for nm = 1:length(exp_name)
     % difference: 
     nexttile
     hold on 
-    for i = 1:length(var_COBALT)
-            plot(time, eval([var_COBALT{i} '_tmean((end-366+1):end)']) - eval([var_COBALT{i} '_offline_tmean']))
+    for i = 1:(length(var_COBALT)-1)
+            plot(time, eval([var_COBALT{i} '_tmean_100m((end-366+1):end)']) - eval([var_COBALT{i} '_offline_tmean']))
     end 
+    i=length(var_COBALT);
+    plot(time, eval([var_COBALT{i} '_tmean((end-366+1):end)']) - eval([var_COBALT{i} '_offline_tmean']))
     plot([time(1) time(end)], [0 0], 'k:', 'LineWidth', 1)
     hold off
     title("Difference")
@@ -660,7 +666,7 @@ for nm = 1:length(exp_name)
     plotwidth = [12, 12];
     
     %% All sizes: --------------------------------------------------------------
-    for d = 1:length(dimension_average)-1
+    for d = 1:length(dimension_average)
         for i = 1:3
             n = n+1;
             figure(n)
@@ -713,7 +719,7 @@ for nm = 1:length(exp_name)
     %% Functional groups: ------------------------------------------------------
     var = {'F', 'P', 'D'};
     
-    for d = 1:length(dimension_average)-1
+    for d = 1:length(dimension_average)
         for i = 1:3
             n = n+1;
             figure(n)
