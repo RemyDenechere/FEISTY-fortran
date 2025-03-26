@@ -8,15 +8,10 @@ program Run_physiology
     implicit none
     
     ! Variables ----------------------------------------------------------
-    type(FEISTY_type)    :: FEISTY
-    type(FEISTY_diag)    :: diags
-    type(FEISTY_tracers)    , dimension(nDeriv)     :: tracers
-    type(Initial_conditions), dimension(nDeriv)     :: IC_tracers_Bio
-    real(dp), dimension(:, :, :, :), allocatable    :: DataTemp, Datadet, &
-                                                       DataZM, Datadzm, DataZL, Datadzl
     integer :: itime, iDAY, iYR, Year, ilayer, ilath, ilongh
     real(dp) :: T1, T2, T3, sim_time
-    logical :: Spinup = .false.
+
+    call init_parameters ! Initialisation of the parameters
 
     print *, "-------------------------------------"
     print *, " Simulation of FEISTY offline using COBALT 1D "
@@ -25,8 +20,7 @@ program Run_physiology
     
     ! Initialisation: ----------------------------------------------------------
     CALL cpu_time(T1)
-    CALL Init_FEISTY(Spinup, FEISTY, diags, IC_tracers_Bio, tracers, &
-                     DataTemp, Datadet, Datadzm, DataZM, Datadzl, DataZL)
+    CALL Init_FEISTY()
     CALL cpu_time(T2)
  
     ! Increasing the spinup time! 
@@ -52,20 +46,19 @@ program Run_physiology
 
     ! Loops over latitude,  longitude, year and day  ----------------------------------------------------------
     Do ilath = 1, FEISTY%Nlath; Do ilongh = 1, FEISTY%Nlongh; Do iYr = 1, Year; Do iDAY = 1, 366 
-            itime = (iYr -1) * 366 + iDAY ! time of simulation used for saving data if spinup
-            CALL init_Biomass(Spinup, itime, ilath, ilongh, IC_tracers_Bio, FEISTY, tracers) ! Initialisation of the biomass
-            CALL Get_Environental_data(FEISTY, DataTemp(ilath, ilongh, :, iDay), Datadet(ilath, ilongh, :, iDay), &
-                                               Datadzm(ilath, ilongh, :, iDay), DataZM(ilath, ilongh, :, iDay), &
-                                               Datadzl(ilath, ilongh, :, iDay), DataZL(ilath, ilongh, :, iDay)) ! Get the environmental data and integrate them over depth
-            CALL Calc_FEISTY_Deriv(FEISTY)                                        ! Calcul biomass at day+1
-            CALL store_daily_biomass(FEISTY, tracers, itime, ilath, ilongh)  ! Save the daily biomass
-            CALL store_daily_diag(diags, FEISTY, itime, ilath, ilongh)       ! Save the daily diagnostic
+            FEISTY%itime = (iYr -1) * 366 + iDAY ! time of simulation used for saving data if spinup
+            FEISTY%iDay = iDay
+            FEISTY%ilath = ilath
+            FEISTY%ilongh = ilongh
+            CALL init_Biomass ! Initialisation of the biomass
+            CALL Get_Environmental_data ! Get the environmental data and integrate them over depth
+            CALL Calc_FEISTY_Deriv                                        ! Calcul biomass at day+1
+            CALL store_daily_biomass    ! Save the daily biomass
+            CALL store_daily_diag       ! Save the daily diagnostic
         enddo; enddo ! End Loop Year and day
     enddo ; enddo; ! } longh; lat; layer
 
-    CALL write_output_netcdf(Spinup, tracers, diags, & 
-                             FEISTY%Ntime, FEISTY%Nlayer, FEISTY%Nlath, FEISTY%Nlongh, &
-                             FEISTY%lat, FEISTY%lon, FEISTY%zt)  ! Save Netcdf 
+    CALL write_output_netcdf  ! Save Netcdf 
 
     CALL cpu_time(T3)
     print *, "-------------------------------------"

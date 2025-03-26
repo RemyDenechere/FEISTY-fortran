@@ -9,10 +9,9 @@ module Physiology
 
 
     contains
-    subroutine Calc_FEISTY_Deriv(FEISTY)
-        type(FEISTY_type), intent(inout) :: FEISTY
+    subroutine Calc_FEISTY_Deriv
         real(dp), dimension(3) :: T_e = 0.0, T_met = 0.0
-        real(dp)                        :: biop, biob ! biomass experience in pelagic and benthic zones by demersals
+        real(dp) :: biop, biob ! biomass experience in pelagic and benthic zones by demersals
         real(dp) :: Cons_Zm, Cons_Zl, frac_Sf, frac_Sp, frac_Sd, frac_Mf, frac_Mp, pred_pel
         real(dp) :: r       ! benthic growth rate ((g/m2/d) / (g/m2))
         real(dp) :: pred    ! predation from demersals (g/m2/d)
@@ -478,7 +477,7 @@ module Physiology
             print*, 'Benthic growth rate   : ', r 
             print*, 'pred on Benthic       : ', pred
             print*, 'dBEdt                 : ', dBEdt
-            CALL Print_FEISTY_diagnostic(FEISTY)
+            CALL Print_FEISTY_diagnostic
         end if 
 
     end subroutine Calc_FEISTY_Deriv

@@ -8,7 +8,7 @@ module Structure
     ! Structure type representing one fish group (i.e., one functional group
     ! one size).
     !------------------------------------------------------------------------------------
-    type :: Fish
+    type, public :: Fish
         real(dp) :: B                   ! Biomass
         real(dp) :: w                   ! weight
         real(dp) :: Texp                ! Temperature experienced by the fish
@@ -70,7 +70,7 @@ module Structure
     !-----------------------------------------------------------------------
     ! Structure type representing one MesoZooplankton (can be extended if needed).
     !------------------------------------------------------------------------------------
-    type :: MesoZooplankton 
+    type, public :: MesoZooplankton 
         real(dp) :: B             = 0.0 , &  ! Biomass 
                     dz            = 0.0 , &  ! Mortality by High trophic Level mortality
                     Zcons_VS_dZ   = 0.0      ! MesoZooplankton consumption from FEISTY over dZm estmated from COBALT
@@ -80,7 +80,7 @@ module Structure
     !-----------------------------------------------------------------------
     ! Structure type Containing all the variable that are use for each time step calculation
     !------------------------------------------------------------------------------------
-    type :: FEISTY_type
+    type, public :: FEISTY_type
         type(MesoZooplankton)   , dimension(2) :: mesozoo
         type(Benthos)           , dimension(1) :: benthos
         type(Fish)              , dimension(8) :: fish
@@ -100,14 +100,10 @@ module Structure
         integer :: Ntime
         integer :: Nlayer
 
-        ! real(dp) :: lath
-        ! real(dp) :: longh
-        ! real(dp) :: time
-        ! real(dp) :: layer
-
         integer :: ilath
         integer :: ilongh
         integer :: itime
+        integer :: iDay
 
         real(dp), dimension(75) :: zt                   ! Depth of each layer
         real(dp), dimension(75) :: layer_thickness      ! Thickness of each layer
@@ -122,7 +118,7 @@ module Structure
     !-----------------------------------------------------------------------
     ! Fish Diagnostic variable
     !------------------------------------------------------------------------------------
-    type :: Diag_fish 
+    type, public :: Diag_fish 
         real(dp), dimension(:, :, :), allocatable :: & 
         ! Physiology: -----------------------------------------------------------------
         f,&               ! Total feeding level
@@ -151,7 +147,7 @@ module Structure
         f_BE
     end type Diag_fish
 
-
+    
     !-----------------------------------------------------------------------
     ! MesoZooplankton Diagnostic variable
     !------------------------------------------------------------------------------------
@@ -182,14 +178,20 @@ module Structure
         real(dp), dimension(:, :), allocatable :: IniBio
     end type 
 
+    ! ====================================================================================!
+    ! Public variables and structures
+    ! ====================================================================================!
+    type(FEISTY_type),          public                                      :: FEISTY
+    type(FEISTY_diag),          public                                      :: diags
+    type(FEISTY_tracers),       public, dimension(nDeriv)                   :: tracers
+    type(Initial_conditions),   public, dimension(nDeriv)                   :: IC_tracers_Bio
+    real(dp),                   public, dimension(:, :, :, :), allocatable  :: DataTemp, Datadet, &
+                                                                               DataZM, Datadzm, DataZL, Datadzl
+
     contains 
 
     ! Define initial condition for a grid cell
-    subroutine initPhysiology(Spinup, ilath, ilongh, IC_tracers_Bio, FEISTY)
-        logical, intent(in) :: Spinup
-        integer, intent(in) :: ilath, ilongh
-        type(FEISTY_type), intent(inout) :: FEISTY
-        type(Initial_conditions), intent(inout), dimension(nDeriv) :: IC_tracers_Bio
+    subroutine initPhysiology()
         integer :: i
     
         if (Spinup) then
@@ -206,26 +208,21 @@ module Structure
         else 
             ! Fish:
             do i = 1, nFishGroup
-                FEISTY%fish(i)%B = IC_tracers_Bio(i)%IniBio(ilath, ilongh)
+                FEISTY%fish(i)%B = IC_tracers_Bio(i)%IniBio(FEISTY%ilath, FEISTY%ilongh)
             end do
             ! Benthic: 
             do i = 1, nBenthos  
-                FEISTY%benthos(i)%B = IC_tracers_Bio(i)%IniBio(ilath, ilongh)
+                FEISTY%benthos(i)%B = IC_tracers_Bio(i)%IniBio(FEISTY%ilath, FEISTY%ilongh)
             end do
         end if 
     end subroutine initPhysiology
 
      ! Define initial condition for a grid cell
-    subroutine init_Biomass(Spinup, itime, ilath, ilongh, IC_tracers_Bio, FEISTY, tracers)
-        type(FEISTY_type)       , intent(inout)                    :: FEISTY
-        type(Initial_conditions), intent(in)   , dimension(nDeriv) :: IC_tracers_Bio
-        type(FEISTY_tracers)    , intent(in)   , dimension(nDeriv) :: tracers
-        logical, intent(in) :: Spinup
-        integer, intent(in) :: itime, ilath, ilongh
+    subroutine init_Biomass
         integer :: i
     
         ! Gives initial condition for 1st time step if Spinup 
-        if ((Spinup) .and. (itime .eq. int(1))) then
+        if ((Spinup) .and. (FEISTY%itime .eq. int(1))) then
             ! Fish: 
             do i = 1, nFishGroup
                 FEISTY%fish(i)%B = IC
@@ -236,132 +233,113 @@ module Structure
             end do
         
         ! Gives initial condition for 1st time step from spinup 
-        elseif ((Spinup .eqv. .false.) .and. (itime .eq. int(1))) then
+        elseif ((Spinup .eqv. .false.) .and. (FEISTY%itime .eq. int(1))) then
             do i = 1, nFishGroup
-                FEISTY%fish(i)%B = IC_tracers_Bio(i)%IniBio(ilath, ilongh)
+                FEISTY%fish(i)%B = IC_tracers_Bio(i)%IniBio(FEISTY%ilath, FEISTY%ilongh)
             end do
         
         ! Gives biomass from previous time step for any time 
-        elseif (itime .gt. int(1)) then 
+        elseif (FEISTY%itime .gt. int(1)) then 
             ! Allocate fish biomass 
             do i = 1, nFishGroup
-                FEISTY%fish(i)%B = tracers(i)%Bio(itime-1, ilath, ilongh)
+                FEISTY%fish(i)%B = tracers(i)%Bio(FEISTY%itime-1, FEISTY%ilath, FEISTY%ilongh)
             end do 
             ! allocate Benthic biomass: 
             do i = 1, nBenthos  
-                FEISTY%benthos(i)%B = tracers(i + nFishGroup)%Bio(itime-1, ilath, ilongh)
+                FEISTY%benthos(i)%B = tracers(i + nFishGroup)%Bio(FEISTY%itime-1, FEISTY%ilath, FEISTY%ilongh)
             end do
         end if 
     end subroutine init_Biomass
     
 
-    subroutine allocate_tracers(tracers, Ntime, Nlath, Nlongh)
-        type(FEISTY_tracers), dimension(nDeriv) :: tracers
-        integer :: Ntime, Nlath, Nlongh
+    subroutine allocate_tracers()
         integer :: i
         do i = 1, nDeriv
-            allocate(tracers(i)%Bio(Ntime, Nlath, Nlongh))
-        end do 
+            allocate(tracers(i)%Bio(FEISTY%Ntime, FEISTY%Nlath, FEISTY%Nlongh))
+        end do
     end subroutine allocate_tracers
 
-    subroutine allocate_diags(diags, Ntime, Nlath, Nlongh)
-        type(FEISTY_diag) :: diags
-        integer, intent(in) :: Ntime, Nlath, Nlongh
+    subroutine allocate_diags()
         integer :: i
-        Do i = 1, nFishGroup
-            allocate(diags%fish(i)%f(Ntime, Nlath, Nlongh))       ; diags%fish(i)%f = 0.0          ! Total feeding level
-            allocate(diags%fish(i)%cmax(Ntime, Nlath, Nlongh))    ; diags%fish(i)%cmax = 0.0           ! Maximum consumption rate 
-            allocate(diags%fish(i)%cons(Ntime, Nlath, Nlongh))    ; diags%fish(i)%cons = 0.0          ! Total consumption rate
-            allocate(diags%fish(i)%met(Ntime, Nlath, Nlongh))     ; diags%fish(i)%met = 0.0           ! metabolic cost 
-            allocate(diags%fish(i)%mu_p(Ntime, Nlath, Nlongh))    ; diags%fish(i)%mu_p = 0.0          ! Predation mortality 
-            allocate(diags%fish(i)%mu_f(Ntime, Nlath, Nlongh))    ; diags%fish(i)%mu_f = 0.0          ! Fishing mortality 
-            allocate(diags%fish(i)%mu_a(Ntime, Nlath, Nlongh))    ; diags%fish(i)%mu_a = 0.0          ! Natural mortality 
-            allocate(diags%fish(i)%mu(Ntime, Nlath, Nlongh))      ; diags%fish(i)%mu = 0.0          ! Total mortality
-            allocate(diags%fish(i)%E_A(Ntime, Nlath, Nlongh))     ; diags%fish(i)%E_A = 0.0          ! Available energy 
-            allocate(diags%fish(i)%Fout(Ntime, Nlath, Nlongh))    ; diags%fish(i)%Fout = 0.0          ! flux out of a size class 
-            allocate(diags%fish(i)%Repro(Ntime, Nlath, Nlongh))   ; diags%fish(i)%Repro = 0.0         ! Reproduction flux 
     
-            ! Feeding level for each prey : ------------------------------------------------
-            allocate(diags%fish(i)%f_Zm(Ntime, Nlath, Nlongh))    ; diags%fish(i)%f_Zm = 0.0         
-            allocate(diags%fish(i)%f_Zl(Ntime, Nlath, Nlongh))    ; diags%fish(i)%f_Zl = 0.0         ! --         
-            allocate(diags%fish(i)%f_Sf(Ntime, Nlath, Nlongh))    ; diags%fish(i)%f_Sf = 0.0         ! --
-            allocate(diags%fish(i)%f_Sp(Ntime, Nlath, Nlongh))    ; diags%fish(i)%f_Sp = 0.0         ! --
-            allocate(diags%fish(i)%f_Sd(Ntime, Nlath, Nlongh))    ; diags%fish(i)%f_Sd = 0.0         ! --
-            allocate(diags%fish(i)%f_Mf(Ntime, Nlath, Nlongh))    ; diags%fish(i)%f_Mf = 0.0         ! --
-            allocate(diags%fish(i)%f_Mp(Ntime, Nlath, Nlongh))    ; diags%fish(i)%f_Mp = 0.0         ! --
-            allocate(diags%fish(i)%f_Md(Ntime, Nlath, Nlongh))    ; diags%fish(i)%f_Md = 0.0        ! --
-            allocate(diags%fish(i)%f_Lp(Ntime, Nlath, Nlongh))    ; diags%fish(i)%f_Lp = 0.0        ! --
-            allocate(diags%fish(i)%f_Ld(Ntime, Nlath, Nlongh))    ; diags%fish(i)%f_Ld = 0.0         ! --
-            allocate(diags%fish(i)%f_BE(Ntime, Nlath, Nlongh))    ; diags%fish(i)%f_BE = 0.0  
-        end Do 
-        
-        ! Zooplankton oversonsumption
-        do i = 1, nMesoZoo
-            allocate(diags%mesozoo(i)%Zcon_VS_dZ(Ntime, Nlath, Nlongh))
+        do i = 1, nFishGroup
+            allocate(diags%fish(i)%f(FEISTY%Ntime, FEISTY%Nlath, FEISTY%Nlongh))       ; diags%fish(i)%f = 0.0
+            allocate(diags%fish(i)%cmax(FEISTY%Ntime, FEISTY%Nlath, FEISTY%Nlongh))    ; diags%fish(i)%cmax = 0.0
+            allocate(diags%fish(i)%cons(FEISTY%Ntime, FEISTY%Nlath, FEISTY%Nlongh))    ; diags%fish(i)%cons = 0.0
+            allocate(diags%fish(i)%met(FEISTY%Ntime, FEISTY%Nlath, FEISTY%Nlongh))     ; diags%fish(i)%met = 0.0
+            allocate(diags%fish(i)%mu_p(FEISTY%Ntime, FEISTY%Nlath, FEISTY%Nlongh))    ; diags%fish(i)%mu_p = 0.0
+            allocate(diags%fish(i)%mu_f(FEISTY%Ntime, FEISTY%Nlath, FEISTY%Nlongh))    ; diags%fish(i)%mu_f = 0.0
+            allocate(diags%fish(i)%mu_a(FEISTY%Ntime, FEISTY%Nlath, FEISTY%Nlongh))    ; diags%fish(i)%mu_a = 0.0
+            allocate(diags%fish(i)%mu(FEISTY%Ntime, FEISTY%Nlath, FEISTY%Nlongh))      ; diags%fish(i)%mu = 0.0
+            allocate(diags%fish(i)%E_A(FEISTY%Ntime, FEISTY%Nlath, FEISTY%Nlongh))     ; diags%fish(i)%E_A = 0.0
+            allocate(diags%fish(i)%Fout(FEISTY%Ntime, FEISTY%Nlath, FEISTY%Nlongh))    ; diags%fish(i)%Fout = 0.0
+            allocate(diags%fish(i)%Repro(FEISTY%Ntime, FEISTY%Nlath, FEISTY%Nlongh))   ; diags%fish(i)%Repro = 0.0
+    
+            ! Feeding level for each prey
+            allocate(diags%fish(i)%f_Zm(FEISTY%Ntime, FEISTY%Nlath, FEISTY%Nlongh))    ; diags%fish(i)%f_Zm = 0.0
+            allocate(diags%fish(i)%f_Zl(FEISTY%Ntime, FEISTY%Nlath, FEISTY%Nlongh))    ; diags%fish(i)%f_Zl = 0.0
+            allocate(diags%fish(i)%f_Sf(FEISTY%Ntime, FEISTY%Nlath, FEISTY%Nlongh))    ; diags%fish(i)%f_Sf = 0.0
+            allocate(diags%fish(i)%f_Sp(FEISTY%Ntime, FEISTY%Nlath, FEISTY%Nlongh))    ; diags%fish(i)%f_Sp = 0.0
+            allocate(diags%fish(i)%f_Sd(FEISTY%Ntime, FEISTY%Nlath, FEISTY%Nlongh))    ; diags%fish(i)%f_Sd = 0.0
+            allocate(diags%fish(i)%f_Mf(FEISTY%Ntime, FEISTY%Nlath, FEISTY%Nlongh))    ; diags%fish(i)%f_Mf = 0.0
+            allocate(diags%fish(i)%f_Mp(FEISTY%Ntime, FEISTY%Nlath, FEISTY%Nlongh))    ; diags%fish(i)%f_Mp = 0.0
+            allocate(diags%fish(i)%f_Md(FEISTY%Ntime, FEISTY%Nlath, FEISTY%Nlongh))    ; diags%fish(i)%f_Md = 0.0
+            allocate(diags%fish(i)%f_Lp(FEISTY%Ntime, FEISTY%Nlath, FEISTY%Nlongh))    ; diags%fish(i)%f_Lp = 0.0
+            allocate(diags%fish(i)%f_Ld(FEISTY%Ntime, FEISTY%Nlath, FEISTY%Nlongh))    ; diags%fish(i)%f_Ld = 0.0
+            allocate(diags%fish(i)%f_BE(FEISTY%Ntime, FEISTY%Nlath, FEISTY%Nlongh))    ; diags%fish(i)%f_BE = 0.0
         end do
-        
+    
+        ! Zooplankton overconsumption
+        do i = 1, nMesoZoo
+            allocate(diags%mesozoo(i)%Zcon_VS_dZ(FEISTY%Ntime, FEISTY%Nlath, FEISTY%Nlongh))
+        end do
     end subroutine allocate_diags
 
-    subroutine allocate_IC_tracers_Bio(IC_tracers_Bio, Nlath, Nlongh)
-        type(Initial_conditions), dimension(nDeriv) :: IC_tracers_Bio
-        integer :: Nlath, Nlongh
-        integer :: i
-        do i = 1, nDeriv
-            allocate(IC_tracers_Bio(i)%IniBio(Nlath, Nlongh))
-        end do 
-    end subroutine allocate_IC_tracers_Bio
-
-    subroutine store_daily_biomass(FEISTY, tracers, itime, ilath, ilongh)
-        type(FEISTY_tracers), intent(inout), dimension(nDeriv) :: tracers
-        type(FEISTY_type)   , intent(inout)  :: FEISTY      ! Daily data for the month 
-        integer, intent(in) :: itime, ilath, ilongh
+    subroutine store_daily_biomass()
         integer :: i
 
         ! Store the daily biomass of each group (FEISTY tracers)
         do i = 1, nFishGroup
-            tracers(i)%Bio(itime, ilath, ilongh) = FEISTY%fish(i)%B
+            tracers(i)%Bio(FEISTY%itime, FEISTY%ilath, FEISTY%ilongh) = FEISTY%fish(i)%B
         end do 
         do i = 1, nBenthos 
-            tracers(i+nFishGroup)%Bio(itime, ilath, ilongh) = FEISTY%benthos(i)%B
+            tracers(i+nFishGroup)%Bio(FEISTY%itime, FEISTY%ilath, FEISTY%ilongh) = FEISTY%benthos(i)%B
         end do 
     end subroutine store_daily_biomass
 
-    subroutine store_daily_diag(diags, FEISTY, itime, ilath, ilongh)
-        type(FEISTY_diag)   , intent(inout)  :: diags
-        type(FEISTY_type)   , intent(inout)  :: FEISTY      ! Daily data for the month 
-        integer, intent(in) :: itime, ilath, ilongh
+    subroutine store_daily_diag()
         integer :: i
 
         Do i = 1, nFishGroup
-            diags%fish(i)%f(itime, ilath, ilongh)     =  FEISTY%fish(i)%f          ! Total feeding level
-            diags%fish(i)%cmax(itime, ilath, ilongh)  =  FEISTY%fish(i)%cmax           ! Maximum consumption rate 
-            diags%fish(i)%cons(itime, ilath, ilongh)  =  FEISTY%fish(i)%cons          ! Total consumption rate
-            diags%fish(i)%met(itime, ilath, ilongh)   =  FEISTY%fish(i)%met           ! metabolic cost 
-            diags%fish(i)%mu_p(itime, ilath, ilongh)  =  FEISTY%fish(i)%mu_p          ! Predation mortality 
-            diags%fish(i)%mu_f(itime, ilath, ilongh)  =  FEISTY%fish(i)%mu_f          ! Fishing mortality 
-            diags%fish(i)%mu_a(itime, ilath, ilongh)  =  FEISTY%fish(i)%mu_a          ! Natural mortality 
-            diags%fish(i)%mu(itime, ilath, ilongh)    =  FEISTY%fish(i)%mu          ! Total mortality
-            diags%fish(i)%E_A(itime, ilath, ilongh)   =  FEISTY%fish(i)%E_A          ! Available energy 
-            diags%fish(i)%Fout(itime, ilath, ilongh)  =  FEISTY%fish(i)%Fout          ! flux out of a size class 
-            diags%fish(i)%Repro(itime, ilath, ilongh) =  FEISTY%fish(i)%Repro         ! Reproduction flux 
+            diags%fish(i)%f(FEISTY%itime, FEISTY%ilath, FEISTY%ilongh)     =  FEISTY%fish(i)%f          ! Total feeding level
+            diags%fish(i)%cmax(FEISTY%itime, FEISTY%ilath, FEISTY%ilongh)  =  FEISTY%fish(i)%cmax           ! Maximum consumption rate 
+            diags%fish(i)%cons(FEISTY%itime, FEISTY%ilath, FEISTY%ilongh)  =  FEISTY%fish(i)%cons          ! Total consumption rate
+            diags%fish(i)%met(FEISTY%itime, FEISTY%ilath, FEISTY%ilongh)   =  FEISTY%fish(i)%met           ! metabolic cost 
+            diags%fish(i)%mu_p(FEISTY%itime, FEISTY%ilath, FEISTY%ilongh)  =  FEISTY%fish(i)%mu_p          ! Predation mortality 
+            diags%fish(i)%mu_f(FEISTY%itime, FEISTY%ilath, FEISTY%ilongh)  =  FEISTY%fish(i)%mu_f          ! Fishing mortality 
+            diags%fish(i)%mu_a(FEISTY%itime, FEISTY%ilath, FEISTY%ilongh)  =  FEISTY%fish(i)%mu_a          ! Natural mortality 
+            diags%fish(i)%mu(FEISTY%itime, FEISTY%ilath, FEISTY%ilongh)    =  FEISTY%fish(i)%mu          ! Total mortality
+            diags%fish(i)%E_A(FEISTY%itime, FEISTY%ilath, FEISTY%ilongh)   =  FEISTY%fish(i)%E_A          ! Available energy 
+            diags%fish(i)%Fout(FEISTY%itime, FEISTY%ilath, FEISTY%ilongh)  =  FEISTY%fish(i)%Fout          ! flux out of a size class 
+            diags%fish(i)%Repro(FEISTY%itime, FEISTY%ilath, FEISTY%ilongh) =  FEISTY%fish(i)%Repro         ! Reproduction flux 
     
             ! Feeding level for each prey : ------------------------------------------------
-            diags%fish(i)%f_Zm(itime, ilath, ilongh)  =  FEISTY%fish(i)%f_Zm         
-            diags%fish(i)%f_Zl(itime, ilath, ilongh)  =  FEISTY%fish(i)%f_Zl         ! --         
-            diags%fish(i)%f_Sf(itime, ilath, ilongh)  =  FEISTY%fish(i)%f_Sf         ! --
-            diags%fish(i)%f_Sp(itime, ilath, ilongh)  =  FEISTY%fish(i)%f_Sp         ! --
-            diags%fish(i)%f_Sd(itime, ilath, ilongh)  =  FEISTY%fish(i)%f_Sd         ! --
-            diags%fish(i)%f_Mf(itime, ilath, ilongh)  =  FEISTY%fish(i)%f_Mf         ! --
-            diags%fish(i)%f_Mp(itime, ilath, ilongh)  =  FEISTY%fish(i)%f_Mp         ! --
-            diags%fish(i)%f_Md(itime, ilath, ilongh)  =  FEISTY%fish(i)%f_Md        ! --
-            diags%fish(i)%f_Lp(itime, ilath, ilongh)  =  FEISTY%fish(i)%f_Lp        ! --
-            diags%fish(i)%f_Ld(itime, ilath, ilongh)  =  FEISTY%fish(i)%f_Ld         ! --
-            diags%fish(i)%f_BE(itime, ilath, ilongh)  =  FEISTY%fish(i)%f_BE  
+            diags%fish(i)%f_Zm(FEISTY%itime, FEISTY%ilath, FEISTY%ilongh)  =  FEISTY%fish(i)%f_Zm         
+            diags%fish(i)%f_Zl(FEISTY%itime, FEISTY%ilath, FEISTY%ilongh)  =  FEISTY%fish(i)%f_Zl         ! --         
+            diags%fish(i)%f_Sf(FEISTY%itime, FEISTY%ilath, FEISTY%ilongh)  =  FEISTY%fish(i)%f_Sf         ! --
+            diags%fish(i)%f_Sp(FEISTY%itime, FEISTY%ilath, FEISTY%ilongh)  =  FEISTY%fish(i)%f_Sp         ! --
+            diags%fish(i)%f_Sd(FEISTY%itime, FEISTY%ilath, FEISTY%ilongh)  =  FEISTY%fish(i)%f_Sd         ! --
+            diags%fish(i)%f_Mf(FEISTY%itime, FEISTY%ilath, FEISTY%ilongh)  =  FEISTY%fish(i)%f_Mf         ! --
+            diags%fish(i)%f_Mp(FEISTY%itime, FEISTY%ilath, FEISTY%ilongh)  =  FEISTY%fish(i)%f_Mp         ! --
+            diags%fish(i)%f_Md(FEISTY%itime, FEISTY%ilath, FEISTY%ilongh)  =  FEISTY%fish(i)%f_Md        ! --
+            diags%fish(i)%f_Lp(FEISTY%itime, FEISTY%ilath, FEISTY%ilongh)  =  FEISTY%fish(i)%f_Lp        ! --
+            diags%fish(i)%f_Ld(FEISTY%itime, FEISTY%ilath, FEISTY%ilongh)  =  FEISTY%fish(i)%f_Ld         ! --
+            diags%fish(i)%f_BE(FEISTY%itime, FEISTY%ilath, FEISTY%ilongh)  =  FEISTY%fish(i)%f_BE  
         end Do 
         
         ! Zooplankton oversonsumption
         do i = 1, nMesoZoo
-            diags%mesozoo(i)%Zcon_VS_dZ(itime, ilath, ilongh) =  FEISTY%mesozoo(i)%Zcons_VS_dZ 
+            diags%mesozoo(i)%Zcon_VS_dZ(FEISTY%itime, FEISTY%ilath, FEISTY%ilongh) =  FEISTY%mesozoo(i)%Zcons_VS_dZ 
         end do
     end subroutine store_daily_diag
 
@@ -376,8 +354,7 @@ module Structure
     !     FEISTY%Md_Fout_end  = FEISTY%fish(Md)%Fout
     ! end subroutine Calc_trans_layer
 
-    subroutine Print_FEISTY_diagnostic(FEISTY)
-        type(FEISTY_type), intent(in) :: FEISTY
+    subroutine Print_FEISTY_diagnostic()
         integer :: i
 
         print *, " ------------------- FEISTY outputs --------------------- "

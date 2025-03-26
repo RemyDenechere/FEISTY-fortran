@@ -25,7 +25,8 @@ else
 fi
 
 locations=(GOM) # list of locations BATS CCE GOM NS 
-
+echo ""
+echo "--------------------------------------------------------------------"
 echo " Running for the current location list: ${locations[@]} "
 
 # Loop through each location and run the script
@@ -34,6 +35,8 @@ for loc in "${locations[@]}"; do
     echo ""
     echo "--------------------------------------------------------------------"
     echo "Analysing COBALT online and offline at location: $loc"
+    echo "--------------------------------------------------------------------"
+    echo ""
 
     # IF experiment_name.txt and nmb_yr.txt ALREADY EXIST THEN CLEAR IT
     if [ -f "$FILE_EXP" ]; then
@@ -57,6 +60,8 @@ for loc in "${locations[@]}"; do
     NUM_LINES=$(wc -l < experiment_name.txt)
 
     # PRINT SIMULATION PARAMETERS:
+    echo ""
+    echo "--------------------------------------------------------------------"
     echo "Start analysis netcdf output from COBALT online at $loc for the $NUM_LINES experiments spined up over $NUM_YEAR yr(s)"
 
     # RUN THE NETCDF ANALYSIS OF THE ONLINE COBALT-FEISTY FOR EVERY EXPERIMENTATION NAME 
@@ -79,6 +84,8 @@ for loc in "${locations[@]}"; do
 
 
     # RUN THE VISUALISATION FOR ALL THE EXPERIMENTATION NAMES
+    echo ""
+    echo "--------------------------------------------------------------------"
     echo "Start making visualisation for the "$NUM_LINES" COBALT online experiments "
     for ((i=1; i<=NUM_LINES; i++))
     do  
@@ -93,10 +100,18 @@ for loc in "${locations[@]}"; do
     wait
     
     # RUN THE VISUALISATION FOR THE OFFLINE COBALT-FEISTY
+    echo ""
+    echo "--------------------------------------------------------------------"
     echo "Start making visualisation for the COBALT offline at " $loc
     matlab -batch "vis_FEISTY_Offline_BATS('$loc')" -nodesktop -nodisplay -nosplash
 
     echo "The netcdf analysis and visulation are done for the $NUM_LINES  experiment in $EXP_NAME for $loc"
+
+    # RUN MATALB ANALYSIS OF ALL EXPERIMENT EXPERIMENTATION NAME LIST       
+    echo ""
+    echo "--------------------------------------------------------------------"   
+    echo "Start comparison analysis of the $NUM_LINES experiments in $EXP_NAME for $loc"
+    matlab -batch "vis_Comparison_exp("exp", '$EXP_NAME', "loc", '$loc');" -nodesktop -nosplash -nojvm 
 done
 
 # PRINT SIMULATION TIME 

@@ -21,7 +21,7 @@ SOURCE_FEISTY = Parameters.f90 Structure.f90 GetNetCDFInf.f90 Physiology.f90 Run
 # SOURCE_NETCDF = Parameters.f90 Structure.f90 GetNetCDFInf.f90 OpenNetCDFFiles.f90
  
 OUTPUT_FEISTY = FEISTY
-OUTPUT_FEISTY_2D = FEISTY_IC_2D
+# OUTPUT_FEISTY_2D = FEISTY_IC_2D
 # OUTPUT_NETCDF = Open_Netcdf
 
 # Targets
