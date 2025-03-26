@@ -5,7 +5,7 @@
 FC = gfortran # mpif90 # 
 CC = gcc
 # Compiler flags
-FFLAGS = -O3
+FFLAGS = -Og -pg -g
 
 # netCDF library flags
 NETCDF_FLAGS = `nf-config --fflags`

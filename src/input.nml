@@ -1,8 +1,11 @@
-
 &FEISTY_nml
-! Spinup parameters: ---------------------------------------------
         Year_2_Spinup = 100
-        Spinup = .false.
+        Spinup = .true.
+!
+! Experimentation parameters: ------------------------------------------
+        loc = "GOM"
+        exp = "2D" ! "COBALT_offline_BATS"
+        coupling = "offline"
 !
 ! Environemental data for test: -----------------------------------
         diagnostic           = .false.   ! True to run debug mode 
@@ -17,11 +20,7 @@
         IC               = 1d-5            ! Fish Initial Condition
         PI_be_cutoff     = 200.00          ! Benthic-pelagic coupling cutoff (depth, m)
 !
-! Experimentation parameters: ------------------------------------------
-        loc = "GOM"
-        exp = "2D" ! "COBALT_offline_BATS"
-        coupling = "offline"
-!
 ! input files: ----------------------------------------------------
         root_dir_output = "/project/rdenechere/COBALT_output/COBALT_offline_forcing_files/"
-        root_dir_loc = "/project/rdenechere/CEFI-regional-MOM6-FEISTY/exps/OM4.single_column.COBALT/"
+        root_dir = "/project/rdenechere/CEFI-regional-MOM6-FEISTY/exps/OM4.single_column.COBALT/"
+/

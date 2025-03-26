@@ -37,13 +37,13 @@ module Parameters
     ! ============= Variables to force from input file ===============!
     ! =================================================================!
     ! Experimentation parameters: ------------------------------------------
-    character(LEN=280), public :: loc = "BATS"
-    character(LEN=280), public :: exp = "2D" ! "COBALT_offline_BATS"
-    character(LEN=280), public :: coupling = "offline"
+    character(LEN=20), public :: loc = "BATS"
+    character(LEN=20), public :: exp = "2D" ! "COBALT_offline_BATS"
+    character(LEN=30), public :: coupling = "offline"
 
     ! Spinup parameters: ---------------------------------------------
     integer, public :: Year_2_Spinup = 100
-    logical :: Spinup = .false.
+    logical, public :: Spinup = .false.
 
     ! Environemental data for test: -----------------------------------
     logical, public :: diagnostic           = .false.   ! True to run diagonostic mode 
@@ -54,16 +54,16 @@ module Parameters
     logical, public :: largDemPel           = .false.
 
     ! Simulation parameters: ------------------------------------------
-    real(dp), public :: Delta_t          = 1.0             ! Time step [d]
-    real(dp), public :: IC               = 1d-5            ! Fish Initial Condition
-    real(dp), public :: PI_be_cutoff     = 200.00          ! Benthic-pelagic coupling cutoff (depth, m).
+    real, public :: Delta_t          = 1.0             ! Time step [d]
+    real, public :: IC               = 1d-5            ! Fish Initial Condition
+    real, public :: PI_be_cutoff     = 200.00          ! Benthic-pelagic coupling cutoff (depth, m).
     
     ! Directories : ----------------------------------------------------
     character(LEN=280), public :: root_dir_output = "/project/rdenechere/COBALT_output/COBALT_offline_forcing_files/"
     character(LEN=280), public :: root_dir = "/project/rdenechere/CEFI-regional-MOM6-FEISTY/exps/OM4.single_column.COBALT/"
 
     ! namelist 
-    namelist /FEISTY_nml/ loc, exp, Spinup, Year_2_Spinup, coupling, diagnostic, save_diagnostics, prod_constrained, &
+    namelist /FEISTY_nml/ Spinup, Year_2_Spinup, loc, exp, coupling, diagnostic, save_diagnostics, prod_constrained, &
                         Spinup_Time_Serie, Initial_Condition_generic_FEISTY, largDemPel, Delta_t, IC, PI_be_cutoff, &
                         root_dir_output, root_dir
     
@@ -97,18 +97,15 @@ module Parameters
 
     ! Assign values to the variables
     subroutine init_parameters
-        character(len=280) :: input_file
         integer :: ios
 
         ! Read from input.nml if it exists
-        input_file = "input.nml"
-        open(unit=10, file=input_file, status="old", iostat=ios)
-        if (ios == 0) then
-            read(10, nml=FEISTY_nml)
-            close(10)
-        else
-            print *, "Warning: input.nml not found. Using default values."
-        end if
+        open(unit=10, file="input.nml", status="old", action="read", iostat=ios)
+        call check_iostat(ios, "Error opening input.nml")
+
+        read(10, nml=FEISTY_nml, iostat=ios)
+        call check_iostat(ios, "Error reading input.nml/FEISTY_nml")   
+        close(10)
 
         ! Directories for the location ----------------------------------------------------
         root_dir_output_loc = trim(root_dir_output) // trim(loc) // "/"
@@ -257,6 +254,16 @@ module Parameters
         convers_det = 6.625 * 12.01 * 9.0 * 24.0 * 3600.0    ! detritus from molN m-2 s-1 --> gC WW m-2 d-1
         convers_dZm = 6.625 * 12.01 * 9.0 * 24.0 * 3600.0    ! zooplankton loss Mol N/kg s-1 --> gC WW m-3 d-1
     end subroutine init_parameters
+
+    subroutine check_iostat(iostat, msg)
+        integer, intent(in) :: iostat
+        character(len=*), intent(in) :: msg
+    
+        if ( iostat == 0 ) return
+        write(*,'(a,i0,/,tr3,a)') 'ERROR = ', iostat, msg
+        stop
+    
+      end subroutine check_iostat
     
 end module Parameters
 
