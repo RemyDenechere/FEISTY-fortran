@@ -24,3 +24,4 @@
         root_dir_output = "/project/rdenechere/COBALT_output/COBALT_offline_forcing_files/"
         root_dir = "/project/rdenechere/CEFI-regional-MOM6-FEISTY/exps/OM4.single_column.COBALT/"
 /
+EOF ! add whatever at the end of the file
