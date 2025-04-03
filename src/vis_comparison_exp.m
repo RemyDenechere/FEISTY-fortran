@@ -4,13 +4,13 @@
 %                                                                         %
 %=========================================================================%
 
-function [] = vis_Comparison_exp(option)
+function [] = vis_comparison_exp(option)
 
 arguments
-    option.exp       char                                                           = 'FEISTY--non-vertical-refuge-1'
+    option.exp       char                                                           = 'FEISTY--non-vertical-refuge-2'
     option.loc       char {mustBeMember(option.loc, {'BATS', 'CCE', 'GOM', 'NS'})}  = 'BATS'
     option.rockfish  logical                                                        = true
-    option.yr      double                                                           = 20
+    option.yr        double                                                         = 20
 end
 clf
 dbclear all 
@@ -117,7 +117,7 @@ for i = 1:N_param % one plot per parameter to test:
     for j = 1:length(N_values)
         % find eperiment with the same value for the parameter: 
         idx_exp = find(table2array(tab(:, i)) == N_values(j));
-        idx_exp = round(length(idx_exp)/2); % Take a value close to the middle of the list
+        idx_exp = idx_exp(round(length(idx_exp)/2)); % Take a value close to the middle of the list
         
         exp_to_test = EXP_LIST{idx_exp};
 
