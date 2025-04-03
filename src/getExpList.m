@@ -9,7 +9,7 @@
 %
 function [EXP_LIST, YR_RUN] = getExpList(EXP_NAME, LOC)
     arguments
-        EXP_NAME        char = 'FEISTY--non-vertical'
+        EXP_NAME        char = 'FEISTY--non-vertical-refuge-2'
         LOC             char = 'BATS'
     end 
 
