@@ -2,10 +2,10 @@
 function [] =  vis_FEISTY_Online_BATS(list, name, loc, yr, exp)
 arguments 
     list      logical = false
-    name      string  = 'BATS_nonFmort_0.1_encounter_70.000_k_1_k50_1_yr_'      % Default experiment
-    loc       char {mustBeMember(loc, {'BATS', 'CCE', 'GOM', 'NS'})} = 'BATS' % Default location
-    yr        char    = '10'
-    exp       char    = 'FEISTY--non-vertical'
+    name      string  = 'BATS_nonFmort_.100_encounter_70.000_k_1_Rfug_.00000000010000000000_yr_'      % Default experiment
+    loc       char {mustBeMember(loc, {'BATS', 'CCE', 'GOM', 'NS', 'GMX'})} = 'BATS' % Default location
+    yr        char    = '20'
+    exp       char    = 'FEISTY--non-vertical-refuge-2'
 end 
 %%
 yr = str2num(yr);
@@ -13,6 +13,7 @@ yr = str2num(yr);
 %! set up variable names
 var              = {'Sf', 'Sp', 'Sd', 'Mf', 'Mp', 'Md', 'Lp', 'Ld', 'BE'};
 var_COBALT       = {'nmdz', 'jhploss_n_Mdz', 'jprod_nmdz', 'nlgz', 'jhploss_n_Lgz', 'jprod_nlgz', 'Pop_btm'};
+var_env          = {'thetao'};
 functional_group = {'Forage', 'Pelagic', 'Demersal'};
 
 % indexes for plotting: 
@@ -22,6 +23,7 @@ idx_mz_rate_growth  = [3, 6]; % indexes growth rates
     
 coupling = 'online'; 
 addpath('../../Programing-Tutorials/Matlab/Matlab_functions/')
+load(['../output/Matlab_Average/', coupling, '/', loc, '/Topology.mat'], 'topog') 
 
 %! colors
 cm10 = colormap(turbo(10));
@@ -163,7 +165,8 @@ for nm = 1:length(exp_name)
     
     ylabel(t, "Biomass gWW m-2")
     xlabel(t, "time days")
-    title(t, {[coupling '_' name_yr '_yr_' num2str(yr)], 'Time_Means'}, Interpreter = 'none')
+    title(t, {[coupling '_' name_yr '_yr_' num2str(yr)], 'Time_Means'}, ...
+                Interpreter = 'none')
     
     save_graph(gcf, "png", [dir_output 'Time_Means'], 20, 14)
     
@@ -565,7 +568,43 @@ for nm = 1:length(exp_name)
     ylabel(t, "growth rates g WW m-2 d-1")
     
     save_graph(gcf, "png", [dir_output 'Comparison_online_offline_zooplanktons_growth_int100'], 20, 14)
-    
+
+    %% ------------------------------------------------------------------------
+    %                ENVIRONEMENTAL PARAMETERS TIME SERIES 
+    % -------------------------------------------------------------------------
+    time = start_date:end_date;
+    for i = 1:length(var_env)
+        n= n+1;
+        axes_formating(gcf, "defaultAxesColorOrder", cm7); 
+        t = tiledlayout(2, 2, "TileSpacing","compact","Padding","compact");
+        title(t, {[name_yr], ['COBALT ' coupling ' ' var_env{i}]}, ...
+        Interpreter = 'none')
+
+        ax = nexttile([1, 2]);
+        surf(time_days', -topog.Layer', eval(['transpose(' var_env{i} '_spacemean)']), ...
+            'EdgeColor', 'none')
+        view(2)
+        clb = colorbar(ax);
+        title(clb, var_env{i})
+        title('Depth Change over spinup years')
+        xlabel('Spinup time (days)')
+        ylabel('Depth (m)')
+
+        ax = nexttile; 
+        plot(time, eval([var_env{i} '_tmean_100m(1:366)']))
+        title('First spinup year')
+        xlabel('time (days)')
+        ylabel(var_env{i})
+
+
+        ax = nexttile;   
+        plot(time, eval([var_env{i} '_tmean_100m(end-365:end)']))
+        title('Last spinup year')
+        xlabel('time (days)')
+        ylabel(var_env{i})
+
+    end
+        
     %% ------------------------------------------------------------------------
     %                         Zooplankton Biomass
     %                              last year int_100m

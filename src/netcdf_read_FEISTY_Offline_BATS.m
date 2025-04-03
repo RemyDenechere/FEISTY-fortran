@@ -2,7 +2,7 @@
 function [] = netcdf_read_FEISTY_Offline_BATS(loc, exp, Rockfish)
 
 arguments 
-    loc                   char {mustBeMember(loc, {'BATS', 'CCE', 'GOM', 'NS'})} = 'BATS'
+    loc                   char {mustBeMember(loc, {'BATS', 'CCE', 'GOM', 'NS', 'GMX'})} = 'BATS'
     exp                   char    = '2D'
     Rockfish              logical = true
 end 
