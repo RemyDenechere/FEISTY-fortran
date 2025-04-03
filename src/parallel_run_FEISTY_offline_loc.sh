@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # List of locations
-locations=(BATS GOM) # BATS CCE GOM NS
+locations=(BATS CCE GOM) # BATS CCE GOM NS GMX
 
 # Loop through each location and run the script
 for loc in "${locations[@]}"; do
@@ -23,8 +23,8 @@ for loc in "${locations[@]}"; do
 
 
     # change location and run spinup
-    sed -i 's|character(LEN=280), parameter :: loc = ".*"|character(LEN=280), parameter :: loc = "'"$loc"'"|' Parameters.f90
-    sed -i 's|logical :: Spinup = ..*.|logical :: Spinup = .true.|' Run_physiology.f90
+    sed -i 's|character(LEN=280), parameter :: loc = ".*"|character(LEN=280), parameter :: loc = "'"$loc"'"|' input.nml
+    sed -i 's|logical :: Spinup = ..*.|logical :: Spinup = .true.|' input.nml
     make
     ./FEISTY
     make clean
@@ -33,7 +33,7 @@ for loc in "${locations[@]}"; do
     cp ../output/netcdf/offline/$loc/FEISTY_2D_2023_10_spinup_subset.nc /project/rdenechere/CEFI-regional-MOM6-FEISTY/exps/OM4.single_column.COBALT/"$loc"/
 
     # run non spinup 
-    sed -i 's|logical :: Spinup = ..*.|logical :: Spinup = .false.|' Run_physiology.f90
+    sed -i 's|logical :: Spinup = ..*.|logical :: Spinup = .false.|' input.nml
     make
     ./FEISTY
     make clean
