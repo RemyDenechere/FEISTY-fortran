@@ -180,7 +180,7 @@ module Structure
 
     ! ====================================================================================!
     ! Public variables and structures
-    ! ====================================================================================!
+    ! =========================================================================!
     type(FEISTY_type),          public                                      :: FEISTY
     type(FEISTY_diag),          public                                      :: diags
     type(FEISTY_tracers),       public, dimension(nDeriv)                   :: tracers

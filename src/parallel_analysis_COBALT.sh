@@ -24,7 +24,7 @@ else
     exit 1
 fi
 
-locations=(GOM) # list of locations BATS CCE GOM NS 
+locations=(BATS GOM) # list of locations BATS GOM GMX CCE NS 
 echo ""
 echo "--------------------------------------------------------------------"
 echo " Running for the current location list: ${locations[@]} "
@@ -79,6 +79,8 @@ for loc in "${locations[@]}"; do
     wait
 
     # RUN THE NETCDF ANALYSIS OF THE OFFLINE COBALT-FEISTY FOR EVERY EXPERIMENTATION NAME:
+    echo ""
+    echo "--------------------------------------------------------------------"
     echo "Start analysis netcdf output from COBALT offline at " $loc
     matlab -batch "netcdf_read_FEISTY_Offline_BATS('$loc')" -nodesktop -nodisplay
 
@@ -107,11 +109,11 @@ for loc in "${locations[@]}"; do
 
     echo "The netcdf analysis and visulation are done for the $NUM_LINES  experiment in $EXP_NAME for $loc"
 
-    # RUN MATALB ANALYSIS OF ALL EXPERIMENT EXPERIMENTATION NAME LIST       
+    # RUN MATALB ANALYSIS OF ALL EXPERIMENT EXPERIMENTATION NAME LIST
     echo ""
-    echo "--------------------------------------------------------------------"   
+    echo "--------------------------------------------------------------------"
     echo "Start comparison analysis of the $NUM_LINES experiments in $EXP_NAME for $loc"
-    matlab -batch "vis_Comparison_exp("exp", '$EXP_NAME', "loc", '$loc');" -nodesktop -nosplash -nojvm 
+    matlab -batch "vis_Comparison_exp("exp", '$EXP_NAME', "loc", '$loc');" -nodesktop -nosplash -nojvm
 done
 
 # PRINT SIMULATION TIME 
