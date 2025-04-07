@@ -3,8 +3,8 @@ function [] =  netcdf_read_FEISTY_Online_BATS(name, loc, yr, exp)
 % TO DO: 
 % use get 
 arguments 
-    name      char    = 'BATS_nonFmort_.100_encounter_70.000_k_1_Rfug_.00000000010000000000_yr_'      % Default experiment
-    loc       char {mustBeMember(loc, {'BATS', 'CCE', 'GOM', 'NS', 'GMX'})} = 'BATS'
+    name      char    = 'GOM_nonFmort_.100_encounter_70.000_k_1_Rfug_.00000000010000000000_yr_'      % Default experiment
+    loc       char {mustBeMember(loc, {'BATS', 'CCE', 'GOM', 'NS', 'GMX'})} = 'GOM'
     yr        char    = '20'      
     exp       char    = 'FEISTY--non-vertical-refuge-2'
 end 

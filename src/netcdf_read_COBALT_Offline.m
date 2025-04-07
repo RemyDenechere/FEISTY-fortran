@@ -9,7 +9,7 @@
 function [] =  netcdf_read_COBALT_Offline(loc, yr, exp)
 %=========================================================================%
 arguments 
-    loc       char {mustBeMember(loc, {'BATS', 'CCE', 'GOM', 'NS', 'GMX'})} = 'BATS'
+    loc       char {mustBeMember(loc, {'BATS', 'CCE', 'GOM', 'NS', 'GMX'})} = 'GOM'
     yr        char    = '20'      
     exp       char    = '2D'
 end 
