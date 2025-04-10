@@ -6,21 +6,21 @@
 % data in a folder called 'output' 
 % See function vis_FEISTY_offline_spinup.m for the plot analysis of the data.
 % 
-function [] =  netcdf_read_COBALT_Offline(loc, yr, exp)
+function [] =  netcdf_read_COBALT_Offline(option)
 %=========================================================================%
 arguments 
-    loc       char {mustBeMember(loc, {'BATS', 'CCE', 'GOM', 'NS', 'GMX'})} = 'GOM'
-    yr        char    = '20'      
-    exp       char    = '2D'
+    option.loc         char {mustBeMember(option.loc, {'BATS', 'CCE', 'GOM', 'NS', 'GMX'})} = 'BATS'
+    option.exp         char    = '2D'
+    option.yr_spinup   char    = '20'    % number of spiup years to read
 end 
-% dbclear all 
-dbstop in netcdf_read_COBALT_Offline at 116
+dbclear all 
+% dbstop in netcdf_read_COBALT_Offline at 107
 
 %% set up variable names
 spinup = true; 
 coupling = 'offline';
-yr = str2double(yr); % Use str2double for faster performance with scalar values
-name = [loc, '_yr_'] ;
+yr = str2double(option.yr_spinup); % Use str2double for faster performance with scalar values
+name = [option.loc, '_offline_yr_'] ;
 
 %! LIST OF VARIABLES: -----------------------------------------------
 var = {'nmdz', 'nlgz', 'nbact', 'ndet', 'ndi', 'nlg', 'nmd', 'nsm', ...
@@ -29,7 +29,7 @@ var = {'nmdz', 'nlgz', 'nbact', 'ndet', 'ndi', 'nlg', 'nmd', 'nsm', ...
 idx_biomass =   [1:8]; % index of the variables that are biomass
 idx_rates =     [9:12]; % index of the variables that are mortality and production
 idx_env =       [13:15]; % index of the environmental variables
-idx_pop_flux =  16; % index of the detritus flux to the bottom
+idx_pop_flux =  length(var); % index of the detritus flux to the bottom
 % [mol N kg-1]
 %    nmdz: medium zooplankton nitrogen
 %    nlgz: large zooplankton nitrogen
@@ -51,12 +51,12 @@ idx_pop_flux =  16; % index of the detritus flux to the bottom
 %    thetao: temperature
 %    Pop_btm: bottom detritus production (detritus flux to the bottom)
 
-disp(['Read netcdf files from COBALT-FEISTY ' coupling ' at ' loc, ...
+disp(['Read netcdf files from COBALT-FEISTY ' coupling ' at ' option.loc, ...
     ' for ' num2str(yr) ' years spinup!'])
 
 %% Get information about the simulation 
-disp(['Get information about the ' loc ' system'])
-topog.dir = ['../../CEFI-regional-MOM6-FEISTY/exps/OM4.single_column.COBALT/' loc '/'];
+disp(['Get information about the ' option.loc ' system'])
+topog.dir = ['../../CEFI-regional-MOM6-FEISTY/exps/OM4.single_column.COBALT/' option.loc '/'];
 topog.var = {'x', 'y', 'depth', 'Layer'};
 topog.longname = {'geographic_longitude', 'geographic_latitude', 'depth', 'Layer pseudo-depth'};
 topog.unit = {'degree_east', 'degree_north', 'meters', 'meters'};
@@ -76,20 +76,28 @@ topog.Layer_thikness(2:end) = topog.Layer(2:end) - topog.Layer(1:(end-1));
 topog.idx_100m = find(topog.Layer > 100, 1, 'first'); % index of the 100m layer to integrate plankton over 100m
 
 % save in folder of the location as its the same for every experiment in a location
-if ~exist(['../output/Matlab_Average/', coupling, '/' loc], "dir")
-    mkdir(['../output/Matlab_Average/', coupling, '/' loc])
+if ~exist(['../output/Matlab_Average/', coupling, '/' option.loc], "dir")
+    mkdir(['../output/Matlab_Average/', coupling, '/' option.loc])
 end
-save(['../output/Matlab_Average/', coupling, '/', loc, '/Topology.mat'], 'topog') 
+save(['../output/Matlab_Average/', coupling, '/', option.loc, '/Topology.mat'], 'topog') 
     
 %% get COBALT outputs for each offline spinup year : 
 
 % ! Loop over years: --------------------------------------------------
 for yr_i = 1:yr
-    disp(['Get COBALT output at ' loc ' for year ' num2str(yr_i)])
+
+    %! these years are not full years: issue with the netcdf files:
+    if yr_i == 4
+        yr_i =3; 
+    elseif yr_i == 5
+        yr_i = 6;
+    end 
+    
+    disp(['Get COBALT output at ' option.loc ' for year ' num2str(yr_i)])
     %! get directory containing output   
     name_yr = [name num2str(yr_i)]; 
-    dir_input = ['../../COBALT_output/COBALT_offline_forcing_files/', loc, '/' name_yr , '/'];
-    dir_output =['../output/Matlab_Average/', coupling, '/' loc, '/', exp, '/', [name num2str(yr)], '/'];
+    dir_input = ['../../COBALT_output/COBALT_offline_forcing_files/', option.loc, '/' name_yr , '/'];
+    dir_output =['../output/Matlab_Average/', coupling, '/' option.loc, '/', option.exp, '/', [name num2str(yr)], '/'];
 
     if ~exist(dir_output, 'dir') 
         mkdir(dir_output)
@@ -100,6 +108,7 @@ for yr_i = 1:yr
     
     % Getting data from netcdf for each variable:
     for i = 1:length(var)
+        disp(['var ', num2str(i), ' = ', var{i}])
         %! Read data from netcdf file: -------------------------------------
         % open the netcdf file: 
         if i == idx_pop_flux % pop_flux is save in a different file

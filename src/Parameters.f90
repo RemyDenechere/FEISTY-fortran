@@ -108,7 +108,7 @@ module Parameters
         close(10)
 
         ! Directories for the location ----------------------------------------------------
-        root_dir_output_loc = trim(root_dir_output) // trim(loc) // "/"
+        root_dir_output_loc = trim(root_dir_output) // trim(loc) // "/" // trim(loc) // "_offline_yr_1/"
         root_dir_loc = trim(root_dir) // trim(loc) // "/"
 
         dir_Temp = trim(root_dir_output_loc) // "20040101.ocean_feisty_forcing.nc"
@@ -250,7 +250,7 @@ module Parameters
         pref_Ld_BE = 1.0        ! Preference for Benthos
 
         ! Unit conversion for input data ----------------------------------
-        convers_zm = 6.625 * 12.01 * 9.0 * 1000.0            ! zooplankton biomass Mol N/kg --> gC WW m-3
+        convers_zm  = 6.625 * 12.01 * 9.0 * 1000.0            ! zooplankton biomass Mol N/kg --> gC WW m-3
         convers_det = 6.625 * 12.01 * 9.0 * 24.0 * 3600.0    ! detritus from molN m-2 s-1 --> gC WW m-2 d-1
         convers_dZm = 6.625 * 12.01 * 9.0 * 24.0 * 3600.0    ! zooplankton loss Mol N/kg s-1 --> gC WW m-3 d-1
     end subroutine init_parameters

@@ -1,12 +1,11 @@
 % Visualize output of FEISTY
 % Time series plots
 
-function [] = vis_FEISTY_Offline_BATS(loc, exp, rockfish, loc_test)
+function [] = vis_FEISTY_Offline_BATS(loc, exp, yr_spinup)
 arguments
     loc       char {mustBeMember(loc, {'BATS', 'CCE', 'GOM', 'NS', 'GMX'})} = 'BATS'
-    exp       char                                      = '2D'
-    rockfish  logical                                   = false
-    loc_test  logical                                   = false
+    exp       char      = '2D'
+    yr_spinup double    = 0                                      
 end
 
 addpath('../../Programing-Tutorials/Matlab/Matlab_functions/') 
@@ -15,15 +14,10 @@ dbclear all
 % dbstop in vis_FEISTY_Offline_BATS.m at 228
 
 %% Root directory: 
-param.Rockfish = rockfish; % true; %  
-param = param_setup(param);
-param.loc_test = loc_test;
-
 coupling = 'offline'; 
 Spinup = {'_Spinup_Time_Serie', ''};
 
-var = {'Sf', 'Sp', 'Sd', 'Mf', 'Mp', 'Md', 'Lp', 'Ld', 'BE', 'dZm', 'dZl'}; 
-
+var = {'Sf', 'Sp', 'Sd', 'Mf', 'Mp', 'Md', 'Lp', 'Ld', 'BE', 'dZm', 'dZl'};
 
 %! get directory containing output
 dir_input =['../output/Matlab_Average/', coupling, '/' loc, '/', exp, '/', ...

@@ -4,7 +4,7 @@
 #
 # USAGE: ./parallel_analysis_COBALT.sh FEISTY--non-vertical
 # 
-# SCRIPT TO PARALLELIZED THE ANALYSIS OF THE OUTPUT FROM COBALT-FEISTY ONLINE AND OFFLINE
+# SCRIPT TO PARALLELIZED THE ANALYSIS OF THE OUTPUT FROM COBALT-FEISTY ONLINE AND FEISTY OFFLINE
 # THE SCRIPT WILL RUN THE MATLAB FUNCTION netcdf_read_FEISTY_Online_BATS.m, netcdf_read_FEISTY_Offline_BATS.m,
 #  vis_FEISTY_Online_BATS.m, AND vis_FEISTY_Offline_BATS.m, FOR EACH EXPERIMENTATION NAME
 
@@ -24,7 +24,7 @@ else
     exit 1
 fi
 
-locations=(GOM) # list of locations BATS GOM GMX CCE NS 
+locations=(BATS GOM) # list of locations BATS GOM GMX CCE NS 
 echo ""
 echo "--------------------------------------------------------------------"
 echo " Running for the current location list: ${locations[@]} "
@@ -104,7 +104,7 @@ for loc in "${locations[@]}"; do
     # RUN THE VISUALISATION FOR THE OFFLINE COBALT-FEISTY
     echo ""
     echo "--------------------------------------------------------------------"
-    echo "Start making visualisation for the COBALT offline at " $loc
+    echo "Start making visualisation for the FEISTY offline at " $loc
     matlab -batch "vis_FEISTY_Offline_BATS('$loc')" -nodesktop -nodisplay -nosplash
 
     echo "The netcdf analysis and visulation are done for the $NUM_LINES  experiment in $EXP_NAME for $loc"
@@ -113,7 +113,7 @@ for loc in "${locations[@]}"; do
     echo ""
     echo "--------------------------------------------------------------------"
     echo "Start comparison analysis of the $NUM_LINES experiments in $EXP_NAME for $loc"
-    matlab -batch "vis_Comparison_exp("exp", '$EXP_NAME', "loc", '$loc');" -nodesktop -nosplash -nojvm
+    matlab -batch "vis_comparison_exp(exp='$EXP_NAME', loc='$loc');" -nodesktop -nosplash -nojvm
 done
 
 # PRINT SIMULATION TIME 

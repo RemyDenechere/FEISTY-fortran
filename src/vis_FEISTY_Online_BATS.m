@@ -2,8 +2,8 @@
 function [] =  vis_FEISTY_Online_BATS(list, name, loc, yr, exp)
 arguments 
     list      logical = false
-    name      string  = 'GOM_nonFmort_.100_encounter_70.000_k_1_Rfug_.00000000010000000000_yr_'      % Default experiment
-    loc       char {mustBeMember(loc, {'BATS', 'CCE', 'GOM', 'NS', 'GMX'})} = 'GOM' % Default location
+    name      string  = 'BATS_nonFmort_.100_encounter_70.000_k_1_Rfug_.00000000010000000000_yr_'      % Default experiment
+    loc       char {mustBeMember(loc, {'BATS', 'CCE', 'GOM', 'NS', 'GMX'})} = 'BATS' % Default location
     yr        char    = '20'
     exp       char    = 'FEISTY--non-vertical-refuge-2'
 end 
