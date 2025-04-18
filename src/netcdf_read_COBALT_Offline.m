@@ -28,7 +28,7 @@ var = {'nmdz', 'nlgz', 'nbact', 'ndet', 'ndi', 'nlg', 'nmd', 'nsm', ...
         'nh4', 'no3', 'o2', 'thetao', 'Pop_btm'};
 idx_biomass =   [1:8]; % index of the variables that are biomass
 idx_rates =     [9:12]; % index of the variables that are mortality and production
-idx_env =       [13:15]; % index of the environmental variables
+idx_env =       [13:16]; % index of the environmental variables
 idx_pop_flux =  length(var); % index of the detritus flux to the bottom
 % [mol N kg-1]
 %    nmdz: medium zooplankton nitrogen
@@ -96,7 +96,7 @@ for yr_i = 1:yr
     disp(['Get COBALT output at ' option.loc ' for year ' num2str(yr_i)])
     %! get directory containing output   
     name_yr = [name num2str(yr_i)]; 
-    dir_input = ['../../COBALT_output/COBALT_offline_forcing_files/', option.loc, '/' name_yr , '/'];
+    dir_input = ['../../COBALT_output/COBALT_offline_forcing_files/', option.loc,'/', option.exp ,'/' name_yr , '/'];
     dir_output =['../output/Matlab_Average/', coupling, '/' option.loc, '/', option.exp, '/', [name num2str(yr)], '/'];
 
     if ~exist(dir_output, 'dir') 

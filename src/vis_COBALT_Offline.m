@@ -21,7 +21,7 @@ var_COBALT = {'nmdz', 'nlgz', 'nbact', 'ndet', 'ndi', 'nlg', 'nmd', 'nsm', ...
                 'nh4', 'no3', 'o2', 'thetao', 'Pop_btm'};
 idx_biomass =   [1:8]; % index of the variables that are biomass
 idx_rates =     [9:12]; % index of the variables that are mortality and production
-idx_env =       [13:15]; % index of the environmental variables
+idx_env =       [13:16]; % index of the environmental variables
 idx_pop_flux =  length(var_COBALT); % index of the detritus flux to the bottom
 
 % make output directory: 
@@ -100,7 +100,7 @@ for i = [idx_biomass idx_rates idx_env]
     xlabel('time (days)')
     ylabel(var_COBALT{i})
 
-    save_graph(gcf, "png", [dir_output 'COBALT_offline_' var_COBALT{i} '_100mInt'], 16, 12)
+    save_graph(gcf, "png", [dir_output 'COBALT_offline_' var_COBALT{i} '_100mInt_' option.yr_spinup '_yrs'], 16, 12)
 end
         
 for i = idx_pop_flux
@@ -133,5 +133,5 @@ for i = idx_pop_flux
     xlabel('time (days)')
     ylabel(var_COBALT{i})
 
-    save_graph(gcf, "png", [dir_output 'COBALT_offline_' var_COBALT{i} '_100mInt'], 16, 12)
+    save_graph(gcf, "png", [dir_output 'COBALT_offline_' var_COBALT{i} '_100mInt_' option.yr_spinup '_yrs'], 16, 12)
 end 

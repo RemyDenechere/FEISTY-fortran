@@ -8,7 +8,6 @@
 # THE SCRIPT WILL RUN THE MATLAB FUNCTION netcdf_read_FEISTY_Online_BATS.m, netcdf_read_FEISTY_Offline_BATS.m,
 #  vis_FEISTY_Online_BATS.m, AND vis_FEISTY_Offline_BATS.m, FOR EACH EXPERIMENTATION NAME
 
-
 # FILE NAMES
 FILE_EXP='experiment_name.txt'
 FILE_YEAR='nmb_yr.txt'
@@ -24,7 +23,7 @@ else
     exit 1
 fi
 
-locations=(BATS GOM) # list of locations BATS GOM GMX CCE NS 
+locations=(BATS) # list of locations BATS GOM GMX CCE NS 
 echo ""
 echo "--------------------------------------------------------------------"
 echo " Running for the current location list: ${locations[@]} "
