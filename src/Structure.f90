@@ -185,8 +185,9 @@ module Structure
     type(FEISTY_diag),          public                                      :: diags
     type(FEISTY_tracers),       public, dimension(nDeriv)                   :: tracers
     type(Initial_conditions),   public, dimension(nDeriv)                   :: IC_tracers_Bio
-    real(dp),                   public, dimension(:, :, :, :), allocatable  :: DataTemp, Datadet, &
-                                                                               DataZM, Datadzm, DataZL, Datadzl
+    real(dp),                   public, dimension(:, :, :, :), allocatable  :: DataTemp, DataZM,&
+                                                                               Datadzm, DataZL, Datadzl
+    real(dp),                   public, dimension(:, :, :)   , allocatable  :: Datadet
 
     contains 
 
@@ -194,7 +195,7 @@ module Structure
     subroutine initPhysiology()
         integer :: i
     
-        if (Spinup) then
+        if (Spinup_logical) then
             ! Fish: 
             do i = 1, nFishGroup
                 FEISTY%fish(i)%B = IC
@@ -212,7 +213,7 @@ module Structure
             end do
             ! Benthic: 
             do i = 1, nBenthos  
-                FEISTY%benthos(i)%B = IC_tracers_Bio(i)%IniBio(FEISTY%ilath, FEISTY%ilongh)
+                FEISTY%benthos(i)%B = IC_tracers_Bio(nFishGroup + i)%IniBio(FEISTY%ilath, FEISTY%ilongh)
             end do
         end if 
     end subroutine initPhysiology
@@ -222,7 +223,7 @@ module Structure
         integer :: i
     
         ! Gives initial condition for 1st time step if Spinup 
-        if ((Spinup) .and. (FEISTY%itime .eq. int(1))) then
+        if ((Spinup_logical) .and. (FEISTY%itime .eq. int(1))) then
             ! Fish: 
             do i = 1, nFishGroup
                 FEISTY%fish(i)%B = IC
@@ -233,7 +234,7 @@ module Structure
             end do
         
         ! Gives initial condition for 1st time step from spinup 
-        elseif ((Spinup .eqv. .false.) .and. (FEISTY%itime .eq. int(1))) then
+        elseif ((Spinup_logical .eqv. .false.) .and. (FEISTY%itime .eq. int(1))) then
             do i = 1, nFishGroup
                 FEISTY%fish(i)%B = IC_tracers_Bio(i)%IniBio(FEISTY%ilath, FEISTY%ilongh)
             end do
@@ -342,17 +343,6 @@ module Structure
             diags%mesozoo(i)%Zcon_VS_dZ(FEISTY%itime, FEISTY%ilath, FEISTY%ilongh) =  FEISTY%mesozoo(i)%Zcons_VS_dZ 
         end do
     end subroutine store_daily_diag
-
-    ! subroutine Calc_trans_layer(diags, FEISTY)
-    !     ! If new grid cell it will take Fout from the last grid cell: it is therefore 
-    !     ! initialised at the begening of the lat and long with a value of 10-5
-    !     type(FEISTY_diag), intent(in)    :: diags         ! Storage (time layer, space)*
-    !     type(FEISTY_type), intent(inout) :: FEISTY        ! Daily data for the month 
-
-    !     FEISTY%Sd_Fout_B_int  = sum(diags%Sd_Fout_B * FEISTY%layer_thickness(1:75)) / FEISTY%layer_thickness(75)
-    !     FEISTY%Ld_Repro_end = FEISTY%fish(Ld)%Repro / FEISTY%layer_thickness(75)
-    !     FEISTY%Md_Fout_end  = FEISTY%fish(Md)%Fout
-    ! end subroutine Calc_trans_layer
 
     subroutine Print_FEISTY_diagnostic()
         integer :: i

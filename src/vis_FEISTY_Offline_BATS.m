@@ -3,15 +3,16 @@
 
 function [] = vis_FEISTY_Offline_BATS(loc, exp, yr_spinup)
 arguments
-    loc       char {mustBeMember(loc, {'BATS', 'CCE', 'GOM', 'NS', 'GMX'})} = 'BATS'
+    loc       char {mustBeMember(loc, {'BATS', 'CCE', 'GOM', 'GOM_2'...
+                                       'NS', 'GMX', 'GMX_2', })} = 'GOM'
     exp       char      = '2D'
-    yr_spinup double    = 0                                      
+    yr_spinup double    = 100                                      
 end
 
 addpath('../../Programing-Tutorials/Matlab/Matlab_functions/') 
 
 dbclear all 
-% dbstop in vis_FEISTY_Offline_BATS.m at 228
+% dbstop in vis_FEISTY_Offline_BATS.m at 16
 
 %% Root directory: 
 coupling = 'offline'; 
@@ -22,7 +23,7 @@ var = {'Sf', 'Sp', 'Sd', 'Mf', 'Mp', 'Md', 'Lp', 'Ld', 'BE', 'dZm', 'dZl'};
 %! get directory containing output
 dir_input =['../output/Matlab_Average/', coupling, '/' loc, '/', exp, '/', ...
                             'FEISTY_' coupling '_' loc '_' exp '_'];
-dir_input_forcing =['../output/Matlab_Average/', coupling, '/' loc, '/', ];
+dir_input_forcing =['../output/Matlab_Average/', coupling, '/' loc, '/',  exp, '/',];
 
 dir_output =['../Fig/', coupling, '/' loc, '/', exp, '/']; 
 if ~exist(dir_output) 
@@ -46,8 +47,8 @@ cm10=[0.5 0.5 0;... %tan/army
 % set(groot,'defaultAxesColorOrder', cm10);
 
 %! thickness of the lines:
-thickness.grp = [1.25, 1.25, 2.5, 1.25];
-thickness.size = [1.25 1.25 2.5 2.5 2.5 2.5 2.5 2.5 1.25];
+thickness.grp = [1.25, 2.5, 2.5, 1.25];
+thickness.size = [1.25 1.25 1.25 2.5 2.5 2.5 3.75 3.75 1.25];
 
 %% plot Spinup 
 % Load Data: -------------------------------------------------------------- 
@@ -85,7 +86,7 @@ h = plot(time(1:xtime), F_tmean(1:xtime), ...
      time(1:xtime), D_tmean(1:xtime), ...
      time(1:xtime), BE_tmean(1:xtime));
 hold off 
-legend('Forage', 'Pelagics', 'Demersals', 'Benthos', 'Location', 'east')
+legend('Forage', 'Pelagics', 'Demersals', 'Benthos', 'Location', 'best')
 set(gca, "YScale", "log", ...
     "XLim", [0, xtime*1.2], ...
     "Ylim", [10^(-3) 10^(2)])
@@ -129,7 +130,7 @@ for i = 1:(length(var)-3)
         'LineWidth', thickness.size(i))
 end 
 hold off 
-legend(var{1:(end-3)}, 'best')
+legend(var{1:(end-3)}, 'Location', 'best')
 set(gca, "YScale", "log", 'Ylim', [10^(-5) 5])
 title("All size")
 
@@ -142,7 +143,7 @@ for i = 1:4
     set(h(i), 'LineWidth', thickness.grp(i))
 end
 set(gca, "YScale", "log", 'Ylim', [10^(-5) 10^(2)])
-legend('Forage', 'Pelagics', 'Demersals', 'Benthos', 'best')
+legend('Forage', 'Pelagics', 'Demersals', 'Benthos', 'Location', 'best')
 title("Functional group")
 
 % Fig axes labels :

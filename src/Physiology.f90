@@ -450,26 +450,34 @@ module Physiology
         ! CC = 80            : Carring Capacity for benthic chemostat
         !:======================================================================
         do i = 1, nBenthos
+            ! Calcul the benthic growth rate and derivative:
             pred = FEISTY%fish(Md)%cons_BE * FEISTY%fish(Md)%B + FEISTY%fish(Ld)%cons_BE * FEISTY%fish(Ld)%B
             r = Bent_eff * FEISTY%det / FEISTY%benthos(i)%B 
             dBEdt = r * FEISTY%benthos(i)%B * (1 - FEISTY%benthos(i)%B/CC) - pred
             FEISTY%benthos(i)%B = FEISTY%benthos(i)%B + Delta_t * r * FEISTY%benthos(i)%B * (1 - FEISTY%benthos(i)%B/CC) - pred
-        enddo
-
-        ! New biomass : ------------------------------------------
-        do i = 1, nFishGroup
-            FEISTY%fish(i)%B = FEISTY%fish(i)%B + Delta_t * FEISTY%dBdt(i)  ! Euler schem
+            
             ! Check for neg and na values 
-            if (FEISTY%fish(i)%B <= zero .or. isnan(FEISTY%fish(i)%B)) then 
-                FEISTY%fish(i)%B = 1.0d-5
-            end if 
-        end do 
-
-        do i = 1, nBenthos
-            if (FEISTY%benthos(i)%B <= zero .or. isnan(FEISTY%benthos(i)%B)) then 
+            if ((FEISTY%benthos(i)%B <= 1.0d-15) .or. (isnan(FEISTY%benthos(i)%B))) then 
                 FEISTY%benthos(i)%B = 1.0d-5
             end if 
         enddo
+
+        ! New biomass Fish : ------------------------------------------
+        do i = 1, nFishGroup
+            FEISTY%fish(i)%B = FEISTY%fish(i)%B + Delta_t * FEISTY%dBdt(i)  ! Euler schem
+            ! if ( i == int(2) ) then 
+            !     print *, trim(tracers_name(i)), 'new bio: ', FEISTY%fish(i)%B
+            ! end if 
+            ! Check for neg and na values 
+            if ((FEISTY%fish(i)%B <= 1.0d-15) .or. (isnan(FEISTY%fish(i)%B))) then 
+                FEISTY%fish(i)%B = 1.0d-5
+                ! if ( i == int(2) ) then 
+                !     print *, 'Sp bio after check: ', FEISTY%fish(i)%B
+                ! end if 
+            end if 
+        end do 
+
+      
 
         ! Print all diagnostics used in FEISTY 
         if (diagnostic) then 

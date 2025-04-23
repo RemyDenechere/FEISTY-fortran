@@ -47,3 +47,8 @@ BE_B = netcdf.getVar(ncid, netcdf.inqVarID(ncid, "BE_B"));
 lz = netcdf.getVar(ncid, netcdf.inqVarID(ncid, "Layer"));
 
 plot(lz, squeeze(mean(BE_B, [1,2])))
+
+%% 
+start = datetime("1900-01-01");
+count = 38350.875; 
+endtime = start + count

@@ -5,12 +5,12 @@ function [] = vis_COBALT_Offline(option)
 arguments
     option.loc       char {mustBeMember(option.loc, {'BATS', 'CCE', 'GOM', 'NS', 'GMX'})} = 'BATS'
     option.exp       char      = '2D'
-    option.yr_spinup char    = '20'    % number of spinup years to read                                  
+    option.yr_spinup char      = '20'    % number of spinup years to read                                  
 end
 dbclear all 
 % dbstop in vis_COBALT_Offline.m at 13
 
-addpath('../../Programing-Tutorials/Matlab/Matlab_functions/') 
+addpath('../../Programing-Tutorials/Matlab/Matlab_functions/')  
 
 %% Root directory: 
 coupling = 'offline'; 

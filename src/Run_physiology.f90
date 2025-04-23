@@ -15,7 +15,7 @@ program Run_physiology
 
     print *, "-------------------------------------"
     print *, " Simulation of FEISTY offline using COBALT 1D "
-    print *, " at ", trim(loc), ", Spinup: ", Spinup
+    print *, " at ", trim(loc), ", Spinup: ", Spinup_logical
     print *, "-------------------------------------"
     
     ! Initialisation: ----------------------------------------------------------
@@ -24,7 +24,7 @@ program Run_physiology
     CALL cpu_time(T2)
  
     ! Increasing the spinup time! 
-    if (Spinup) then 
+    if (Spinup_logical) then 
         Year = FEISTY%Ntime/366
         sim_time = 1.73
     else 
@@ -58,6 +58,8 @@ program Run_physiology
         enddo; enddo ! End Loop Year and day
     enddo ; enddo; ! } longh; lat; layer
 
+    print *, "-------------------------------------"
+    print *, "     starting write_output_netcdf    "
     CALL write_output_netcdf  ! Save Netcdf 
 
     CALL cpu_time(T3)

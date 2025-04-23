@@ -1,9 +1,9 @@
 &FEISTY_nml
         Year_2_Spinup = 100
-        Spinup = .true.
+        Spinup_logical = .false.
 !
 ! Experimentation parameters: ------------------------------------------
-        loc = "GOM"
+        loc = "GMX_2"
         exp = "2D" ! "COBALT_offline_BATS"
         coupling = "offline"
 !

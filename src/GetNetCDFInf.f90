@@ -11,7 +11,7 @@ module GetNetCDFinf
     ! Initialisation of the FEISTY model
     !:======================================================================
     ! Inputs:   
-    ! Spinup: logical, if true, the model will run for 100 years
+    ! Spinup_logical: logical, if true, the model will run for 100 years
     ! FEISTY: type(FEISTY_type), the main structure of the model
     ! diags: type(FEISTY_diag), the structure to store the diagnostics
     ! IC_tracers_Bio: type(Initial_conditions), the structure to store the initial conditions
@@ -44,7 +44,7 @@ module GetNetCDFinf
         CALL load_forcing_data ! Load the data used to force the model
         Call load_IC_fish ! Load the initial condition of the model
         ! 
-        if (Spinup) then 
+        if (Spinup_logical) then 
             FEISTY%Ntime = FEISTY%Ntime * Year_2_Spinup
         end if
 
@@ -143,7 +143,8 @@ module GetNetCDFinf
         CALL readgrid4D(dir_dzm, var_dzm,    Datadzm)
         CALL readgrid4D(dir_zl, var_zl,      DataZL)
         CALL readgrid4D(dir_dzl, var_dzl,    Datadzl)
-        CALL readgrid4D(dir_det, var_det,    Datadet)
+        CALL readgrid3D(dir_det, var_det,    Datadet)
+
         
         ! Get data about the location 
         CALL readgrid1D(dir_zt, var_zt, Datazt)  ! pseudo layer depth 
@@ -167,7 +168,7 @@ module GetNetCDFinf
     subroutine load_IC_fish()
         integer :: i
 
-        if (Spinup .eqv. .false.) then 
+        if (Spinup_logical .eqv. .false.) then 
             do i = 1, nDeriv
                 allocate(IC_tracers_Bio(i)%IniBio(FEISTY%Nlath, FEISTY%Nlongh))
             end do 
@@ -189,14 +190,14 @@ module GetNetCDFinf
     subroutine write_output_netcdf()
         integer :: i
 
-        IF (Spinup) THEN
+        IF (Spinup_logical) THEN
             DO i = 1, nDeriv
                 CALL write_nc_file3D(Dir_IC(i), tracers_name(i), tracers(i)%Bio(FEISTY%Ntime, 1:FEISTY%Nlath, 1:FEISTY%Nlongh))
             END DO
     
             IF (Spinup_Time_Serie) THEN
                 DO i = 1, nDeriv
-                    CALL write_nc_file4D("../output/netcdf/" // TRIM(coupling) // "/" // TRIM(loc) // &
+                    CALL write_nc_file4D("../output/netcdf/" // TRIM(coupling) // "/" // TRIM(loc) // "/" // TRIM(exp) //&
                         "/COBALT_" // TRIM(coupling) // "_" // TRIM(loc) // "_" // TRIM(exp) // &
                         "_" // TRIM(tracers_name(i)) // "_bio_Spinup_Time_Serie.nc", &
                         TRIM(tracers_name(i)), tracers(i)%Bio)
@@ -207,13 +208,25 @@ module GetNetCDFinf
                 CALL FEISTY_Save_IC()
             END IF
         ELSE
-            ! Write each variable to a separate NetCDF file
+            ! Write each biomass variable to a separate NetCDF file
             DO i = 1, nDeriv
-                CALL write_nc_file4D("../output/netcdf/" // TRIM(coupling) // "/" // TRIM(loc) // &
+                ! print *, tracers_name(i)
+                ! print *, tracers(i)%Bio
+                CALL write_nc_file4D("../output/netcdf/" // TRIM(coupling) // "/" // TRIM(loc) // "/" // TRIM(exp) //&
                     "/COBALT_" // TRIM(coupling) // "_" // TRIM(loc) // "_" // TRIM(exp) // &
                     "_" // TRIM(tracers_name(i)) // "_bio.nc", &
                     TRIM(tracers_name(i)), tracers(i)%Bio)
             END DO
+            ! Write eooplankton overconsumption to a separate NetCDF file
+            DO i = 1, nMesoZoo
+                CALL write_nc_file4D("../output/netcdf/" // TRIM(coupling) // "/" // TRIM(loc) // "/" // TRIM(exp) //&
+                "/COBALT_" // TRIM(coupling) // "_" // TRIM(loc) // "_" // TRIM(exp) // &
+                "_" // TRIM(Meso_diag_name(i)) // ".nc", &
+                TRIM(Meso_diag_name(i)), diags%mesozoo(i)%Zcon_VS_dZ)
+            END DO
+
+            ! Write diagnostic variables to a separate NetCDF file
+            CALL FEISTY_Save_diag()
         END IF
     END SUBROUTINE write_output_netcdf
 
@@ -225,6 +238,11 @@ module GetNetCDFinf
 
         ! Create the NetCDF file
         status = nf90_create(filename, NF90_CLOBBER, ncid)
+        if (status /= NF90_NOERR) then
+            print *, nf90_strerror(status)
+            print *, "Error creating file: ", trim(filename)
+            stop
+        end if
         
         ! Define the dimensions
         status = nf90_def_dim(ncid, 'Time'  , FEISTY%Ntime  , dimids(1))
@@ -234,20 +252,49 @@ module GetNetCDFinf
 
         ! Define the variable
         status = nf90_def_var(ncid, varname, NF90_REAL, dimids([1,3,4]), varid)
+        if (status /= NF90_NOERR) then
+            print *, nf90_strerror(status)
+            print *, "Error def var: ", trim(varname), " in: ", trim(filename)
+            stop
+        end if
+
+       ! add a unit attribute 
+        status = nf90_put_att(ncid, varid, 'units', 'gWW m-2')
+        if (status /= NF90_NOERR) then
+            print *, nf90_strerror(status)
+            print *, "nf90_put_att: ", trim(varname), " in: ",  trim(filename)
+            stop
+        end if
 
         ! End the definitions mode
         status = nf90_enddef(ncid)
-        
+        if (status /= NF90_NOERR) then
+            print *, nf90_strerror(status)
+            print *, "Error endingdef mode: ", trim(filename)
+            stop
+        end if
+
         ! Write the variable data
         status = nf90_put_var(ncid, varid, var)
+        if (status /= NF90_NOERR) then
+            print *, nf90_strerror(status)
+            print *, "nf90_put_var: ", trim(varname), " in: ",  trim(filename)
+            stop
+        else 
+            print *, "var written: ", trim(varname), " in: ",  trim(filename)
+        end if
 
-        ! add a unit attribute 
-        status = nf90_put_att(ncid, varid, 'units', 'gWW m-2')
-        
         ! Close the file
         status = nf90_close(ncid)
+        if (status /= NF90_NOERR) then
+            print *, nf90_strerror(status)
+            print *, "nf90_close: ", trim(varname), " in: ",  trim(filename)
+            stop
+        else 
+            print *, "File closed: ", trim(filename)
+        end if
 
-        print *, filename, " written"
+
     end subroutine write_nc_file4D
 
     subroutine write_nc_file3D(filename, varname, var)
@@ -258,26 +305,71 @@ module GetNetCDFinf
 
         ! Create the NetCDF file
         status = nf90_create(filename, NF90_CLOBBER, ncid)
+        if (status /= NF90_NOERR) then
+            print *, nf90_strerror(status)
+            print *, "Error creating file: ", trim(filename)
+            stop
+        end if
         
         ! Define the dimensions
         status = nf90_def_dim(ncid, 'Layer' , FEISTY%Nlayer , dimids(1))
+        if (status /= NF90_NOERR) then
+            print *, nf90_strerror(status)
+            print *, "Error def_dim: ", 'Layer'
+            stop
+        end if
         status = nf90_def_dim(ncid, 'Lath'  , FEISTY%Nlath  , dimids(2))
+        if (status /= NF90_NOERR) then
+            print *, nf90_strerror(status)
+            print *,  "Error def_dim: ", 'Lath'
+            stop
+        end if
         status = nf90_def_dim(ncid, 'Longh' , FEISTY%Nlongh , dimids(3))
+        if (status /= NF90_NOERR) then
+            print *, nf90_strerror(status)
+            print *,  "Error def_dim: ", 'Longh'
+            stop
+        end if
 
         ! Define the variable
         status = nf90_def_var(ncid, varname, NF90_REAL, dimids(2:3), varid)
-
-        ! End the definitions mode
-        status = nf90_enddef(ncid)
-        
-        ! Write the variable data
-        status = nf90_put_var(ncid, varid, var)
+        if (status /= NF90_NOERR) then
+            print *, nf90_strerror(status)
+            print *,  "Error nf90_def_var: ", trim(varname), " in: ", trim(filename)
+            stop
+        end if
 
         ! add a unit attribute 
         status = nf90_put_att(ncid, varid, 'units', 'gWW m-2')
+        if (status /= NF90_NOERR) then
+            print *, nf90_strerror(status)
+            print *,  "Error nf90_put_att: ", trim(varname), " in: ", trim(filename)
+            stop
+        end if
+
+        ! End the definitions mode
+        status = nf90_enddef(ncid)
+        if (status /= NF90_NOERR) then
+            print *, nf90_strerror(status)
+            print *,  "Error nf90_enddef: ", trim(varname), " in: ", trim(filename)
+            stop
+        end if
+        
+        ! Write the variable data
+        status = nf90_put_var(ncid, varid, var)
+        if (status /= NF90_NOERR) then
+            print *, nf90_strerror(status)
+            print *,  "Error nf90_put_var: ", trim(varname), " in: ", trim(filename)
+            stop
+        end if
         
         ! Close the file
         status = nf90_close(ncid)
+        if (status /= NF90_NOERR) then
+            print *, nf90_strerror(status)
+            print *,  "Error nf90_close: ", " in: ", trim(filename)
+            stop
+        end if
     end subroutine write_nc_file3D
 
 
@@ -287,15 +379,15 @@ module GetNetCDFinf
     !:======================================================================  
     subroutine Get_Environmental_data()
         ! Integrate all over depth and store them in the FEISTY structure
-        FEISTY%Tp = sum(DataTemp(FEISTY%ilath, FEISTY%ilongh, FEISTY%idx_100m, FEISTY%iDay)) / size(FEISTY%idx_100m)
-        FEISTY%Tb = DataTemp(FEISTY%ilath, FEISTY%ilongh, FEISTY%Nlayer, FEISTY%iDay)
-        FEISTY%mesozoo(1)%B  = sum(DataZM(FEISTY%ilath, FEISTY%ilongh, FEISTY%idx_100m, FEISTY%iDay) & 
+        FEISTY%Tp = sum(DataTemp(FEISTY%ilongh, FEISTY%ilath, FEISTY%idx_100m, FEISTY%iDay)) / size(FEISTY%idx_100m)
+        FEISTY%Tb = DataTemp(FEISTY%ilongh, FEISTY%ilath, FEISTY%Nlayer, FEISTY%iDay)
+        FEISTY%mesozoo(1)%B  = sum(DataZM(FEISTY%ilongh, FEISTY%ilath, FEISTY%idx_100m, FEISTY%iDay) & 
                                     * FEISTY%layer_thickness(FEISTY%idx_100m)) * convers_zm
-        FEISTY%mesozoo(2)%B  = sum(DataZL(FEISTY%ilath, FEISTY%ilongh, FEISTY%idx_100m, FEISTY%iDay) &
+        FEISTY%mesozoo(2)%B  = sum(DataZL(FEISTY%ilongh, FEISTY%ilath, FEISTY%idx_100m, FEISTY%iDay) &
                                     * FEISTY%layer_thickness(FEISTY%idx_100m)) * convers_zm
-        FEISTY%mesozoo(1)%dz = sum(Datadzm(FEISTY%ilath, FEISTY%ilongh, FEISTY%idx_100m, FEISTY%iDay)) * convers_dZm
-        FEISTY%mesozoo(2)%dz = sum(Datadzl(FEISTY%ilath, FEISTY%ilongh, FEISTY%idx_100m, FEISTY%iDay)) * convers_dZm
-        FEISTY%det = Datadet(FEISTY%ilath, FEISTY%ilongh, FEISTY%Nlayer, FEISTY%iDay) * convers_det
+        FEISTY%mesozoo(1)%dz = sum(Datadzm(FEISTY%ilongh, FEISTY%ilath, FEISTY%idx_100m, FEISTY%iDay)) * convers_dZm
+        FEISTY%mesozoo(2)%dz = sum(Datadzl(FEISTY%ilongh, FEISTY%ilath, FEISTY%idx_100m, FEISTY%iDay)) * convers_dZm
+        FEISTY%det = Datadet(FEISTY%ilongh, FEISTY%ilath, FEISTY%iDay) * convers_det
     end subroutine Get_Environmental_data
 
 
@@ -332,7 +424,7 @@ module GetNetCDFinf
         ierr = nf90_close(ncid)
     
         print *, trim(varname), " loaded"
-        print *, "dir : ", trim(dir)
+        ! print *, "dir : ", trim(dir)
     end subroutine readgrid4D
 
     subroutine readgrid3D(dir, varname, values)
@@ -340,7 +432,7 @@ module GetNetCDFinf
         real(dp), dimension(:, :, :), allocatable, intent(inout) :: values
         integer :: ierr, ncid, varid
     
-        allocate(values(FEISTY%Nlayer, FEISTY%Nlath, FEISTY%Nlongh))
+        allocate(values(FEISTY%Nlongh, FEISTY%Nlath, FEISTY%Ntime))
     
         ! Open NetCDF file
         ierr = nf90_open(dir, NF90_NOWRITE, ncid)
@@ -365,7 +457,7 @@ module GetNetCDFinf
         end if
     
         print *, "Initial condition ", trim(varname), " loaded"
-    
+
         ! Close the NetCDF file
         ierr = nf90_close(ncid)
     end subroutine readgrid3D
@@ -440,7 +532,8 @@ module GetNetCDFinf
         integer :: i
         real(dp), dimension(FEISTY%Ntime, FEISTY%Nlath, FEISTY%Nlongh) :: hp_ingest_nmdz
     
-        filename = "../output/netcdf/" // trim(coupling) // "/" // trim(loc) // "/FEISTY_2D_2023_10_spinup_subset.nc"
+        filename = "../output/netcdf/" // trim(coupling) // "/" // trim(loc) // "/" // trim(exp) // &
+                    "/FEISTY_2D_2023_10_spinup_subset.nc"
         call init_tracer_nc(filename, ncid, dimids)
     
         do i = 1, nDeriv
@@ -468,7 +561,7 @@ module GetNetCDFinf
         ! Create the NetCDF file
         status = nf90_create(filename, NF90_CLOBBER, ncid)
         if (status /= NF90_NOERR) then
-            print *, "Error opening " , trim(filename), " in init_tracer_nc"
+            print *, "Error creating " , trim(filename), " in init_tracer_nc"
             print *, trim(nf90_strerror(status))
             STOP
         end if
@@ -607,14 +700,14 @@ module GetNetCDFinf
         character(LEN=280) :: filename, String_Spinup
         integer(4) :: ncid, dimids(4), i
     
-        if (Spinup) then
+        if (Spinup_logical) then
             String_Spinup = "_Spinup_"
         else
             String_Spinup = "_"
         end if
     
         do i = 1, nFishGroup
-            filename = "../output/netcdf/" // trim(coupling) // "/" // trim(loc) // &
+            filename = "../output/netcdf/" // trim(coupling) // "/" // trim(loc) // "/" // trim(exp) // &
                        "/COBALT_" // trim(coupling) // "_" // trim(loc) // "_" // trim(exp) // "_" // &
                        trim(tracers_name(i)) // "_diag" // trim(String_Spinup) // "Time_Serie.nc"
     
@@ -631,7 +724,20 @@ module GetNetCDFinf
             call add_Diag_nc(ncid, dimids, "E_A", trim(tracers_name(i))  // " Energy Available", diags%fish(i)%E_A)
             call add_Diag_nc(ncid, dimids, "Fout", trim(tracers_name(i)) // " Flux out size class", diags%fish(i)%Fout)
             call add_Diag_nc(ncid, dimids, "Repro", trim(tracers_name(i))// " Reproductive output", diags%fish(i)%Repro)
-    
+
+            ! feeding levels:
+            call add_Diag_nc(ncid, dimids, "f_Zm", trim(tracers_name(i)) // " Feeding level Medium Zoo", diags%fish(i)%f_Zm)
+            call add_Diag_nc(ncid, dimids, "f_Zl", trim(tracers_name(i)) // " Feeding level Large Zoo", diags%fish(i)%f_Zl)
+            call add_Diag_nc(ncid, dimids, "f_Sf", trim(tracers_name(i)) // " Feeding level Small forages", diags%fish(i)%f_Sf)
+            call add_Diag_nc(ncid, dimids, "f_Sp", trim(tracers_name(i)) // " Feeding level Small pelagics", diags%fish(i)%f_Sp)
+            call add_Diag_nc(ncid, dimids, "f_Sd", trim(tracers_name(i)) // " Feeding level Dmall Demersals", diags%fish(i)%f_Sd)
+            call add_Diag_nc(ncid, dimids, "f_Mf", trim(tracers_name(i)) // " Feeding level Medium forages", diags%fish(i)%f_Mf)
+            call add_Diag_nc(ncid, dimids, "f_Mp", trim(tracers_name(i)) // " Feeding level Medium pelagics", diags%fish(i)%f_Mp)
+            call add_Diag_nc(ncid, dimids, "f_Md", trim(tracers_name(i)) // " Feeding level Medium Demersals", diags%fish(i)%f_Md)
+            call add_Diag_nc(ncid, dimids, "f_Lp", trim(tracers_name(i)) // " Feeding level Large pelagics", diags%fish(i)%f_Lp)
+            call add_Diag_nc(ncid, dimids, "f_Ld", trim(tracers_name(i)) // " Feeding level Large Demersals", diags%fish(i)%f_Ld)
+            call add_Diag_nc(ncid, dimids, "f_BE", trim(tracers_name(i)) // " Feeding level Benthic resource", diags%fish(i)%f_BE)
+            
             call end_Diag_nc(ncid)
             print *, trim(filename), " -- written"
         end do

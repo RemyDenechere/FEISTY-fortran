@@ -2,7 +2,8 @@
 function [] = netcdf_read_FEISTY_Offline_BATS(loc, exp, Rockfish)
 
 arguments 
-    loc                   char {mustBeMember(loc, {'BATS', 'CCE', 'GOM', 'NS', 'GMX'})} = 'BATS'
+    loc                   char {mustBeMember(loc, {'BATS', 'CCE', 'GOM', 'GOM_2'...
+                                                   'NS', 'GMX', 'GMX_2', })} = 'BATS'
     exp                   char    = '2D'
     Rockfish              logical = true
 end 
@@ -17,8 +18,8 @@ coupling = 'offline';
 Spinup = {'_Spinup_Time_Serie', ''};
 
 %! get directory containing output
-dir_input_offline_forcing = ['../../COBALT_output/COBALT_offline_forcing_files/' loc '/']; 
-dir_input_offline_FEISTY = ['../output/netcdf/' coupling '/' loc '/', ...
+dir_input_offline_forcing = ['../../COBALT_output/COBALT_offline_forcing_files/' loc '/' exp '/']; 
+dir_input_offline_FEISTY = ['../output/netcdf/' coupling '/' loc '/' exp '/', ...
                             'COBALT_' coupling '_' loc '_' exp '_'];
 dir_output =['../output/Matlab_Average/', coupling, '/' loc, '/', exp, '/', ...
                             'FEISTY_' coupling '_' loc '_' exp '_'];
@@ -31,6 +32,9 @@ var_diag = {'f', 'cmax', 'cons', 'met', 'mu_p', 'mu_f', 'mu_a', 'mu',...
 
 if ~exist(['../output/Matlab_Average/', coupling, '/' loc, '/', exp, '/'], "dir")
     mkdir(['../output/Matlab_Average/', coupling, '/' loc, '/', exp, '/'])
+    if ~exist(['../output/Matlab_Average/', coupling, '/' loc, '/', exp, '/'], "dir")
+        error('Directory not created')
+    end
 end
 
 %% Get information about the simulation 
@@ -41,7 +45,7 @@ topog.dir = ['../../CEFI-regional-MOM6-FEISTY/exps/OM4.single_column.COBALT/' lo
 topog.var = {'x', 'y', 'depth', 'Layer'};
 topog.longname = {'geographic_longitude', 'geographic_latitude', 'depth', 'Layer'};
 topog.unit = {'degree_east', 'degree_north', 'meters', 'meters'};
-topog.files = {'ocean_hgrid.nc', 'ocean_hgrid.nc', 'ocean_topog.nc', 'FEISTY_2D_2023_10_spinup_subset.nc'}; 
+topog.files = {'ocean_hgrid.nc', 'ocean_hgrid.nc', 'ocean_topog.nc', ['FEISTY_' exp '_2023_10_spinup_subset.nc']}; 
 topog.Layer_thikness = zeros(1, 75, "double"); 
 
 for i = 1:length(topog.var)
@@ -121,8 +125,8 @@ end
 
 %% Initial condition for Online Coupling: 
 disp('Get IC for Online COBALT')
-ncid = netcdf.open(['../output/netcdf/' coupling '/' loc '/', ...
-                    'FEISTY_2D_2023_10_spinup_subset.nc'],'NC_NOWRITE');
+ncid = netcdf.open(['../output/netcdf/' coupling '/' loc '/' exp '/', ...
+                    'FEISTY_' exp '_2023_10_spinup_subset.nc'],'NC_NOWRITE');
 for i = 1:(length(var)-2)
     varid = netcdf.inqVarID(ncid, [var{i} '_B']);
     eval([ var{i} '_IC = netcdf.getVar(ncid, varid);']);
@@ -185,8 +189,8 @@ var = {'nmdz', 'jhploss_n_Mdz', 'jprod_nmdz', 'nlgz', 'jhploss_n_Lgz', 'jprod_nl
 coupling = 'offline';
 
 %! get directory containing output
-dir_input_offline_forcing = ['../../COBALT_output/COBALT_offline_forcing_files/' loc '/'];
-dir_output =['../output/Matlab_Average/', coupling, '/' loc, '/', ];
+dir_input_offline_forcing = ['../../COBALT_output/COBALT_offline_forcing_files/' loc '/' exp '/' loc '_offline_yr_1/'];
+dir_output =['../output/Matlab_Average/', coupling, '/' loc, '/', exp '/'];
 
 if ~exist(dir_output) 
     mkdir(dir_output)

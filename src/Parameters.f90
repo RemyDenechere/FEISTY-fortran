@@ -43,7 +43,7 @@ module Parameters
 
     ! Spinup parameters: ---------------------------------------------
     integer, public :: Year_2_Spinup = 100
-    logical, public :: Spinup = .false.
+    logical, public :: Spinup_logical = .false.
 
     ! Environemental data for test: -----------------------------------
     logical, public :: diagnostic           = .false.   ! True to run diagonostic mode 
@@ -63,7 +63,7 @@ module Parameters
     character(LEN=280), public :: root_dir = "/project/rdenechere/CEFI-regional-MOM6-FEISTY/exps/OM4.single_column.COBALT/"
 
     ! namelist 
-    namelist /FEISTY_nml/ Spinup, Year_2_Spinup, loc, exp, coupling, diagnostic, save_diagnostics, prod_constrained, &
+    namelist /FEISTY_nml/ Spinup_logical, Year_2_Spinup, loc, exp, coupling, diagnostic, save_diagnostics, prod_constrained, &
                         Spinup_Time_Serie, Initial_Condition_generic_FEISTY, largDemPel, Delta_t, IC, PI_be_cutoff, &
                         root_dir_output, root_dir
     
@@ -79,6 +79,7 @@ module Parameters
     character(len=2), dimension(nDeriv), public :: tracers_name
     character(len=33), dimension(nDeriv), public :: tracers_long_name
     character(len=2), dimension(nMesoZoo), public :: MesoZoo_name
+    character(len=3), dimension(nMesoZoo), public :: Meso_diag_name
     character(len=22), dimension(nMesoZoo), public :: MesoZoo_long_name
 
     ! Parameters physiology: -----------------------------------------
@@ -108,7 +109,7 @@ module Parameters
         close(10)
 
         ! Directories for the location ----------------------------------------------------
-        root_dir_output_loc = trim(root_dir_output) // trim(loc) // "/" // trim(loc) // "_offline_yr_1/"
+        root_dir_output_loc = trim(root_dir_output) // trim(loc) // "/" // trim(exp) // "/"  // trim(loc) // "_offline_yr_1/"
         root_dir_loc = trim(root_dir) // trim(loc) // "/"
 
         dir_Temp = trim(root_dir_output_loc) // "20040101.ocean_feisty_forcing.nc"
@@ -137,43 +138,43 @@ module Parameters
         var_max_depth = "depth"
 
         ! Input data (Spinup): --------------------------------------------
-        Dir_IniBE = "../output/netcdf/" // trim(coupling) // "/" // trim(loc) // &
+        Dir_IniBE = "../output/netcdf/" // trim(coupling) // "/" // trim(loc) // "/" // trim(exp) //&
                     "/COBALT_" // trim(coupling) // "_" // trim(loc) // "_" // trim(exp) // "_BE_bio_Spinup.nc"
-        Dir_IniSf = "../output/netcdf/" // trim(coupling) // "/" // trim(loc) // &
+        Dir_IniSf = "../output/netcdf/" // trim(coupling) // "/" // trim(loc) // "/" // trim(exp) // &
                     "/COBALT_" // trim(coupling) // "_" // trim(loc) // "_" // trim(exp) // "_Sf_bio_Spinup.nc"
-        Dir_IniSp = "../output/netcdf/" // trim(coupling) // "/" // trim(loc) // &
+        Dir_IniSp = "../output/netcdf/" // trim(coupling) // "/" // trim(loc) // "/" // trim(exp) // &
                     "/COBALT_" // trim(coupling) // "_" // trim(loc) // "_" // trim(exp) // "_Sp_bio_Spinup.nc"
-        Dir_IniSd = "../output/netcdf/" // trim(coupling) // "/" // trim(loc) // &
+        Dir_IniSd = "../output/netcdf/" // trim(coupling) // "/" // trim(loc) // "/" // trim(exp) // &
                     "/COBALT_" // trim(coupling) // "_" // trim(loc) // "_" // trim(exp) // "_Sd_bio_Spinup.nc"
-        Dir_IniMf = "../output/netcdf/" // trim(coupling) // "/" // trim(loc) // &
+        Dir_IniMf = "../output/netcdf/" // trim(coupling) // "/" // trim(loc) // "/" // trim(exp) // &
                     "/COBALT_" // trim(coupling) // "_" // trim(loc) // "_" // trim(exp) // "_Mf_bio_Spinup.nc"
-        Dir_IniMp = "../output/netcdf/" // trim(coupling) // "/" // trim(loc) // &
+        Dir_IniMp = "../output/netcdf/" // trim(coupling) // "/" // trim(loc) // "/" // trim(exp) // &
                     "/COBALT_" // trim(coupling) // "_" // trim(loc) // "_" // trim(exp) // "_Mp_bio_Spinup.nc"
-        Dir_IniMd = "../output/netcdf/" // trim(coupling) // "/" // trim(loc) // &
+        Dir_IniMd = "../output/netcdf/" // trim(coupling) // "/" // trim(loc) // "/" // trim(exp) // &
                     "/COBALT_" // trim(coupling) // "_" // trim(loc) // "_" // trim(exp) // "_Md_bio_Spinup.nc"
-        Dir_IniLp = "../output/netcdf/" // trim(coupling) // "/" // trim(loc) // &
+        Dir_IniLp = "../output/netcdf/" // trim(coupling) // "/" // trim(loc) // "/" // trim(exp) // &
                     "/COBALT_" // trim(coupling) // "_" // trim(loc) // "_" // trim(exp) // "_Lp_bio_Spinup.nc"
-        Dir_IniLd = "../output/netcdf/" // trim(coupling) // "/" // trim(loc) // &
+        Dir_IniLd = "../output/netcdf/" // trim(coupling) // "/" // trim(loc) // "/" // trim(exp) // &
                     "/COBALT_" // trim(coupling) // "_" // trim(loc) // "_" // trim(exp) // "_Ld_bio_Spinup.nc"
 
         ! Input files as array: ------------------------------------------
-        Dir_IC = [   "../output/netcdf/" // trim(coupling) // "/" // trim(loc) // &
+        Dir_IC = [   "../output/netcdf/" // trim(coupling) // "/" // trim(loc) // "/" // trim(exp) // &
                     "/COBALT_" // trim(coupling) // "_" // trim(loc) // "_" // trim(exp) // "_Sf_bio_Spinup.nc", &
-                    "../output/netcdf/" // trim(coupling) // "/" // trim(loc) // &
+                    "../output/netcdf/" // trim(coupling) // "/" // trim(loc) // "/" // trim(exp) // &
                     "/COBALT_" // trim(coupling) // "_" // trim(loc) // "_" // trim(exp) // "_Sp_bio_Spinup.nc", &
-                    "../output/netcdf/" // trim(coupling) // "/" // trim(loc) // &
+                    "../output/netcdf/" // trim(coupling) // "/" // trim(loc) // "/" // trim(exp) // &
                     "/COBALT_" // trim(coupling) // "_" // trim(loc) // "_" // trim(exp) // "_Sd_bio_Spinup.nc", &
-                    "../output/netcdf/" // trim(coupling) // "/" // trim(loc) // &
+                    "../output/netcdf/" // trim(coupling) // "/" // trim(loc) // "/" // trim(exp) // &
                     "/COBALT_" // trim(coupling) // "_" // trim(loc) // "_" // trim(exp) // "_Mf_bio_Spinup.nc", &
-                    "../output/netcdf/" // trim(coupling) // "/" // trim(loc) // &
+                    "../output/netcdf/" // trim(coupling) // "/" // trim(loc) // "/" // trim(exp) // &
                     "/COBALT_" // trim(coupling) // "_" // trim(loc) // "_" // trim(exp) // "_Mp_bio_Spinup.nc", &
-                    "../output/netcdf/" // trim(coupling) // "/" // trim(loc) // &
+                    "../output/netcdf/" // trim(coupling) // "/" // trim(loc) // "/" // trim(exp) // &
                     "/COBALT_" // trim(coupling) // "_" // trim(loc) // "_" // trim(exp) // "_Md_bio_Spinup.nc", &
-                    "../output/netcdf/" // trim(coupling) // "/" // trim(loc) // &
+                    "../output/netcdf/" // trim(coupling) // "/" // trim(loc) // "/" // trim(exp) // &
                     "/COBALT_" // trim(coupling) // "_" // trim(loc) // "_" // trim(exp) // "_Lp_bio_Spinup.nc", &
-                    "../output/netcdf/" // trim(coupling) // "/" // trim(loc) // &
+                    "../output/netcdf/" // trim(coupling) // "/" // trim(loc) // "/" // trim(exp) // &
                     "/COBALT_" // trim(coupling) // "_" // trim(loc) // "_" // trim(exp) // "_Ld_bio_Spinup.nc", &
-                    "../output/netcdf/" // trim(coupling) // "/" // trim(loc) // &
+                    "../output/netcdf/" // trim(coupling) // "/" // trim(loc) // "/" // trim(exp) // &
                     "/COBALT_" // trim(coupling) // "_" // trim(loc) // "_" // trim(exp) // "_BE_bio_Spinup.nc" ]
 
         dir_COBALT_IC = "/project/rdenechere/CEFI-regional-MOM6-FEISTY/exps/OM4.single_column.COBALT/INPUT/&
@@ -194,6 +195,7 @@ module Parameters
                             "Large demersal fish biomass      ", &
                             "Benthic invertebrate biomass     "]
         MesoZoo_name = ["Mz", "Lz"]
+        Meso_diag_name = ["dZm", "dZl"]
         MesoZoo_long_name = ["Medium MesoZooplankton", &
                              "Large MesoZooplankton "]
 

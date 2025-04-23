@@ -9,7 +9,8 @@
 function [] =  netcdf_read_COBALT_Offline(option)
 %=========================================================================%
 arguments 
-    option.loc         char {mustBeMember(option.loc, {'BATS', 'CCE', 'GOM', 'NS', 'GMX'})} = 'BATS'
+    option.loc         char {mustBeMember(option.loc, {'BATS', 'CCE', 'GOM', 'GOM_2'...
+                                                       'NS', 'GMX', 'GMX_2', })} = 'BATS'
     option.exp         char    = '2D'
     option.yr_spinup   char    = '20'    % number of spiup years to read
 end 
@@ -100,7 +101,12 @@ for yr_i = 1:yr
     dir_output =['../output/Matlab_Average/', coupling, '/' option.loc, '/', option.exp, '/', [name num2str(yr)], '/'];
 
     if ~exist(dir_output, 'dir') 
+        disp(['output directory:' dir_output ' does not exist, making it...'])
         mkdir(dir_output)
+        if ~exist(dir_output, 'dir')    
+            disp(['error making output dir:' dir_output ' exiting...'])
+            exit
+        end
     end 
 
     dir = {[dir_input '20040101.ocean_feisty_forcing.nc']
