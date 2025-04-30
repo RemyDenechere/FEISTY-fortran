@@ -11,11 +11,11 @@ function [] =  netcdf_read_COBALT_Offline(option)
 arguments 
     option.loc         char {mustBeMember(option.loc, {'BATS', 'CCE', 'GOM', 'GOM_2'...
                                                        'NS', 'GMX', 'GMX_2', })} = 'BATS'
-    option.exp         char    = '2D'
-    option.yr_spinup   char    = '20'    % number of spiup years to read
+    option.exp         char    = 'test_restart'
+    option.yr_spinup   char    = '7'    % number of spiup years to read
 end 
 dbclear all 
-% dbstop in netcdf_read_COBALT_Offline at 107
+% dbstop in netcdf_read_COBALT_Offline at 91
 
 %% set up variable names
 spinup = true; 
@@ -31,6 +31,7 @@ idx_biomass =   [1:8]; % index of the variables that are biomass
 idx_rates =     [9:12]; % index of the variables that are mortality and production
 idx_env =       [13:16]; % index of the environmental variables
 idx_pop_flux =  length(var); % index of the detritus flux to the bottom
+idx_var_restart = [3:8, 13:15]; % index of the variables that are in the restart file
 % [mol N kg-1]
 %    nmdz: medium zooplankton nitrogen
 %    nlgz: large zooplankton nitrogen
@@ -74,7 +75,12 @@ end
 % and the max depth from the location: 
 topog.Layer_thikness(1) = topog.Layer(1);
 topog.Layer_thikness(2:end) = topog.Layer(2:end) - topog.Layer(1:(end-1));
-topog.idx_100m = find(topog.Layer > 100, 1, 'first'); % index of the 100m layer to integrate plankton over 100m
+if max(topog.Layer) < 100
+    topog.idx_100m = length(topog.Layer);
+else 
+    topog.idx_100m = find(topog.Layer >= 100, 1, 'first'); % index of the 100m layer to integrate plankton over 100m
+end 
+
 
 % save in folder of the location as its the same for every experiment in a location
 if ~exist(['../output/Matlab_Average/', coupling, '/' option.loc], "dir")
@@ -86,13 +92,6 @@ save(['../output/Matlab_Average/', coupling, '/', option.loc, '/Topology.mat'], 
 
 % ! Loop over years: --------------------------------------------------
 for yr_i = 1:yr
-
-    %! these years are not full years: issue with the netcdf files:
-    if yr_i == 4
-        yr_i =3; 
-    elseif yr_i == 5
-        yr_i = 6;
-    end 
     
     disp(['Get COBALT output at ' option.loc ' for year ' num2str(yr_i)])
     %! get directory containing output   
@@ -110,7 +109,8 @@ for yr_i = 1:yr
     end 
 
     dir = {[dir_input '20040101.ocean_feisty_forcing.nc']
-           [dir_input '20040101.ocean_feisty_forcing_detritus.nc']};
+           [dir_input '20040101.ocean_cobalt_restart.nc']
+           [dir_input '20040101.ocean_feisty_forcing_detritus.nc']}; % detritus flux to the bottom is save in a different file
     
     % Getting data from netcdf for each variable:
     for i = 1:length(var)
@@ -118,6 +118,8 @@ for yr_i = 1:yr
         %! Read data from netcdf file: -------------------------------------
         % open the netcdf file: 
         if i == idx_pop_flux % pop_flux is save in a different file
+            ncid = netcdf.open(dir{3},'NC_NOWRITE');
+        elseif ismember(i, idx_var_restart)
             ncid = netcdf.open(dir{2},'NC_NOWRITE');
         else 
             ncid = netcdf.open(dir{1},'NC_NOWRITE');

@@ -3,12 +3,12 @@
 
 function [] = vis_COBALT_Offline(option)
 arguments
-    option.loc       char {mustBeMember(option.loc, {'BATS', 'CCE', 'GOM', 'NS', 'GMX'})} = 'BATS'
-    option.exp       char      = '2D'
-    option.yr_spinup char      = '20'    % number of spinup years to read                                  
+    option.loc       char {mustBeMember(option.loc, {'BATS', 'CCE', 'GOM', 'GOM_2', 'NS', 'GMX', 'GMX_2'})} = 'BATS'
+    option.exp       char      = 'test_restore'
+    option.yr_spinup char      = '7'    % number of spinup years to read                                  
 end
 dbclear all 
-% dbstop in vis_COBALT_Offline.m at 13
+% dbstop in vis_COBALT_Offline.m at 15
 
 addpath('../../Programing-Tutorials/Matlab/Matlab_functions/')  
 
@@ -25,11 +25,11 @@ idx_env =       [13:16]; % index of the environmental variables
 idx_pop_flux =  length(var_COBALT); % index of the detritus flux to the bottom
 
 % make output directory: 
-dir_output =['../Fig/', coupling, '/' option.loc, '/', option.exp, '/']; 
+dir_output =['../Fig/', coupling, '/' option.loc, '/', option.exp, '/' 'Offline_' option.yr_spinup 'yrs/']; 
 if ~exist(dir_output) 
     mkdir(dir_output)
 end 
-dir_output =['../Fig/', coupling, '/' option.loc, '/', option.exp, '/', ...
+dir_output =['../Fig/', coupling, '/' option.loc, '/', option.exp, '/' 'Offline_' option.yr_spinup 'yrs/' , ...
                 option.loc '_' option.exp '_' ];
 
 %% colors
@@ -60,7 +60,7 @@ disp(dir_input_COBALT_spinup)
 load(['../output/Matlab_Average/', coupling, '/', option.loc, '/Topology.mat'], 'topog') % load topography data
 load([dir_input_COBALT_spinup 'Time_Depth_Means_forcing' '.mat']); % load depth means
 load([dir_input_COBALT_spinup 'Time_Means_forcing_100m'  '.mat']); % load 100m means
-load([dir_input_COBALT_spinup 'Time_Means_forcing'       '.mat'], var_COBALT{idx_pop_flux}); % load average over time 
+load([dir_input_COBALT_spinup 'Time_Means_forcing'       '.mat'], [var_COBALT{idx_pop_flux} '_tmean']); % load average over time 
 cm7  = colormap(turbo(7)); % colormap for the figures
 start_date = datetime("2004-01-01"); % start date of the expriment 
 end_date   = datetime("2004-12-31"); % end date of the expriment
@@ -80,6 +80,12 @@ for i = [idx_biomass idx_rates idx_env]
     surf(time_days', -topog.Layer', eval(['transpose(' var_COBALT{i} '_spacemean)']), ...
         'EdgeColor', 'none')
     view(2)
+    % Add a dashed line at time 366
+    hold on
+    plot3(366 * ones(size(-topog.Layer')), -topog.Layer', max(eval(['transpose(' var_COBALT{i} '_spacemean)']), [], 'all') * ones(size(-topog.Layer')), ...
+        '--', 'LineWidth', 1.5, 'Color', 'r')
+    hold off
+
     clb = colorbar(ax);
     title(clb, var_COBALT{i})
     title('Depth Change over spinup years')
@@ -111,8 +117,7 @@ for i = idx_pop_flux
     Interpreter = 'none')
 
     ax = nexttile([1, 2]);
-    plot(time_days, eval([var_COBALT{i} '_tmean)']), ...
-        'EdgeColor', 'none')
+    plot(time_days, eval([var_COBALT{i} '_tmean']))
     view(2)
     clb = colorbar(ax);
     title(clb, var_COBALT{i})
