@@ -11,8 +11,8 @@ function [] =  netcdf_read_COBALT_Offline(option)
 arguments 
     option.loc         char {mustBeMember(option.loc, {'BATS', 'CCE', 'GOM', 'GOM_2'...
                                                        'NS', 'GMX', 'GMX_2', })} = 'BATS'
-    option.exp         char    = 'test_restart'
-    option.yr_spinup   char    = '7'    % number of spiup years to read
+    option.exp         char    = 'DIAG_COORD_DEF_01_FNC1_4680'
+    option.yr_spinup   char    = '2'    % number of spiup years to read
 end 
 dbclear all 
 % dbstop in netcdf_read_COBALT_Offline at 91
@@ -134,11 +134,12 @@ for yr_i = 1:yr
             eval([ var{i} ' = ' var{i} '(:,:,:,1:366);']);
         end
         netcdf.close(ncid);
-    
+        
+        %! Convert units: --------------------------------------------------
         if ismember(i, idx_biomass) % conversions biomass 
-            eval([ var{i} ' = ' var{i} '*6.625* 12.01 * 9.0 * 1000.0;' ]);     % Conversion from Mol N/kg --> gC WW m-3
+            eval([ var{i} '_conv = ' var{i} '*6.625* 12.01 * 9.0 * 1000.0;' ]);     % Conversion from Mol N/kg --> gC WW m-3
         elseif ismember(i, [idx_rates, idx_pop_flux]) % conversion mortality and pop flux
-            eval([ var{i} ' = ' var{i} '*6.625* 12.01 * 9.0 * 24.0*3600;' ]);  % Conversion from Mol mol N m-2 s-1 (Layer integrated) --> gC WW m-3 d-1
+            eval([ var{i} '_conv = ' var{i} '*6.625* 12.01 * 9.0 * 24.0*3600;' ]);  % Conversion from Mol mol N m-2 s-1 (Layer integrated) --> gC WW m-3 d-1
         end
     end 
     
@@ -151,8 +152,8 @@ for yr_i = 1:yr
     %! Calculate average over lat and long for zooplanton biomass (integrate over 100m depth): 
     for i = idx_biomass
         eval([var{i} '_spacemean(timerange, :) = transpose(squeeze(nanmean(' var{i} ', [1,2])));']);
-        eval([var{i} '_tmean(timerange) = squeeze(sum(' var{i} '_spacemean(timerange, :) .* topog.Layer_thikness, 2));']); % integrated biomass over depth
-        eval([var{i} '_tmean_100m(timerange) = squeeze(sum(' var{i} '_spacemean(timerange, 1:topog.idx_100m) .* topog.Layer_thikness(1:topog.idx_100m), 2));']); % integrated biomass over 100m
+        eval([var{i} '_tmean(timerange) = squeeze(sum(' var{i} '_spacemean(timerange, :) .* 1000 .* topog.Layer_thikness, 2));']); % integrated biomass over depth [mol N m-2]
+        eval([var{i} '_tmean_100m(timerange) = squeeze(sum(' var{i} '_spacemean(timerange, 1:topog.idx_100m) .* 1000 .* topog.Layer_thikness(1:topog.idx_100m), 2));']); % integrated biomass over 100m [mol N m-2]
         eval([var{i} '_zmean(yr_i, :) = transpose(squeeze(nanmean(' var{i} '_spacemean(timerange, :), 1)));']); % concentration at every depth
     end
     % Calculate average over lat and long for zooplanton mortality and production: these comes as layer integrated no need to multiply by layer thickness:
