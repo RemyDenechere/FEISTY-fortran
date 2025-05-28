@@ -26,12 +26,13 @@ name = [option.loc, '_offline_yr_'] ;
 %! LIST OF VARIABLES: -----------------------------------------------
 var = {'nmdz', 'nlgz', 'nbact', 'ndet', 'ndi', 'nlg', 'nmd', 'nsm', ...
         'jhploss_n_Mdz', 'jprod_nmdz', 'jhploss_n_Lgz', 'jprod_nlgz',...
-        'nh4', 'no3', 'o2', 'thetao', 'Pop_btm'};
+        'nh4', 'no3', 'o2', 'dic', 'thetao', 'Pop_btm'};
 idx_biomass =   [1:8]; % index of the variables that are biomass
 idx_rates =     [9:12]; % index of the variables that are mortality and production
 idx_env =       [13:16]; % index of the environmental variables
+idx_temp =      17;
 idx_pop_flux =  length(var); % index of the detritus flux to the bottom
-idx_var_restart = [3:8, 13:15]; % index of the variables that are in the restart file
+idx_var_restart = [3:8, 13:16]; % index of the variables that are in the restart file
 % [mol N kg-1]
 %    nmdz: medium zooplankton nitrogen
 %    nlgz: large zooplankton nitrogen
@@ -50,6 +51,7 @@ idx_var_restart = [3:8, 13:15]; % index of the variables that are in the restart
 %    nh4: ammonia
 %    no3: nitrate
 %    o2: oxygen
+%    dic: disolved inorganic carbon
 %    thetao: temperature
 %    Pop_btm: bottom detritus production (detritus flux to the bottom)
 
@@ -150,7 +152,7 @@ for yr_i = 1:yr
     timerange = ((yr_i - 1) * dim(4) + 1):(yr_i * dim(4)); % indexes for the year yr_i
     
     %! Calculate average over lat and long for zooplanton biomass (integrate over 100m depth): 
-    for i = idx_biomass
+    for i = [idx_biomass idx_env]
         eval([var{i} '_spacemean(timerange, :) = transpose(squeeze(nanmean(' var{i} ', [1,2])));']);
         eval([var{i} '_tmean(timerange) = squeeze(sum(' var{i} '_spacemean(timerange, :) .* 1000 .* topog.Layer_thikness, 2));']); % integrated biomass over depth [mol N m-2]
         eval([var{i} '_tmean_100m(timerange) = squeeze(sum(' var{i} '_spacemean(timerange, 1:topog.idx_100m) .* 1000 .* topog.Layer_thikness(1:topog.idx_100m), 2));']); % integrated biomass over 100m [mol N m-2]
@@ -158,13 +160,14 @@ for yr_i = 1:yr
     end
     % Calculate average over lat and long for zooplanton mortality and production: these comes as layer integrated no need to multiply by layer thickness:
     % or are variables that do not need layer depth integration (temperature)
-    for i = [idx_rates idx_env]
+    for i = [idx_rates]
         eval([var{i} '_spacemean(timerange, :) = transpose(squeeze(nanmean(' var{i} ', [1,2])));']);
         eval([var{i} '_tmean(timerange) = squeeze(sum(' var{i} '_spacemean(timerange, :), 2));']); % integrated biomass over depth
         eval([var{i} '_tmean_100m(timerange) = squeeze(sum(' var{i} '_spacemean(timerange, 1:topog.idx_100m), 2));']); % integrated biomass over 100m
         eval([var{i} '_zmean(yr_i, :) = transpose(squeeze(nanmean(' var{i} '_spacemean(timerange, :), 1)));']); % concentration at every depth
     end 
-    for i = idx_env  % for environemntal variables, we do not need to integrate over depth we take the mean over the depth instead.
+    for i = idx_temp  % for temperature, we do not need to integrate over depth we take the mean over the depth instead.
+        eval([var{i} '_spacemean(timerange, :) = transpose(squeeze(nanmean(' var{i} ', [1,2])));']);
         eval([var{i} '_tmean_100m(timerange) = squeeze(nanmean(' var{i} '_spacemean(timerange, 1:topog.idx_100m), 2));']);
     end 
     for i = idx_pop_flux % pop_flux does not have vertical dimension

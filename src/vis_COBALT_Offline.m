@@ -18,18 +18,18 @@ Spinup = {'_Spinup_Time_Serie', ''};
 
 var_COBALT = {'nmdz', 'nlgz', 'nbact', 'ndet', 'ndi', 'nlg', 'nmd', 'nsm', ...
                 'jhploss_n_Mdz', 'jprod_nmdz', 'jhploss_n_Lgz', 'jprod_nlgz',...
-                'nh4', 'no3', 'o2', 'thetao', 'Pop_btm'};
+                'nh4', 'no3', 'o2', 'dic', 'thetao', 'Pop_btm'};
 units = {'Mol N/kg', 'Mol N/kg', 'Mol N/kg', 'Mol N/kg', 'Mol N/kg', 'Mol N/kg', 'Mol N/kg', 'Mol N/kg',...
          'mol N m-2 s-1', 'mol N m-2 s-1', 'mol N m-2 s-1', 'mol N m-2 s-1',...
-         'mol/kg', 'mol/kg', 'mol/kg', '°C', 'Mol m-2 s-1'};
+         'mol/kg', 'mol/kg', 'mol/kg', 'mol/kg', '°C', 'Mol m-2 s-1'};
 units_int = {'Mol N m-2', 'Mol N m-2', 'Mol N m-2', 'Mol N m-2', 'Mol N m-2', 'Mol N m-2', 'Mol N m-2', 'Mol N m-2',...
          'mol N m-2 s-1', 'mol N m-2 s-1', 'mol N m-2 s-1', 'mol N m-2 s-1',...
-         'mol m-2', 'mol m-2', 'mol m-2', '°C', 'Mol m-2 s-1'};
+         'mol m-2', 'mol m-2', 'mol m-2', 'mol m-2', '°C', 'Mol m-2 s-1'};
 idx_biomass =   [1:8]; % index of the variables that are biomass
 idx_rates =     [9:12]; % index of the variables that are mortality and production
 idx_env =       [13:16]; % index of the environmental variables
 idx_pop_flux =  length(var_COBALT); % index of the detritus flux to the bottom
-indx_temp = 16;
+indx_temp = 17;
 
 % make output directory: 
 dir_output =['../Fig/', coupling, '/' option.loc, '/', option.exp, '/' 'Offline_' option.yr_spinup 'yrs/']; 
