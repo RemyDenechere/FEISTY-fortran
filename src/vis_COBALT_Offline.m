@@ -5,7 +5,11 @@ function [] = vis_COBALT_Offline(option)
 arguments
     option.loc       char {mustBeMember(option.loc, {'BATS', 'CCE', 'GOM', 'GOM_2', 'NS', 'GMX', 'GMX_2'})} = 'BATS'
     option.exp       char      = 'DIAG_COORD_DEF_01_FNC1_4680'
-    option.yr_spinup char      = '2'    % number of spinup years to read                                  
+    option.yr_spinup char      = '2'    % number of spinup years to read     
+    option.multiyear   logical = false  % if true, all years are concatenated in the same netcdf file 
+                                        % This is happening when the we run several years (2004 to 2006) 
+                                        % at the same time instead of re running the 
+                                        % same year over an over for spinup.                               
 end
 dbclear all 
 % dbstop in vis_COBALT_Offline.m at 74
@@ -16,28 +20,20 @@ addpath('../../Programing-Tutorials/Matlab/Matlab_functions/')
 coupling = 'offline'; 
 Spinup = {'_Spinup_Time_Serie', ''};
 
-var_COBALT = {'nmdz', 'nlgz', 'nbact', 'ndet', 'ndi', 'nlg', 'nmd', 'nsm', ...
+var_COBALT = {'nmdz', 'nlgz', 'nsmz', 'nbact', 'ndet', 'ndi', 'nlg', 'nmd', 'nsm', ...
                 'jhploss_n_Mdz', 'jprod_nmdz', 'jhploss_n_Lgz', 'jprod_nlgz',...
                 'nh4', 'no3', 'o2', 'dic', 'thetao', 'Pop_btm'};
-units = {'Mol N/kg', 'Mol N/kg', 'Mol N/kg', 'Mol N/kg', 'Mol N/kg', 'Mol N/kg', 'Mol N/kg', 'Mol N/kg',...
+units = {'Mol N/kg', 'Mol N/kg', 'Mol N/kg', 'Mol N/kg', 'Mol N/kg', 'Mol N/kg', 'Mol N/kg', 'Mol N/kg', 'Mol N/kg',...
          'mol N m-2 s-1', 'mol N m-2 s-1', 'mol N m-2 s-1', 'mol N m-2 s-1',...
          'mol/kg', 'mol/kg', 'mol/kg', 'mol/kg', '°C', 'Mol m-2 s-1'};
-units_int = {'Mol N m-2', 'Mol N m-2', 'Mol N m-2', 'Mol N m-2', 'Mol N m-2', 'Mol N m-2', 'Mol N m-2', 'Mol N m-2',...
+units_int = {'Mol N m-2', 'Mol N m-2', 'Mol N m-2', 'Mol N m-2', 'Mol N m-2', 'Mol N m-2', 'Mol N m-2', 'Mol N m-2', 'Mol N m-2',...
          'mol N m-2 s-1', 'mol N m-2 s-1', 'mol N m-2 s-1', 'mol N m-2 s-1',...
          'mol m-2', 'mol m-2', 'mol m-2', 'mol m-2', '°C', 'Mol m-2 s-1'};
-idx_biomass =   [1:8]; % index of the variables that are biomass
-idx_rates =     [9:12]; % index of the variables that are mortality and production
-idx_env =       [13:16]; % index of the environmental variables
+idx_biomass =   [1:9]; % index of the variables that are biomass
+idx_rates =     [10:13]; % index of the variables that are mortality and production
+idx_env =       [14:17]; % index of the environmental variables
+indx_temp =     18;     % index of Temperature
 idx_pop_flux =  length(var_COBALT); % index of the detritus flux to the bottom
-indx_temp = 17;
-
-% make output directory: 
-dir_output =['../Fig/', coupling, '/' option.loc, '/', option.exp, '/' 'Offline_' option.yr_spinup 'yrs/']; 
-if ~exist(dir_output) 
-    mkdir(dir_output)
-end 
-dir_output =['../Fig/', coupling, '/' option.loc, '/', option.exp, '/' 'Offline_' option.yr_spinup 'yrs/' , ...
-                option.loc '_' option.exp '_' ];
 
 %% colors
 cm10=[0.5 0.5 0;... %tan/army
@@ -51,6 +47,36 @@ cm10=[0.5 0.5 0;... %tan/army
     0.5 0.5 0.5; ...%med grey
     0 0 0];...      %black
 
+%% spinup years:
+if ~option.multiyear
+    % make output directory: 
+    dir_output =['../Fig/', coupling, '/' option.loc, '/', option.exp, '/' 'Offline_' option.yr_spinup 'yrs/']; 
+    if ~exist(dir_output) 
+        mkdir(dir_output)
+    end 
+    dir_output =['../Fig/', coupling, '/' option.loc, '/', option.exp, '/' 'Offline_' option.yr_spinup 'yrs/' , ...
+                    option.loc '_' option.exp '_' ];
+    
+    % make input directory: 
+    name = [option.loc, '_offline_yr_'] ; % name of the spinup file
+    % directory of the spinup experiment at option.yr_spinup
+    dir_input_COBALT_spinup = ['../output/Matlab_Average/', coupling, '/' option.loc, '/', ...
+                            option.exp, '/', [name option.yr_spinup], '/']; 
+elseif option.multiyear
+    % make input directory: 
+    name_yr = [option.yr_spinup 'years']; 
+    dir_input_COBALT_spinup = ['../output/Matlab_Average/', coupling, '/' ,...
+                                option.loc,'/multiyear/', name_yr , '/', option.exp ,'/' ];
+    
+    % make output directory: 
+    dir_output =['../Fig/', coupling, '/' option.loc,'/multiyear/', name_yr , '/', option.exp ,'/']; 
+    if ~exist(dir_output) 
+        mkdir(dir_output)
+    end 
+    dir_output =['../Fig/', coupling, '/' option.loc,'/multiyear/', name_yr , '/', option.exp ,'/', ...
+                    option.loc '_' option.exp '_' name_yr '_'];
+end 
+
 %% ============================================================================= %%  
 %                                                                                 %
 %                           COBALT OFFLINE SPINUP over XX year                    %
@@ -58,12 +84,12 @@ cm10=[0.5 0.5 0;... %tan/army
 %! ============================================================================= !%
 disp(['Analysis of COBALT offline Spinup over ' option.yr_spinup ' years'])
 
-name = [option.loc, '_offline_yr_'] ; % name of the spinup file
-dir_input_COBALT_spinup = ['../output/Matlab_Average/', coupling, '/' option.loc, '/', ...
-                            option.exp, '/', [name option.yr_spinup], '/']; % directory of the spinup experiment at option.yr_spinup
+%! ============================================================================= !%
 disp("Searching for .mat data files in:")
 disp(dir_input_COBALT_spinup)
 
+%! ============================================================================= !%
+% load the topological data for the specific location 
 load(['../output/Matlab_Average/', coupling, '/', option.loc, '/Topology.mat'], 'topog') % load topography data
 load([dir_input_COBALT_spinup 'Time_Depth_Means_forcing' '.mat']); % load depth means
 load([dir_input_COBALT_spinup 'Time_Means_forcing_100m'  '.mat']); % load 100m means
@@ -75,9 +101,8 @@ time = start_date:end_date; % time vector for the expriment in days
 n = 0; % counter for the number of figures
 
 % Loop over each COBALT bgc tracer:
-for i = [idx_biomass idx_rates idx_env]
+for i = [idx_biomass idx_rates idx_env indx_temp]
     n = n+1;
-
     % Figure 1: Depth profiles of the time mean over all spinup years: ---------------------------
         figure(n)
         axes_formating(gcf, "defaultAxesColorOrder", cm7, "AxesTitleHorizontalAlignment", "left"); 
@@ -130,7 +155,7 @@ for i = [idx_biomass idx_rates idx_env]
         xlabel('time (days)')
         ylabel([var_COBALT{i} ' (' units_int{i} ')'])
         set(gca, 'YLim', [min(eval([var_COBALT{i} '_tmean_100m'])) max(eval([var_COBALT{i} '_tmean_100m']))])
-
+        
     save_graph(gcf, "png", [dir_output 'COBALT_offline_' var_COBALT{i} '_100mInt_' option.yr_spinup '_yrs'], 16, 12)
 
     % Figure 2: Time series of the time at several depths: ---------------------------
@@ -173,11 +198,9 @@ for i = [idx_biomass idx_rates idx_env]
         else 
             title([var_COBALT{i} ' int. over top 100m'])
         end 
-        
-
         save_graph(gcf, "png", [dir_output 'COBALT_offline_' var_COBALT{i} '_Surface_Bottom_Time_series_' option.yr_spinup '_yrs'], 16, 12)
 
-   % Figure 3:  Layer profiles of the time mean over all spinup years: ---------------------------
+% Figure 3:  Layer profiles of the time mean over all spinup years: ---------------------------
         n = n+1;
         figure(n)
         axes_formating(gcf, "defaultAxesColorOrder", cm7, "AxesTitleHorizontalAlignment", "left"); 
@@ -265,4 +288,4 @@ for i = idx_pop_flux
     ylabel([var_COBALT{i} units{i}])
 
     save_graph(gcf, "png", [dir_output 'COBALT_offline_' var_COBALT{i} '_100mInt_' option.yr_spinup '_yrs'], 16, 12)
-end 
+end

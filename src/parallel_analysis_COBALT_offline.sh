@@ -12,15 +12,21 @@
 if [ "$#" -eq 2 ]; then 
     # ASSIGN ARGUMENT
     SPINUP_YEARS="$1"
-    EXP_NAME="$2" 
+    EXP_NAME="$2"
+    MULTIYEAR="false" # default value
+elif [ "$#" -eq 3 ]; then 
+    # ASSIGN ARGUMENT
+    SPINUP_YEARS="$1"
+    EXP_NAME="$2"
+    MULTIYEAR="$3"
 else
     echo "wrong number of arguments."
-    echo "USAGE: ./parallel_analysis_COBALT_offline.sh <Spinup year> <Experimentation Name> "
-    echo "Default experimentation name is <20> <2D> "
+    echo "USAGE: ./parallel_analysis_COBALT_offline.sh <Spinup year> <Experimentation Name> <MultiYear>"
+    echo "Default experimentation name is <20> <2D> <true/false>"
     exit 1
 fi
 
-locations=(BATS GOM GMX GMX_2) # list of locations BATS GOM GMX GMX_2 GMX CCE NS 
+locations=(BATS) # list of locations BATS GOM GMX GMX_2 GMX CCE NS 
 echo ""
 echo "--------------------------------------------------------------------"
 echo " Running for the current location list: ${locations[@]} "
@@ -35,7 +41,7 @@ echo "--------------------------------------------------------------------"
 echo ""
 for loc in "${locations[@]}"; do
     # RUN THE NETCDF ANALYSIS OF THE OFFLINE COBALT 
-    matlab -batch "netcdf_read_COBALT_Offline(loc='$loc', exp='$EXP_NAME', yr_spinup='$SPINUP_YEARS');" -nodesktop -nosplash -nojvm&
+    matlab -batch "netcdf_read_COBALT_Offline(loc='$loc', exp='$EXP_NAME', yr_spinup='$SPINUP_YEARS', multiyear='$MULTIYEAR');" -nodesktop -nosplash -nojvm&
 done 
 
 # WAIT FOR ALL BACKGROUND PROCESSES (MATLAB JOBS) TO FINISH
@@ -49,7 +55,7 @@ echo ""
 
 for loc in "${locations[@]}"; do
     # RUN THE NETCDF ANALYSIS OF THE OFFLINE COBALT 
-    matlab -batch "vis_COBALT_Offline(loc='$loc', exp='$EXP_NAME', yr_spinup='$SPINUP_YEARS');" -nodisplay -nosplash&
+    matlab -batch "vis_COBALT_Offline(loc='$loc', exp='$EXP_NAME', yr_spinup='$SPINUP_YEARS', multiyear='$MULTIYEAR');" -nodisplay -nosplash&
 done 
 
 # WAIT FOR ALL BACKGROUND PROCESSES (MATLAB JOBS) TO FINISH
