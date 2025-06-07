@@ -11,5 +11,6 @@
 *.png
 *.mat
 *.jpg
+*.zip
 
 output/Matlab_Average/
