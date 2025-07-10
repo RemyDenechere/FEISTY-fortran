@@ -3,16 +3,16 @@
 
 function [] = vis_COBALT_Offline(option)
 arguments
-    option.loc       char {mustBeMember(option.loc, {'BATS', 'CCE', 'GOM', 'GOM_2', 'NS', 'GMX', 'GMX_2'})} = 'BATS'
-    option.exp       char      = 'DIAG_COORD_DEF_01_FNC1_4680'
-    option.yr_spinup char      = '2'    % number of spinup years to read     
-    option.multiyear   logical = false  % if true, all years are concatenated in the same netcdf file 
+    option.loc       char {mustBeMember(option.loc, {'BATS', 'CCE', 'GOM', 'GOM_2', 'NS', 'GMX', 'GMX_2', 'GBK'})} = 'BATS'
+    option.exp       char      = 'FE_FORCING'
+    option.yr_spinup char      = '7'    % number of spinup years to read     
+    option.multiyear logical   = false  % if true, all years are concatenated in the same netcdf file 
                                         % This is happening when the we run several years (2004 to 2006) 
                                         % at the same time instead of re running the 
                                         % same year over an over for spinup.                               
 end
 dbclear all 
-% dbstop in vis_COBALT_Offline.m at 74
+% dbstop in vis_COBALT_Offline.m at 90
 
 addpath('../../Programing-Tutorials/Matlab/Matlab_functions/')  
 
@@ -22,30 +22,18 @@ Spinup = {'_Spinup_Time_Serie', ''};
 
 var_COBALT = {'nmdz', 'nlgz', 'nsmz', 'nbact', 'ndet', 'ndi', 'nlg', 'nmd', 'nsm', ...
                 'jhploss_n_Mdz', 'jprod_nmdz', 'jhploss_n_Lgz', 'jprod_nlgz',...
-                'nh4', 'no3', 'o2', 'dic', 'thetao', 'Pop_btm'};
+                'nh4', 'no3', 'o2', 'po4', 'dic', 'fed', 'thetao', 'so', 'irr_aclm', 'Pop_btm', 'MLD_003'};
 units = {'Mol N/kg', 'Mol N/kg', 'Mol N/kg', 'Mol N/kg', 'Mol N/kg', 'Mol N/kg', 'Mol N/kg', 'Mol N/kg', 'Mol N/kg',...
          'mol N m-2 s-1', 'mol N m-2 s-1', 'mol N m-2 s-1', 'mol N m-2 s-1',...
-         'mol/kg', 'mol/kg', 'mol/kg', 'mol/kg', '°C', 'Mol m-2 s-1'};
+         'mol/kg', 'mol/kg', 'mol/kg', 'mol/kg', 'mol/kg', 'mol/kg', '°C', 'Watts/m^2', 'psu', 'Mol m-2 s-1', 'm'};
 units_int = {'Mol N m-2', 'Mol N m-2', 'Mol N m-2', 'Mol N m-2', 'Mol N m-2', 'Mol N m-2', 'Mol N m-2', 'Mol N m-2', 'Mol N m-2',...
          'mol N m-2 s-1', 'mol N m-2 s-1', 'mol N m-2 s-1', 'mol N m-2 s-1',...
-         'mol m-2', 'mol m-2', 'mol m-2', 'mol m-2', '°C', 'Mol m-2 s-1'};
+         'mol m-2', 'mol m-2', 'mol m-2', 'mol m-2', 'mol m-2', 'mol m-2', '°C', 'Watts/m^2', 'psu', 'Mol m-2 s-1', 'm'};
 idx_biomass =   [1:9]; % index of the variables that are biomass
 idx_rates =     [10:13]; % index of the variables that are mortality and production
-idx_env =       [14:17]; % index of the environmental variables
-indx_temp =     18;     % index of Temperature
-idx_pop_flux =  length(var_COBALT); % index of the detritus flux to the bottom
-
-%% colors
-cm10=[0.5 0.5 0;... %tan/army
-    0 0.7 0;...     %g
-    1 0 1;...       %m
-    1 0 0;...       %r
-    0.5 0 0;...     %maroon
-    0/255 206/255 209/255;... %turq
-    0 0.5 0.75;...  %med blue
-    0 0 0.75;...    %b
-    0.5 0.5 0.5; ...%med grey
-    0 0 0];...      %black
+idx_env =       [14:19]; % index of the environmental variables
+idx_physic =    [20, 21, 22]; % index of the physical variables
+idx_2D_flux =   [23 24]; % index of the detritus flux to the bottom
 
 %% spinup years:
 if ~option.multiyear
@@ -93,7 +81,7 @@ disp(dir_input_COBALT_spinup)
 load(['../output/Matlab_Average/', coupling, '/', option.loc, '/Topology.mat'], 'topog') % load topography data
 load([dir_input_COBALT_spinup 'Time_Depth_Means_forcing' '.mat']); % load depth means
 load([dir_input_COBALT_spinup 'Time_Means_forcing_100m'  '.mat']); % load 100m means
-load([dir_input_COBALT_spinup 'Time_Means_forcing'       '.mat'], [var_COBALT{idx_pop_flux} '_tmean']); % load average over time 
+load([dir_input_COBALT_spinup 'Time_Means_forcing'       '.mat']); % load average over time 
 cm7  = colormap(turbo(7)); % colormap for the figures
 start_date = datetime("2004-01-01"); % start date of the expriment 
 end_date   = datetime("2004-12-31"); % end date of the expriment
@@ -101,7 +89,7 @@ time = start_date:end_date; % time vector for the expriment in days
 n = 0; % counter for the number of figures
 
 % Loop over each COBALT bgc tracer:
-for i = [idx_biomass idx_rates idx_env indx_temp]
+for i = [idx_biomass idx_rates idx_env idx_physic]
     n = n+1;
     % Figure 1: Depth profiles of the time mean over all spinup years: ---------------------------
         figure(n)
@@ -132,7 +120,7 @@ for i = [idx_biomass idx_rates idx_env indx_temp]
         plot(time, eval([var_COBALT{i} '_tmean_100m(1:366)']))
         plot(time, zeros(length(time), 1), 'k--')
         hold off
-        if i == indx_temp
+        if ismember(i, idx_physic)
             title('Last spinup year 100 m average')
         else 
             title('Last spinup year 100 m int.')
@@ -147,7 +135,7 @@ for i = [idx_biomass idx_rates idx_env indx_temp]
         plot(time, eval([var_COBALT{i} '_tmean_100m(end-365:end)']))
         plot(time, zeros(length(time), 1), 'k--')
         hold off
-        if i == indx_temp
+        if ismember(i, idx_physic)
             title('Last spinup year 100 m average')
         else 
             title('Last spinup year 100 m int.')
@@ -193,7 +181,7 @@ for i = [idx_biomass idx_rates idx_env indx_temp]
         hold off
         xlabel('Spinup time (days)')
         ylabel([var_COBALT{i} ' (' units_int{i} ')'])
-        if i == indx_temp
+        if ismember(i, idx_physic)
             title([var_COBALT{i} ' average over top 100m'])
         else 
             title([var_COBALT{i} ' int. over top 100m'])
@@ -231,7 +219,7 @@ for i = [idx_biomass idx_rates idx_env indx_temp]
         plot(time, eval([var_COBALT{i} '_tmean_100m(1:366)']))
         plot(time, zeros(length(time), 1), 'k--')
         hold off
-        if i == indx_temp
+        if ismember(i, idx_physic)
             title('Last spinup year 100 m average')
         else 
             title('Last spinup year 100 m int.')
@@ -246,7 +234,7 @@ for i = [idx_biomass idx_rates idx_env indx_temp]
         plot(time, eval([var_COBALT{i} '_tmean_100m(end-365:end)']))
         plot(time, zeros(length(time), 1), 'k--')
         hold off
-        if i == indx_temp
+        if ismember(i, idx_physic)
             title('Last spinup year 100 m average')
         else 
             title('Last spinup year 100 m int.')
@@ -258,7 +246,7 @@ for i = [idx_biomass idx_rates idx_env indx_temp]
     save_graph(gcf, "png", [dir_output 'COBALT_offline_' var_COBALT{i} '_Layer_100mInt_' option.yr_spinup '_yrs'], 16, 12)
 end
         
-for i = idx_pop_flux
+for i = idx_2D_flux
     n = n+1;
     axes_formating(gcf, "defaultAxesColorOrder", cm7); 
     t = tiledlayout(2, 2, "TileSpacing","compact","Padding","compact");
@@ -289,3 +277,17 @@ for i = idx_pop_flux
 
     save_graph(gcf, "png", [dir_output 'COBALT_offline_' var_COBALT{i} '_100mInt_' option.yr_spinup '_yrs'], 16, 12)
 end
+
+% Figure 4: Plot the depth at each layer:
+n = n+1;
+figure(n)
+axes_formating(gcf); 
+semilogy(1:75, -topog.Layer(1:75))
+hold on 
+plot([1 75], [-200 -200], 'k--')
+hold off
+xlabel('Layer ID')
+ylabel('Depth (m)')
+title('Depth at each layer Based on BATS')
+legend('Layer depth', '200 m')
+save_graph(gcf, "png", [dir_output 'Layer_Depth'], 12, 10)

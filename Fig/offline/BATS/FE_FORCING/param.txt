@@ -1,0 +1,8 @@
+Location: BATS
+ROTATION = "2omegasinlat" 
+OMEGA = 7.2921E-05
+KD=10-5
+DIAG_COORD_DEF_01 = "FNC1:2,4680,6,.01
+New Initial condition 
+Vertical T and S restoring
+Iron Forcing

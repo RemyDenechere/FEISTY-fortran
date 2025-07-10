@@ -10,7 +10,7 @@ arguments
     option.exp       char                                                           = 'FEISTY--non-vertical-refuge-2'
     option.loc       char {mustBeMember(option.loc, {'BATS', 'CCE', 'GOM', 'NS'})}  = 'BATS'
     option.rockfish  logical                                                        = true
-    option.yr        double                                                         = 20
+    option.yr        double                                                         = 7
 end
 clf
 dbclear all 
@@ -86,8 +86,8 @@ idx_mz_rate_loss    = [2, 5, 7]; % indexes mortality rates and detritus flux
 idx_mz_rate_growth  = [3, 6]; % indexes growth rates 
     
 coupling = 'online'; 
-% addpath('/project/rdenechere/Programing-Tutorials/Matlab/Matlab_functions/')
-addpath('\\sio-smb.ucsd.edu\petrik-lab\rdenechere\Programing-Tutorials\Matlab\Matlab_functions\')
+addpath('/project/rdenechere/Programing-Tutorials/Matlab/Matlab_functions/')
+% addpath('\\sio-smb.ucsd.edu\petrik-lab\rdenechere\Programing-Tutorials\Matlab\Matlab_functions\')
 
 %! thickness of the lines:
 thickness.grp = [1.5 1.5 2 1.5];

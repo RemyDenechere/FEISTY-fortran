@@ -112,7 +112,7 @@ for loc in "${locations[@]}"; do
     echo ""
     echo "--------------------------------------------------------------------"
     echo "Start comparison analysis of the $NUM_LINES experiments in $EXP_NAME for $loc"
-    matlab -batch "vis_comparison_exp(exp='$EXP_NAME', loc='$loc');" -nodesktop -nosplash -nojvm
+    matlab -batch "vis_comparison_exp(exp='$EXP_NAME', loc='$loc');" -nodisplay
 done
 
 # PRINT SIMULATION TIME 
