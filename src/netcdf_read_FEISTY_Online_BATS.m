@@ -9,7 +9,7 @@ arguments
     exp       char    = 'FEISTY--non-vertical-16Jun25'
 end 
 dbclear all 
-% dbstop in netcdf_read_FEISTY_Online_BATS at 67
+% dbstop in netcdf_read_FEISTY_Online_BATS at 31
 
 %! set up variable names
 coupling = 'online';
@@ -172,9 +172,41 @@ end
 
 disp("Get Zooplankton outputs from COBALT-FEISTY online  & process them for visualisation")
 
-var = {'nmdz', 'jhploss_n_Mdz', 'jprod_nmdz', 'nlgz', 'jhploss_n_Lgz', 'jprod_nlgz',...
-        'thetao', 'Pop_btm'};
-
+%! LIST OF VARIABLES: -----------------------------------------------
+var = {'nmdz', 'nlgz', 'nsmz', 'nbact', 'ndet', 'ndi', 'nlg', 'nmd', 'nsm', ...
+        'jhploss_n_Mdz', 'jprod_nmdz', 'jhploss_n_Lgz', 'jprod_nlgz',...
+        'nh4', 'no3', 'o2', 'po4', 'dic', 'fed', 'thetao', 'so' , 'irr_aclm', 'Pop_btm', 'MLD_003'};
+idx_biomass =       [1:9]; % index of the variables that are biomass
+idx_rates =         [10:13]; % index of the variables that are mortality and production
+idx_env =           [14:19]; % index of the environmental variables
+idx_physic =        [20, 21, 22]; % index of the physical variables
+idx_pop_flux =       23;     % index of the detritus flux to the bottom
+idx_2D_flux =       [23 24]; % index of the detritus flux to the bottom
+idx_var_restart =   [3:9, 14:19, 22]; % index of the variables that are in the restart file
+idx_var_ocean   =   [21 24]; % index of the variables that are in the ocean file
+% [mol N kg-1]
+%    nmdz: medium zooplankton nitrogen
+%    nlgz: large zooplankton nitrogen
+%    nbact: bacteria
+%    ndet: nitrogen detritus
+%    ndi: diazotroph nitrogen
+%    nlg: large, coastal or chain-forming, phytoplankton nitrogen
+%    nmd: medium phytoplankton nitrogen
+%    nsm: high-light adapted small phytoplankton nitrogen
+% [mol N Kg-1 s-1]
+%    jhploss_n_Mdz: medium zooplankton nitrogen mortality
+%    jprod_nmdz: medium zooplankton nitrogen production
+%    jhploss_n_Lgz: large zooplankton nitrogen mortality
+%    jprod_nlgz: large zooplankton nitrogen production
+% environemnetal variables:
+%    nh4: ammonia
+%    no3: nitrate
+%    po4: Phosphate
+%    o2: oxygen
+%    dic: disolved inorganic carbon
+%    thetao: temperature
+%    Pop_btm: bottom detritus production (detritus flux to the bottom)
+% --------------------------------------------------------------------------------------------------------------------------------- % 
 
 % consider taking nmdz_100 instead of nmdz
 for yr_i = 1:yr
@@ -184,35 +216,50 @@ for yr_i = 1:yr
     dir_output =['../output/Matlab_Average/', coupling, '/' loc, '/', exp, '/', [name num2str(yr)], '/'];
 
     if ~exist(dir_output, 'dir') 
-        mkdir(dir_output)
-    end 
+            disp(['output directory:' dir_output ' does not exist, making it...'])
+            mkdir(dir_output)
+            if ~exist(dir_output, 'dir')    
+                disp(['error making output dir:' dir_output ' exiting...'])
+                exit
+            end
+    end  
 
-    dir = {[dir_input '20040101.ocean_feisty_forcing.nc'], ...
-           [dir_input '20040101.ocean_feisty_forcing.nc'], ...
-           [dir_input '20040101.ocean_feisty_forcing.nc'], ...
-           [dir_input '20040101.ocean_feisty_forcing.nc'], ...
-           [dir_input '20040101.ocean_feisty_forcing.nc'], ...
-           [dir_input '20040101.ocean_feisty_forcing.nc'], ...
-           [dir_input '20040101.ocean_feisty_forcing.nc'], ...
-           [dir_input '20040101.ocean_feisty_forcing_detritus.nc']};
+dir = { [dir_input '20040101.ocean_feisty_forcing.nc']
+                [dir_input '20040101.ocean_cobalt_restart.nc']
+                [dir_input '20040101.ocean_daily.nc']
+                [dir_input '20040101.ocean_feisty_forcing_detritus.nc']}; % detritus flux to the bottom is save in a different file
     
     % Getting data from netcdf
     for i = 1:length(var) 
-        ncid = netcdf.open(dir{i},'NC_NOWRITE');
+          disp(['var ', num2str(i), ' = ', var{i}])
+        %! Read data from netcdf file: -------------------------------------
+        % open the netcdf file: 
+        if i == idx_pop_flux % pop_flux is save in a different file
+            ncid = netcdf.open(dir{4},'NC_NOWRITE');
+        elseif ismember(i, idx_var_ocean) % variables that are in the ocean file
+            ncid = netcdf.open(dir{3},'NC_NOWRITE');
+        elseif ismember(i, idx_var_restart)
+            ncid = netcdf.open(dir{2},'NC_NOWRITE');
+        else 
+            ncid = netcdf.open(dir{1},'NC_NOWRITE');
+        end
+        % get the variable id and get data:
         varid = netcdf.inqVarID(ncid, var{i});
         eval([ var{i} ' = netcdf.getVar(ncid, varid);']);
         eval([ var{i} '(' var{i} ' == 99999) = NaN;']);
-        if i == 8
+        if ismember(i, idx_2D_flux) % pop_flux does not have vertical dimension
             eval([ var{i} ' = ' var{i} '(:,:,1:366);']);
         else
             eval([ var{i} ' = ' var{i} '(:,:,:,1:366);']);
         end
         netcdf.close(ncid);
+        disp(['var ', num2str(i), ' = ', var{i} ' done'])
     
-        if ismember(i, [1, 4]) % conversions biomass 
-            eval([ var{i} ' = ' var{i} '*6.625* 12.01 * 9.0 * 1000.0;' ]);     % Conversion from Mol N/kg --> gC WW m-3
-        elseif ismember(i, [2, 3, 5, 6, 8]) % conversion mortality
-            eval([ var{i} ' = ' var{i} '*6.625* 12.01 * 9.0 * 24.0*3600;' ]);  % Conversion from Mol mol N m-2 s-1 (Layer integrated) --> gC WW m-3 d-1
+        %! Convert units: --------------------------------------------------
+        if ismember(i, idx_biomass) % conversions biomass 
+            eval([ var{i} '_conv = ' var{i} '*6.625* 12.01 * 9.0 * 1000.0;' ]);     % Conversion from Mol N/kg --> gC WW m-3
+        elseif ismember(i, [idx_rates, idx_pop_flux]) % conversion mortality and pop flux
+            eval([ var{i} '_conv = ' var{i} '*6.625* 12.01 * 9.0 * 24.0*3600;' ]);  % Conversion from Mol mol N m-2 s-1 (Layer integrated) --> gC WW m-3 d-1
         end
     end 
     
@@ -220,33 +267,34 @@ for yr_i = 1:yr
     dim = size(eval([var{1}]));
     time = 1:dim(4);
     depth = 1:dim(3);
-    timerange = ((yr_i - 1) * dim(4) + 1):(yr_i * dim(4)); 
+    timerange = ((yr_i - 1) * dim(4) + 1):(yr_i * dim(4)); % indexes for the year yr_i
     
     %! Calculate average over lat and long for zooplanton biomass (integrate over 100m depth): 
-    for i = [1, 4] 
+    for i = [idx_biomass idx_env]
         eval([var{i} '_spacemean(timerange, :) = transpose(squeeze(nanmean(' var{i} ', [1,2])));']);
-        eval([var{i} '_tmean(timerange) = squeeze(sum(' var{i} '_spacemean(timerange, :) .* topog.Layer_thikness, 2));']); % integrated biomass over depth
-        eval([var{i} '_tmean_100m(timerange) = squeeze(sum(' var{i} '_spacemean(timerange, 1:topog.idx_100m) .* topog.Layer_thikness(1:topog.idx_100m), 2));']); % integrated biomass over 100m
+        eval([var{i} '_tmean(timerange) = squeeze(sum(' var{i} '_spacemean(timerange, :) .* 1000 .* topog.Layer_thikness, 2));']); % integrated biomass over depth [mol N m-2]
+        eval([var{i} '_tmean_100m(timerange) = squeeze(sum(' var{i} '_spacemean(timerange, 1:topog.idx_100m) .* 1000 .* topog.Layer_thikness(1:topog.idx_100m), 2));']); % integrated biomass over 100m [mol N m-2]
         eval([var{i} '_zmean(yr_i, :) = transpose(squeeze(nanmean(' var{i} '_spacemean(timerange, :), 1)));']); % concentration at every depth
     end
     % Calculate average over lat and long for zooplanton mortality and production: these comes as layer integrated no need to multiply by layer thickness:
     % or are variables that do not need layer depth integration (temperature)
-    for i = [2, 3, 5, 6, 7] 
+    for i = [idx_rates]
         eval([var{i} '_spacemean(timerange, :) = transpose(squeeze(nanmean(' var{i} ', [1,2])));']);
         eval([var{i} '_tmean(timerange) = squeeze(sum(' var{i} '_spacemean(timerange, :), 2));']); % integrated biomass over depth
         eval([var{i} '_tmean_100m(timerange) = squeeze(sum(' var{i} '_spacemean(timerange, 1:topog.idx_100m), 2));']); % integrated biomass over 100m
         eval([var{i} '_zmean(yr_i, :) = transpose(squeeze(nanmean(' var{i} '_spacemean(timerange, :), 1)));']); % concentration at every depth
     end 
-    for i = 7  % average temperature over 100m
+    for i = idx_physic  % for temperature, we do not need to integrate over depth we take the mean over the depth instead.
+        eval([var{i} '_spacemean(timerange, :) = transpose(squeeze(nanmean(' var{i} ', [1,2])));']);
         eval([var{i} '_tmean_100m(timerange) = squeeze(nanmean(' var{i} '_spacemean(timerange, 1:topog.idx_100m), 2));']);
     end 
-    for i = length(var) % pop_flux does not have vertical dimension
+    for i = idx_2D_flux % 2D vars do not have vertical dimension
         eval([var{i} '_tmean(timerange) = nanmean(' var{i} ', [1,2]);']);
     end 
 end 
     
-time_days = 1:(366*yr);
-time_year = yr; 
+time_days = 1:(366*yr); % Total number of days in the simulation
+time_year = yr; % Total number of years in the simulation
 
 %! Save data: -------------------------------------------------------------
 %!! average over lat and long: 
@@ -254,15 +302,19 @@ save([dir_output 'Time_Depth_Means_forcing' '.mat'], 'time_days', 'time_year', '
 save([dir_output 'Time_Means_forcing' '.mat'], 'time_days', 'time_year')
 save([dir_output 'Time_Means_forcing_100m' '.mat'], 'time_days', 'time_year')
 save([dir_output 'Depth_Means_forcing' '.mat'], 'time_days', 'time_year', 'depth')
-for i = 1:(length(var)-1)
+for i = [idx_biomass idx_rates idx_env ]
     save([dir_output 'Time_Depth_Means_forcing' '.mat'], [var{i} '_spacemean'] ,'-append')
     save([dir_output 'Time_Means_forcing' '.mat'], [var{i} '_tmean'] ,'-append')
     save([dir_output 'Time_Means_forcing_100m' '.mat'], [var{i} '_tmean_100m'] ,'-append')
     save([dir_output 'Depth_Means_forcing' '.mat'], [var{i} '_zmean'] ,'-append')
 end
-save([dir_output 'Time_Means_forcing' '.mat'], [var{end} '_tmean'] ,'-append')
-
-dbclear all
+for i = idx_physic
+    save([dir_output 'Time_Depth_Means_forcing' '.mat'], [var{i} '_spacemean'] ,'-append')
+    save([dir_output 'Time_Means_forcing_100m' '.mat'], [var{i} '_tmean_100m'] ,'-append')
+end 
+for i = idx_2D_flux % 2D vars do not have vertical dimension
+    save([dir_output 'Time_Means_forcing' '.mat'], [var{i} '_tmean'] ,'-append')
+end 
 
 end
 

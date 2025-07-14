@@ -1,27 +1,27 @@
-&FEISTY_nml
-        Year_2_Spinup = 100
-        Spinup_logical = .false.
-!
-! Experimentation parameters: ------------------------------------------
-        loc = "GMX_2"
-        exp = "2D" ! "COBALT_offline_BATS"
-        coupling = "offline"
-!
-! Environemental data for test: -----------------------------------
-        diagnostic           = .false.   ! True to run debug mode 
-        save_diagnostics     = .true.
-        prod_constrained     = .true.
-        Spinup_Time_Serie    = .true.
-        Initial_Condition_generic_FEISTY = .true.
-        largDemPel           = .false.
-!
-! Simulation parameters: ------------------------------------------
-        Delta_t          = 1.0             ! Time step [d]
-        IC               = 1d-5            ! Fish Initial Condition
-        PI_be_cutoff     = 200.00          ! Benthic-pelagic coupling cutoff (depth, m)
-!
-! input files: ----------------------------------------------------
-        root_dir_output = "/project/rdenechere/COBALT_output/COBALT_offline_forcing_files/"
-        root_dir = "/project/rdenechere/CEFI-regional-MOM6-FEISTY/exps/OM4.single_column.COBALT/"
-/
-EOF ! add whatever at the end of the file
+-&FEISTY_nml
+-        Year_2_Spinup = 100
+-        Spinup_logical = .false.
+-!
+-! Experimentation parameters: ------------------------------------------
+-        loc = "GMX_2"
+-        exp = "2D" ! "COBALT_offline_BATS"
+-        coupling = "offline"
+-!
+-! Environemental data for test: -----------------------------------
+-        diagnostic           = .false.   ! True to run debug mode
+-        save_diagnostics     = .true.
+-        prod_constrained     = .true.
+-        Spinup_Time_Serie    = .true.
+-        Initial_Condition_generic_FEISTY = .true.
+-        largDemPel           = .false.
+-!
+-! Simulation parameters: ------------------------------------------
+-        Delta_t          = 1.0             ! Time step [d]
+-        IC               = 1d-5            ! Fish Initial Condition
+-        PI_be_cutoff     = 200.00          ! Benthic-pelagic coupling cutoff (depth, m)
+-!
+-! input files: ----------------------------------------------------
+-        root_dir_output = "/project/rdenechere/COBALT_output/COBALT_offline_forcing_files/"
+-        root_dir = "/project/rdenechere/CEFI-regional-MOM6-FEISTY/exps/OM4.single_column.COBALT/"
+-/
+-EOF ! add whatever at the end of the file

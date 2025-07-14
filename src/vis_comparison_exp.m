@@ -77,13 +77,21 @@ disp(tab);
 
 %! set up variable names
 var              = {'Sf', 'Sp', 'Sd', 'Mf', 'Mp', 'Md', 'Lp', 'Ld', 'BE'};
-var_COBALT       = {'nmdz', 'jhploss_n_Mdz', 'jprod_nmdz', 'nlgz', 'jhploss_n_Lgz', 'jprod_nlgz', 'Pop_btm'};
 functional_group = {'Forage', 'Pelagic', 'Demersal'};
-
-% indexes for plotting: 
-idx_mz_bio          = [1, 4]; % indexes biomass zooplankton 
-idx_mz_rate_loss    = [2, 5, 7]; % indexes mortality rates and detritus flux 
-idx_mz_rate_growth  = [3, 6]; % indexes growth rates 
+var_COBALT = {'nmdz', 'nlgz', 'nsmz', 'nbact', 'ndet', 'ndi', 'nlg', 'nmd', 'nsm', ...
+              'jhploss_n_Mdz', 'jprod_nmdz', 'jhploss_n_Lgz', 'jprod_nlgz',...
+              'nh4', 'no3', 'o2', 'po4', 'dic', 'fed', 'thetao', 'so', 'irr_aclm', 'Pop_btm', 'MLD_003'};
+units = {'Mol N/kg', 'Mol N/kg', 'Mol N/kg', 'Mol N/kg', 'Mol N/kg', 'Mol N/kg', 'Mol N/kg', 'Mol N/kg', 'Mol N/kg',...
+         'mol N m-2 s-1', 'mol N m-2 s-1', 'mol N m-2 s-1', 'mol N m-2 s-1',...
+         'mol/kg', 'mol/kg', 'mol/kg', 'mol/kg', 'mol/kg', 'mol/kg', '°C', 'Watts/m^2', 'psu', 'Mol m-2 s-1', 'm'};
+units_int = {'Mol N m-2', 'Mol N m-2', 'Mol N m-2', 'Mol N m-2', 'Mol N m-2', 'Mol N m-2', 'Mol N m-2', 'Mol N m-2', 'Mol N m-2',...
+             'mol N m-2 s-1', 'mol N m-2 s-1', 'mol N m-2 s-1', 'mol N m-2 s-1',...
+             'mol m-2', 'mol m-2', 'mol m-2', 'mol m-2', 'mol m-2', 'mol m-2', '°C', 'Watts/m^2', 'psu', 'Mol m-2 s-1', 'm'};
+idx_biomass =   [1:9]; % index of the variables that are biomass
+idx_rates =     [10:13]; % index of the variables that are mortality and production
+idx_env =       [14:19]; % index of the environmental variables
+idx_physic =    [20, 21, 22]; % index of the physical variables
+idx_2D_flux =   [23 24]; % index of the detritus flux to the bottom
     
 coupling = 'online'; 
 addpath('/project/rdenechere/Programing-Tutorials/Matlab/Matlab_functions/')
@@ -93,6 +101,7 @@ addpath('/project/rdenechere/Programing-Tutorials/Matlab/Matlab_functions/')
 thickness.grp = [1.5 1.5 2 1.5];
 thickness.size = [1.5 1.5 2 2 2 2 2 2 1.5];
 
+dir_output =['../Fig/', coupling, '/' option.loc, '/', option.exp , '/Comparison_experiments/' ];
 
 %=========================================================================%
 %               plot comparison between each experiemnt                   %
@@ -103,50 +112,42 @@ for i = 1:N_param % one plot per parameter to test:
 
     %! colors
     cm = colormap(turbo(length(N_values)));
-
-    % create the figure
-    figure(i)
-    axes_formating(gcf);
-    t = tiledlayout(2, 1, "TileSpacing", "compact", "Padding", "compact");
-    title(t, {[option.exp, ' at ' option.loc, ' for ' num2str(option.yr) ' Spinup year'], ...
-            ['Parameter tested: ' char(param_name(i))]})
-    mzaxes = nexttile;    
-    lzaxes = nexttile;
-
-
-    for j = 1:length(N_values)
-        % find eperiment with the same value for the parameter: 
-        idx_exp = find(table2array(tab(:, i)) == N_values(j));
-        idx_exp = idx_exp(round(length(idx_exp)/2)); % Take a value close to the middle of the list
         
-        exp_to_test = EXP_LIST{idx_exp};
+    for k = [idx_biomass idx_rates idx_env]
+         % create the figure
+        figure
+        axes_formating(gcf);
+        t = tiledlayout(1, 1, "TileSpacing", "compact", "Padding", "compact");
+        title(t, {[option.exp, ' at ' option.loc, ' for ' num2str(option.yr) ' Spinup year'], ...
+                ['Parameter tested: ' char(param_name(i))], ...
+                ['Variable: ' char(var_COBALT{k})]})
 
-        % load the data
-        dir_input =['../output/Matlab_Average/', coupling, '/' option.loc, '/', option.exp, '/', [exp_to_test num2str(option.yr)] , '/'];
-        dir_output =['../Fig/', coupling, '/' option.loc, '/', option.exp , '/Comparison_experiments/' ];
-        if ~exist(dir_output, 'dir')
-            mkdir(dir_output)
+        %! set the axes! 
+        for j = 1:length(N_values)
+            % find eperiment with the same value for the parameter: 
+            idx_exp = find(table2array(tab(:, i)) == N_values(j));
+            idx_exp = idx_exp(round(length(idx_exp)/2)); % Take a value close to the middle of the list
+            
+            exp_to_test = EXP_LIST{idx_exp};
+
+            % load the data
+            dir_input =['../output/Matlab_Average/', coupling, '/' option.loc, '/', option.exp, '/', [exp_to_test num2str(option.yr)] , '/'];
+
+            if ~exist(dir_output, 'dir')
+                mkdir(dir_output)
+            end
+            load([dir_input 'Time_Means_forcing_100m' '.mat']) % Cobalt tracers 
+    
+            axes_formating(gca, "defaultAxesColorOrder", cm);
+            hold on 
+            plot(time_days, eval([var_COBALT{k} '_tmean_100m']))
+            hold off 
         end
-        load([dir_input 'Time_Means_forcing_100m' '.mat']) % Cobalt tracers 
- 
-        k = idx_mz_bio(1); % index of small zooplanton
-        axes_formating(gca, "defaultAxesColorOrder", cm);
-        hold on 
-        plot(mzaxes, time_days, eval([var_COBALT{k} '_tmean_100m']))
-        hold off 
-
-        k = idx_mz_bio(2); % index of large zooplanton 
-        axes_formating(gca, "defaultAxesColorOrder", cm);
-        hold on
-        plot(lzaxes, time_days, eval([var_COBALT{k} '_tmean_100m']))
-        hold off
-    end
-    L=legend(lzaxes, string(N_values), 'Location', 'best');
-    title(L, param_name(i))
-    title(mzaxes, 'Medium Zooplankton')
-    title(lzaxes, 'Large Zooplankton')
-    xlabel(t, ['Time over' option.yr 'year(s) Spinup (day)'])
-    ylabel(t, 'Biomass of Zooplankton integrated over 100m (g WW C m^-^2)')
-    save_graph(gcf, 'png', [dir_output 'Comparison_' char(param_name(i))], 16, 13)
+        L=legend(string(N_values), 'Location', 'best');
+        title(L, param_name(i))
+        xlabel(t, ['Time over' option.yr 'year(s) Spinup (day)'])
+        ylabel(t, [var_COBALT{k} ' (' units{k} ')'])
+        save_graph(gcf, 'png', [dir_output 'Comparison_' char(param_name(i)) '_for_var' var_COBALT{k}], 16, 13)
+    end 
 end 
 

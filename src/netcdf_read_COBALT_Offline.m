@@ -116,10 +116,10 @@ if ~option.multiyear
             end
         end 
 
-        dir = {[dir_input '20040101.ocean_feisty_forcing.nc']
-            [dir_input '20040101.ocean_cobalt_restart.nc']
-            [dir_input '20040101.ocean_daily.nc']
-            [dir_input '20040101.ocean_feisty_forcing_detritus.nc']}; % detritus flux to the bottom is save in a different file
+        dir = { [dir_input '20040101.ocean_feisty_forcing.nc']
+                [dir_input '20040101.ocean_cobalt_restart.nc']
+                [dir_input '20040101.ocean_daily.nc']
+                [dir_input '20040101.ocean_feisty_forcing_detritus.nc']}; % detritus flux to the bottom is save in a different file
         
         % Getting data from netcdf for each variable:
         for i = 1:length(var)
